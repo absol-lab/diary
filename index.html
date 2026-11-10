@@ -699,8 +699,9 @@ function renderEntry(){
   renderEntryPhotos();
 }
 function toggleEdit(force){
-  if(typeof force==='boolean') editing=force; else editing=!editing;
-  if(!editing){ saveEdit(); }
+  const to = (typeof force==='boolean') ? force : !editing;
+  if(editing && !to){ saveEdit(); renderEntry(); return; }
+  editing=to;
   renderEntry();
   if(editing){ setTimeout(()=>{ try{$('editarea').focus();}catch(e){} }, 60); }
 }
