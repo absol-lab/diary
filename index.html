@@ -222,6 +222,15 @@
     padding: 11px 16px; color: var(--text); outline: none;
   }
   .searchcount { color: var(--muted); font-size: calc(var(--fs) * .8); margin: 12px 4px; }
+  .taglabel { color: var(--muted); font-size: calc(var(--fs) * .8); margin: 18px 4px 8px; letter-spacing: .1em; }
+  .tagcloud { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 2px 10px; }
+  .tagchip { border: 1px solid var(--line); background: var(--card); color: var(--text); border-radius: 999px; padding: 7px 13px; font-size: calc(var(--fs) * .85); }
+  .tagchip:active { background: var(--card2); }
+  .tagchip .cnt { color: var(--muted); font-size: .82em; margin-left: 5px; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 14px; }
+  .tagrow .tagchip { padding: 5px 11px; font-size: calc(var(--fs) * .78); }
+  .taglink { color: var(--accent); display: inline; }
+  .tagclear { color: var(--accent); font-size: calc(var(--fs) * .85); margin-left: 8px; padding: 4px 2px; }
 
   /* ---------- settings ---------- */
   .pillrow {
@@ -573,12 +582,14 @@ function entryCardHTML(e){
   const title=firstLine(e.text)||'（タイトルなし）';
   const prev=restPreview(e.text);
   const nPhotos=(e.photoFileIds||[]).length + (LocalPhotos[e.id]?LocalPhotos[e.id].length:0) + (e.photoNames||[]).length;
+  const tags=entryTags(e);
   return '<div class="cardwrap" data-eid="'+escA(e.id)+'">'+
     '<button class="carddel" onclick="swipeDeleteEntry(\''+escA(e.id)+'\')" aria-label="この日記を削除">削除</button>'+
     '<button class="card" onclick="openEntry(\''+escA(e.id)+'\')">'+
     '<div class="when"><div class="dow '+dowCls+'">'+esc(dow)+'</div><div class="day">'+(d?d.getDate():'')+'</div><div class="time">'+esc(e.time||'')+'</div></div>'+
     '<div class="body"><div class="title">'+esc(title)+'</div>'+
     (prev?'<div class="preview">'+esc(prev)+'</div>':'')+
+    (tags.length?'<div class="photomark">'+tags.map(t=>'#'+esc(t)).join('　')+'</div>':'')+
     (nPhotos?'<div class="photomark">▦ 写真 '+nPhotos+' 件</div>':'')+
     '</div></button></div>';
 }
@@ -751,12 +762,53 @@ async function swipeDeleteEntry(id){
   }, true);
 })();
 
-/* ================= search ================= */
+/* ================= search / hashtags ================= */
+const TAG_RE = /[#＃]([^\s#＃、。，．！？!?,.;:・「」『』（）()[\]{}<>＜＞"“”'‘’/\\|｜]+)/g;
+function entryTags(e){
+  const out=[]; const seen=new Set();
+  const re=new RegExp(TAG_RE.source, 'g');
+  let m; const text=e.text||'';
+  while((m=re.exec(text))){ const t=m[1]; if(t && !seen.has(t)){ seen.add(t); out.push(t); } }
+  return out;
+}
+function allTags(){
+  const map=new Map();
+  visibleEntries().forEach(e=>{ entryTags(e).forEach(t=>map.set(t, (map.get(t)||0)+1)); });
+  return Array.from(map.entries()).sort((a,b)=> (b[1]-a[1]) || (a[0]<b[0]?-1:1));
+}
+function tagChipHTML(t, cnt){
+  return '<button class="tagchip" onclick="openTag(\''+escA(t)+'\')">#'+esc(t)+(cnt!=null?'<span class="cnt">'+cnt+'</span>':'')+'</button>';
+}
+function linkifyTags(escapedHtml){
+  return escapedHtml.replace(new RegExp(TAG_RE.source, 'g'), (m,t)=>'<button class="taglink" onclick="openTag(\''+escA(t)+'\')">#'+esc(t)+'</button>');
+}
 let searchQuery='';
-function onSearchInput(v){ searchQuery=v; renderSearch(); }
+let searchTag=null;
+function onSearchInput(v){ searchQuery=v; if(v.trim()) searchTag=null; renderSearch(); }
+function openTag(t){
+  searchTag=t; searchQuery='';
+  const inp=$('searchinput'); if(inp) inp.value='';
+  if(currentView!=='search') showView('search'); else renderSearch();
+}
+function clearTag(){ searchTag=null; renderSearch(); }
 function renderSearch(){
+  if(searchTag){
+    const es=visibleEntries().filter(e=>entryTags(e).includes(searchTag)).sort(cmpDesc);
+    $('searchcount').innerHTML = '#'+esc(searchTag)+'　'+es.length+' 件 <button class="tagclear" onclick="clearTag()">✕ タグを解除</button>';
+    $('searchresults').innerHTML = es.length ? es.map(entryCardHTML).join('') : '<div class="empty">このタグの日記はありません。</div>';
+    return;
+  }
   const q=searchQuery.trim();
-  if(!q){ $('searchcount').textContent=''; $('searchresults').innerHTML='<div class="empty">タイトルと本文から探します。</div>'; return; }
+  if(!q){
+    const tags=allTags();
+    $('searchcount').textContent='';
+    $('searchresults').innerHTML = '<div class="empty">タイトルと本文から探します。</div>'+
+      '<div class="taglabel">タグ</div>'+
+      (tags.length
+        ? '<div class="tagcloud">'+tags.map(tc=>tagChipHTML(tc[0], tc[1])).join('')+'</div>'
+        : '<div style="color:var(--muted); font-size:calc(var(--fs) * .85); margin:0 4px">まだタグはありません。本文に #制作 のように書くと、ここに自動で集まります。</div>');
+    return;
+  }
   const es=visibleEntries().filter(e=>(e.text||'').includes(q)).sort(cmpDesc);
   $('searchcount').textContent = '「'+q+'」 '+es.length+' 件';
   $('searchresults').innerHTML = es.length ? es.map(entryCardHTML).join('') : '<div class="empty">見つかりませんでした。</div>';
@@ -800,9 +852,11 @@ function renderEntry(){
     const title = hi<lines.length ? lines[hi] : '';
     const rest = lines.slice(hi+1).join('\n').replace(/^\n+/, '');
     let html='<div class="entrybody">';
-    html+='<h1>'+(title?esc(title):'（タイトルなし）')+'</h1>';
+    html+='<h1>'+(title?linkifyTags(esc(title)):'（タイトルなし）')+'</h1>';
+    const etags=entryTags(e);
+    if(etags.length) html+='<div class="tagrow">'+etags.map(t=>tagChipHTML(t)).join('')+'</div>';
     if(rest){
-      html+=rest.split(/\n{2,}/).map(p=>'<p>'+esc(p).replace(/\n/g,'<br>')+'</p>').join('');
+      html+=rest.split(/\n{2,}/).map(p=>'<p>'+linkifyTags(esc(p).replace(/\n/g,'<br>'))+'</p>').join('');
     }
     if((e.photoNames||[]).length){
       html+='<div class="photoline">移行元の写真： '+e.photoNames.map(esc).join('、')+'（実体は移行元にあります）</div>';
@@ -988,7 +1042,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.6', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.7', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1041,7 +1095,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.6 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.7 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
