@@ -386,7 +386,7 @@
       <div class="setgroup">
         <h2>このアプリについて</h2>
         <div class="setbox">
-          <div class="note" style="margin-top:0">独立版 日記 v1.2 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div>
+          <div class="note" style="margin-top:0">独立版 日記 v1.3 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div>
         </div>
       </div>
     </main>
@@ -979,9 +979,23 @@ function connectDrive(){
     const tc=google.accounts.oauth2.initTokenClient({
       client_id: cid,
       scope: DRIVE_SCOPE,
-      ux_mode: 'redirect',
-      redirect_uri: redirectUri(),
-      callback: function(){}
+      ux_mode: 'popup',
+      callback: function(resp){
+        if(resp && resp.access_token){
+          storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10));
+          storeDel(LS_PENDING);
+          setSyncStatus('syncing');
+          syncNow('connect');
+        } else {
+          setSyncStatus('error', 'トークンを取得できませんでした');
+        }
+      },
+      error_callback: function(err){
+        const t='認証エラー：'+((err && (err.type || err.message)) || 'unknown');
+        storeSet(LS_AUTH_ERR, t);
+        setSyncStatus('error', t);
+        storeDel(LS_PENDING);
+      }
     });
     storeSet(LS_PENDING, String(Date.now()));
     tc.requestAccessToken();
