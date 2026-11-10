@@ -386,7 +386,7 @@
       <div class="setgroup">
         <h2>このアプリについて</h2>
         <div class="setbox">
-          <div class="note" style="margin-top:0">独立版 日記 v1 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div>
+          <div class="note" style="margin-top:0">独立版 日記 v1.1 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div>
         </div>
       </div>
     </main>
@@ -1007,6 +1007,12 @@ function checkAuthRedirect(){
     const errTxt='認証エラー：'+(p.get('error')||'unknown')+((p.get('error_description')) ? '（'+p.get('error_description')+'）' : '');
     storeSet(LS_AUTH_ERR, errTxt);
     setSyncStatus('error', errTxt);
+    handled='error';
+    try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
+  } else if(location.hash && location.hash.length>1){
+    const noteTxt='認証の戻り（トークンなし）：'+location.hash.slice(0,120);
+    storeSet(LS_AUTH_ERR, noteTxt);
+    setSyncStatus('error', noteTxt);
     handled='error';
     try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
   }
