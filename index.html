@@ -13,13 +13,16 @@
 <link rel="apple-touch-icon" href="IMG_2278.png">
 <link rel="icon" type="image/png" href="IMG_2278.png">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&family=Zen+Old+Mincho:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;500&family=Zen+Kurenaido&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; }
   body {
     --fs: 16px;
     background: var(--bg); color: var(--text);
-    font-size: var(--fs); line-height: 1.6;
+    font-size: var(--fs); line-height: var(--lh, 1.7);
     padding-bottom: 108px;
     -webkit-text-size-adjust: 100%;
   }
@@ -87,7 +90,7 @@
   .view.active { display: block; }
 
   /* ---------- entry cards ---------- */
-  .monthhead { margin: 20px 2px 12px; font-size: calc(var(--fs) * 1.25); color: var(--text); font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  .monthhead { margin: 20px 2px 12px; font-size: calc(var(--fs) * 1.08); color: var(--text); font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
   .monthhead:first-child { margin-top: 4px; }
   .card {
     position: relative; overflow: hidden;
@@ -175,7 +178,7 @@
   .entrybody .photoline { font-size: calc(var(--fs) * .78); color: var(--muted); margin-top: 14px; }
   #editarea {
     width: 100%; min-height: 46vh; background: var(--card); color: var(--text);
-    border: 1px solid var(--line); border-radius: 14px; padding: 14px; line-height: 1.7; resize: vertical;
+    border: 1px solid var(--line); border-radius: 14px; padding: 14px; line-height: var(--lh, 1.7); resize: vertical;
   }
   .editmeta { display: flex; gap: 10px; margin: 10px 0; }
   .editmeta label { flex: 1; font-size: calc(var(--fs) * .75); color: var(--muted); display: block; }
@@ -366,7 +369,7 @@
   <nav id="pillnav">
     <button id="nav-list" class="on" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15.5" x2="12.5" y2="15.5"/></svg><span>リスト</span></button>
     <button id="nav-calendar" onclick="showView('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/><circle cx="8" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="8" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.15" fill="currentColor" stroke="none"/></svg><span>カレンダー</span></button>
-    <button id="nav-settings" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3.3"/><line x1="12" y1="2.8" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21.2"/><line x1="2.8" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21.2" y2="12"/><line x1="5.5" y1="5.5" x2="7.8" y2="7.8"/><line x1="16.2" y1="16.2" x2="18.5" y2="18.5"/><line x1="18.5" y1="5.5" x2="16.2" y2="7.8"/><line x1="7.8" y1="16.2" x2="5.5" y2="18.5"/></svg><span>設定</span></button>
+    <button id="nav-settings" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>設定</span></button>
   </nav>
 
   <div class="overlay" id="overlay" onclick="if(event.target===this) closeSheet()">
@@ -409,7 +412,24 @@ const LS_AUTH_ERR='diaryStandalone.authError';
 const LS_PENDING='diaryStandalone.pendingConnect';
 const SS_TOKEN='diaryStandalone.accessToken';
 
-function defaultSettings(){ return { theme:'sumi', fontSize:'standard', fontFamily:'mincho' }; }
+const FONTFAMS=[
+  { id:'mincho', name:'明朝', stack:'"Hiragino Mincho ProN","Hiragino Mincho Pro","YuMincho","Yu Mincho","Noto Serif JP",serif' },
+  { id:'gothic', name:'ゴシック', stack:'-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif' },
+  { id:'maru', name:'丸ゴシック', stack:'"Hiragino Maru Gothic ProN","TsukuARdGothic","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif' },
+  { id:'shippori', name:'しっぽり明朝', stack:'"Shippori Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'zenmincho', name:'Zen明朝', stack:'"Zen Old Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'rounded', name:'M PLUS Rounded', stack:'"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kurenaido', name:'手書き（Zen紅）', stack:'"Zen Kurenaido","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' }
+];
+const LINEHEIGHTS=[
+  { id:'narrow', name:'狭い', val:1.5 },
+  { id:'standard', name:'標準', val:1.7 },
+  { id:'wide', name:'広い', val:1.9 },
+  { id:'xwide', name:'とても広い', val:2.1 }
+];
+function fontFamById(id){ return FONTFAMS.find(f=>f.id===id) || FONTFAMS[0]; }
+function lineHeightById(id){ return LINEHEIGHTS.find(l=>l.id===id) || LINEHEIGHTS[1]; }
+function defaultSettings(){ return { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard' }; }
 function normalizeEntry(e){
   if(!e || typeof e!=='object') return null;
   const id = (typeof e.id==='string' && e.id) ? e.id : genId();
@@ -432,7 +452,8 @@ function normalizeData(d){
     if(d.settings && typeof d.settings==='object'){
       if(['sumi','ocher','spandrel','kinari'].includes(d.settings.theme)) out.settings.theme=d.settings.theme;
       if(['small','standard','large','xlarge'].includes(d.settings.fontSize)) out.settings.fontSize=d.settings.fontSize;
-      if(['mincho','gothic'].includes(d.settings.fontFamily)) out.settings.fontFamily=d.settings.fontFamily;
+      if(FONTFAMS.some(f=>f.id===d.settings.fontFamily)) out.settings.fontFamily=d.settings.fontFamily;
+      if(LINEHEIGHTS.some(l=>l.id===d.settings.lineHeight)) out.settings.lineHeight=d.settings.lineHeight;
     }
   }
   return out;
@@ -806,6 +827,8 @@ function applyAppearance(){
   document.body.dataset.theme=DB.settings.theme;
   document.body.dataset.fontsize=DB.settings.fontSize;
   document.body.dataset.fontfamily=DB.settings.fontFamily;
+  document.body.style.fontFamily=fontFamById(DB.settings.fontFamily).stack;
+  document.body.style.setProperty('--lh', lineHeightById(DB.settings.lineHeight).val);
   const tc=document.querySelector('meta[name="theme-color"]');
   if(tc) tc.setAttribute('content', DB.settings.theme==='kinari' ? '#f1ebda' : '#000000');
 }
@@ -815,12 +838,14 @@ const SICON = {
   db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
   aaBig: '<span style="font-weight:600; line-height:1"><span style="font-size:14px">A</span><span style="font-size:21px">A</span></span>',
-  aa: '<span style="font-size:19px; line-height:1">Aa</span>'
+  aa: '<span style="font-size:19px; line-height:1">Aa</span>',
+  leading: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="9.5" y1="6" x2="21" y2="6"/><line x1="9.5" y1="12" x2="21" y2="12"/><line x1="9.5" y1="18" x2="21" y2="18"/><line x1="4" y1="3.5" x2="4" y2="20.5"/><polyline points="1.9,6.2 4,3.8 6.1,6.2"/><polyline points="1.9,17.8 4,20.2 6.1,17.8"/></svg>'
 };
 let settingsPanel=null;
 function themeName(){ const t=THEMES.find(t=>t.id===DB.settings.theme); return t?t.name:''; }
 function sizeName(){ return ({small:'小',standard:'標準',large:'大',xlarge:'特大'})[DB.settings.fontSize]||'標準'; }
-function famName(){ return DB.settings.fontFamily==='gothic'?'ゴシック':'明朝'; }
+function famName(){ return fontFamById(DB.settings.fontFamily).name; }
+function lhName(){ return lineHeightById(DB.settings.lineHeight).name; }
 function driveVal(){ return syncStatus==='synced' ? '同期済み' : (syncStatus==='syncing' ? '同期中…' : (syncStatus==='error' ? '同期エラー' : '未接続')); }
 function srow(icon, label, val, onclick, danger){
   return '<button class="srow'+(danger?' danger':'')+'" onclick="'+onclick+'"><span class="ic">'+icon+'</span><span class="lb">'+esc(label)+'</span>'+(val?'<span class="val">'+esc(val)+'</span>':'')+'<span class="chev">›</span></button>';
@@ -838,10 +863,11 @@ function renderSettingsMain(){
       srow(SICON.palette, 'テーマカラー', themeName(), "openSettingsPanel('theme')")+
       srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
       srow(SICON.aa, 'フォントスタイル', famName(), "openSettingsPanel('font')")+
+      srow(SICON.leading, '行間', lhName(), "openSettingsPanel('leading')")+
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.4', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.5', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -862,9 +888,13 @@ function renderSettingsPanel(){
     $('fontsizeseg').innerHTML = sizes.map(s=>'<button class="seg'+(DB.settings.fontSize===s[0]?' on':'')+'" onclick="setFontSize(\''+s[0]+'\')">'+s[1]+'</button>').join('');
   }
   else if(settingsPanel==='font'){
-    p.innerHTML = panelShell('フォントスタイル', '<div class="setbox"><div class="setlabel">書体（画面の飾り文字を除く全体）</div><div class="segrow" id="fontfamilyseg"></div></div>');
-    const fams=[['mincho','明朝'],['gothic','ゴシック']];
-    $('fontfamilyseg').innerHTML = fams.map(f=>'<button class="seg'+(DB.settings.fontFamily===f[0]?' on':'')+'" onclick="setFontFamily(\''+f[0]+'\')">'+f[1]+'</button>').join('');
+    p.innerHTML = panelShell('フォントスタイル', '<div class="groupcard" style="margin-bottom:14px">'+FONTFAMS.map(f=>
+      '<button class="srow" onclick="setFontFamily(\''+f.id+'\')"><span class="lb" style="font-family:'+f.stack.replace(/"/g,'&quot;')+'">'+esc(f.name)+'</span>'+(DB.settings.fontFamily===f.id?'<span style="color:var(--accent); font-size:19px">✓</span>':'')+'</button>'
+    ).join('')+'</div><div class="note">しっぽり明朝・Zen明朝・M PLUS Rounded・手書きはWebフォントです。ネット接続時に読み込まれ、オフラインでは端末の明朝／ゴシックで表示されます。</div>');
+  }
+  else if(settingsPanel==='leading'){
+    p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div><div class="note">日記の本文と入力欄に適用されます。</div></div>');
+    $('lhseg').innerHTML = LINEHEIGHTS.map(l=>'<button class="seg'+(DB.settings.lineHeight===l.id?' on':'')+'" onclick="setLineHeight(\''+l.id+'\')">'+l.name+'</button>').join('');
   }
   else if(settingsPanel==='drive'){
     p.innerHTML = panelShell('Google Drive 同期',
@@ -890,12 +920,13 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.4 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.5 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
 function setFontSize(id){ DB.settings.fontSize=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
 function setFontFamily(id){ DB.settings.fontFamily=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
+function setLineHeight(id){ DB.settings.lineHeight=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
 function saveClientId(){ const el=$('clientid'); if(el) storeSet(LS_CID, el.value.trim()); }
 
 /* ---------- import / export ---------- */
