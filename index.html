@@ -386,7 +386,7 @@
       <div class="setgroup">
         <h2>このアプリについて</h2>
         <div class="setbox">
-          <div class="note" style="margin-top:0">独立版 日記 v1.1 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div>
+          <div class="note" style="margin-top:0">独立版 日記 v1.2 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div>
         </div>
       </div>
     </main>
@@ -437,6 +437,7 @@ const LS_PHOTOS='diaryStandalone.photos.v1';
 const LS_CID='diaryStandalone.clientId';
 const LS_TOKEN_EXP='diaryStandalone.tokenExpiry';
 const LS_AUTH_ERR='diaryStandalone.authError';
+const LS_PENDING='diaryStandalone.pendingConnect';
 const SS_TOKEN='diaryStandalone.accessToken';
 
 function defaultSettings(){ return { theme:'sumi', fontSize:'standard', fontFamily:'mincho' }; }
@@ -982,6 +983,7 @@ function connectDrive(){
       redirect_uri: redirectUri(),
       callback: function(){}
     });
+    storeSet(LS_PENDING, String(Date.now()));
     tc.requestAccessToken();
   }catch(e){
     sheetInfo('Drive接続', '接続を開始できませんでした：'+(e && e.message ? e.message : e));
@@ -996,25 +998,35 @@ function disconnectDrive(){
 }
 function checkAuthRedirect(){
   let handled=null;
+  const hadPending=!!storeGet(LS_PENDING);
   if(location.hash && location.hash.indexOf('access_token')>=0){
     const p=new URLSearchParams(location.hash.slice(1));
     const tok=p.get('access_token');
     const exp=parseInt(p.get('expires_in')||'3600', 10);
-    if(tok){ storeToken(tok, exp); handled='token'; }
+    if(tok){ storeToken(tok, exp); storeDel(LS_PENDING); handled='token'; }
     try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
   } else if(location.hash && location.hash.indexOf('error')>=0){
     const p=new URLSearchParams(location.hash.slice(1));
     const errTxt='認証エラー：'+(p.get('error')||'unknown')+((p.get('error_description')) ? '（'+p.get('error_description')+'）' : '');
     storeSet(LS_AUTH_ERR, errTxt);
     setSyncStatus('error', errTxt);
+    storeDel(LS_PENDING);
     handled='error';
     try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
   } else if(location.hash && location.hash.length>1){
     const noteTxt='認証の戻り（トークンなし）：'+location.hash.slice(0,120);
     storeSet(LS_AUTH_ERR, noteTxt);
     setSyncStatus('error', noteTxt);
+    storeDel(LS_PENDING);
     handled='error';
     try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
+  }
+  if(!handled && hadPending && !isDriveConnected()){
+    const diagTxt='診断：接続ボタンは押されましたが、認証の戻り（URLの # 以降）が確認できませんでした';
+    storeSet(LS_AUTH_ERR, diagTxt);
+    setSyncStatus('error', diagTxt);
+    storeDel(LS_PENDING);
+    handled='error';
   }
   return handled;
 }
