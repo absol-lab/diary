@@ -436,6 +436,7 @@ const LS_DATA='diaryStandalone.data.v1';
 const LS_PHOTOS='diaryStandalone.photos.v1';
 const LS_CID='diaryStandalone.clientId';
 const LS_TOKEN_EXP='diaryStandalone.tokenExpiry';
+const LS_AUTH_ERR='diaryStandalone.authError';
 const SS_TOKEN='diaryStandalone.accessToken';
 
 function defaultSettings(){ return { theme:'sumi', fontSize:'standard', fontFamily:'mincho' }; }
@@ -930,19 +931,21 @@ let syncRunning=false;
 
 function getClientId(){ return (storeGet(LS_CID)||'').trim(); }
 function getValidToken(){
-  const tok=(function(){ try{ return sessionStorage.getItem(SS_TOKEN); }catch(e){ return null; } })();
+  const tok=storeGet(SS_TOKEN);
   const exp=+(storeGet(LS_TOKEN_EXP)||0);
   if(tok && exp && Date.now()<exp-15000) return tok;
   return null;
 }
 function isDriveConnected(){ return !!getValidToken(); }
 function storeToken(tok, expiresInSec){
-  try{ sessionStorage.setItem(SS_TOKEN, tok); }catch(e){}
+  storeSet(SS_TOKEN, tok);
   storeSet(LS_TOKEN_EXP, String(Date.now() + (expiresInSec||3600)*1000));
+  storeDel(LS_AUTH_ERR);
 }
 function clearToken(){
-  try{ sessionStorage.removeItem(SS_TOKEN); }catch(e){}
+  storeDel(SS_TOKEN);
   storeDel(LS_TOKEN_EXP);
+  storeDel(LS_AUTH_ERR);
 }
 function setSyncStatus(st, msg){
   syncStatus=st; if(typeof msg==='string') syncMsg=msg;
@@ -992,16 +995,19 @@ function disconnectDrive(){
   clearToken(); setSyncStatus('disconnected');
 }
 function checkAuthRedirect(){
-  let handled=false;
+  let handled=null;
   if(location.hash && location.hash.indexOf('access_token')>=0){
     const p=new URLSearchParams(location.hash.slice(1));
     const tok=p.get('access_token');
     const exp=parseInt(p.get('expires_in')||'3600', 10);
-    if(tok){ storeToken(tok, exp); handled=true; }
+    if(tok){ storeToken(tok, exp); handled='token'; }
     try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
   } else if(location.hash && location.hash.indexOf('error')>=0){
     const p=new URLSearchParams(location.hash.slice(1));
-    setSyncStatus('error', '認証エラー（'+(p.get('error')||'unknown')+'）');
+    const errTxt='認証エラー：'+(p.get('error')||'unknown')+((p.get('error_description')) ? '（'+p.get('error_description')+'）' : '');
+    storeSet(LS_AUTH_ERR, errTxt);
+    setSyncStatus('error', errTxt);
+    handled='error';
     try{ history.replaceState(null, '', location.pathname+location.search); }catch(e){}
   }
   return handled;
@@ -1017,7 +1023,7 @@ function trySilentRefresh(){
       callback: function(resp){
         if(resp && resp.access_token){ storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10)); setSyncStatus('synced'); syncNow('startup'); }
       },
-      error_callback: function(){ setSyncStatus('disconnected'); }
+      error_callback: function(){ if(syncStatus!=='error') setSyncStatus('disconnected'); }
     });
     tc.requestAccessToken({ prompt: '' });
   }catch(e){ setSyncStatus('disconnected'); }
@@ -1134,13 +1140,17 @@ async function syncNow(reason){
 /* ================= init ================= */
 (function init(){
   applyAppearance();
-  const cameBackFromAuth=checkAuthRedirect();
+  const authResult=checkAuthRedirect();
   renderList(); renderCalendar(); renderSyncStatus();
-  if(cameBackFromAuth){
-    setSyncStatus('synced');
+  if(authResult==='token'){
+    setSyncStatus('syncing');
     setTimeout(()=>syncNow('connect'), 300);
+  } else if(authResult==='error'){
+    /* 認証エラーを表示したままにする（サイレント更新で上書きしない） */
   } else if(isDriveConnected()){
     setTimeout(()=>syncNow('startup'), 300);
+  } else if(getClientId() && storeGet(LS_AUTH_ERR)){
+    setSyncStatus('error', storeGet(LS_AUTH_ERR));
   } else if(getClientId()){
     setTimeout(trySilentRefresh, 800);
   }
