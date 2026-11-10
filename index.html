@@ -89,6 +89,17 @@
   .view { display: none; }
   .view.active { display: block; }
 
+  /* ---------- splash (opening) ---------- */
+  #splash {
+    position: fixed; inset: 0; z-index: 200; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
+    transition: opacity .38s ease;
+  }
+  #splash.hide { opacity: 0; pointer-events: none; }
+  #splash img { width: 92px; height: 92px; border-radius: 22px; animation: splashIn .55s cubic-bezier(.25,.9,.3,1) both; }
+  #splash .sttl { font-size: 26px; letter-spacing: .4em; text-indent: .4em; color: var(--text); animation: splashIn .55s .08s cubic-bezier(.25,.9,.3,1) both; }
+  @keyframes splashIn { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+
   /* ---------- entry cards ---------- */
   .monthhead { margin: 20px 2px 12px; font-size: calc(var(--fs) * 1.08); color: var(--text); font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
   .monthhead:first-child { margin-top: 4px; }
@@ -311,6 +322,9 @@
 </style>
 </head>
 <body data-theme="sumi" data-fontsize="standard" data-fontfamily="mincho">
+
+  <!-- ======= SPLASH ======= -->
+  <div id="splash"><img src="IMG_2278.png" alt=""><div class="sttl">日記</div></div>
 
   <!-- ======= LIST ======= -->
   <section id="view-list" class="view active">
@@ -1043,7 +1057,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.8', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.9', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1096,7 +1110,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.8 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.9 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
@@ -1417,6 +1431,13 @@ async function syncNow(reason){
 
 /* ================= init ================= */
 (function init(){
+  const sp=$('splash');
+  if(sp){
+    const hideSplash=()=>{ if(!sp.classList.contains('hide')){ sp.classList.add('hide'); setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 480); } };
+    sp.addEventListener('click', hideSplash);
+    setTimeout(hideSplash, 850);
+    setTimeout(hideSplash, 2800); /* 保険：何があっても必ず消す */
+  }
   applyAppearance();
   const authResult=checkAuthRedirect();
   renderList(); renderCalendar(); renderSyncStatus();
