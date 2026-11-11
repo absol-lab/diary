@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.15">
+<meta name="app-version" content="1.16">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -184,6 +184,8 @@
   #pillnav button { position: relative; z-index: 1; flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0; border-radius: 999px; font-size: 10px; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color .3s; }
   #pillnav button svg { width: 21px; height: 21px; }
   #pillnav button.on { color: var(--text); }
+  /* press feedback: subtle brighten while pressed, so taps are visible */
+  button:active, .calcell:active { filter: brightness(1.32); }
 
   /* ---------- calendar ---------- */
   .calhead2 { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 2px 14px; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
@@ -674,6 +676,7 @@ function pinNav(){
   if(Math.abs(gap-8)>2) nav.style.bottom=(16-gap)+'px';
 }
 window.addEventListener('resize', ()=>{ moveNavInd(false); pinNav(); });
+document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active on iOS */
 function showView(v){
   if(currentView==='entry' && v!=='entry' && editing){ saveEdit(); }
   if(v!=='settings' && typeof settingsPanel!=='undefined') settingsPanel=null;
@@ -1549,7 +1552,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.15';
+const APP_VERSION='1.16';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
