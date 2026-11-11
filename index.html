@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.19">
+<meta name="app-version" content="1.20">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1649,7 +1649,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.19';
+const APP_VERSION='1.20';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
@@ -1745,7 +1745,8 @@ function todoEditRowHTML(t) {
     + '<div class="tdmain"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div><span class="tdhandle">☰</span></div>';
 }
 function renderTodo() {
-  const wrap = $('todowrap'); if (!wrap || !TodoDB) return;
+  const wrap = $('todowrap'); if (!wrap) return;
+  if (!TodoDB) { try { loadTodo(); } catch (e) {} if (!TodoDB) return; }
   if (todoListId && !listById(todoListId)) { todoListId = null; todoEdit = false; }
   if (!todoListId && (!todoFolderId || !folderById(todoFolderId))) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
   if (todoEdit) { const c = curContainer(); if (c) { wrap.innerHTML = editHTML(c); return; } todoEdit = false; }
@@ -2194,6 +2195,7 @@ function gotoTodo(id) {
 /* ---- folder admin (並び替え・編集) ---- */
 function openFolderAdmin() { renderFolderAdmin(); }
 function renderFolderAdmin() {
+  if (!TodoDB) { try { loadTodo(); } catch (e) {} if (!TodoDB) return; }
   TDOK = null;
   tdOpen(tdHead('フォルダの並び替え・編集', false) + '<div class="tdfbody">'
     + '<p class="tdfnote" style="margin:0 0 6px">項目をタップすると名前を編集できます。☰で並び替え、赤いボタンで削除。</p>'
@@ -2276,6 +2278,7 @@ document.addEventListener('pointerup', function () {
     setTimeout(hideSplash, 2800); /* 保険：何があっても必ず消す */
   }
   applyAppearance();
+  loadTodo(); renderTodo();
   const authResult=checkAuthRedirect();
   renderList(); renderCalendar(); renderSyncStatus();
   if(authResult==='token'){
