@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.27">
+<meta name="app-version" content="1.28">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -104,25 +104,8 @@
   @keyframes viewin { from { opacity: 0; } }
 
   /* ---------- splash (opening) ---------- */
-  #splash { position: fixed; inset: 0; z-index: 200; overflow: hidden; transition: opacity .22s ease; }
+  #splash { position: fixed; inset: 0; z-index: 200; background: #000; transition: opacity .45s ease; }
   #splash.hide { opacity: 0; pointer-events: none; }
-  #splash .sbase { position: absolute; inset: 0; background: var(--bg); }
-  #splash .sgrad { position: absolute; inset: 0; opacity: 0;
-    background:
-      radial-gradient(120% 90% at 50% 112%, rgba(217,164,65,.5), rgba(217,164,65,0) 60%),
-      linear-gradient(180deg, rgba(241,235,218,.95) 0%, rgba(219,203,168,.6) 45%, rgba(122,98,62,.28) 78%, rgba(0,0,0,0) 100%);
-  }
-  #splash.play .sgrad { animation: gradSeq 1.15s cubic-bezier(.4,0,.2,1) forwards; }
-  #splash.play .sbase { animation: baseOut 1.15s ease forwards; }
-  @keyframes gradSeq {
-    0% { opacity: 0; transform: translateY(4%); }
-    35% { opacity: 1; transform: translateY(0); }
-    65% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-100%); }
-  }
-  @keyframes baseOut { 0%, 65% { opacity: 1; } 100% { opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) {
-    #splash.play .sgrad, #splash.play .sbase { animation: none; }
   }
 
   /* ---------- entry cards ---------- */
@@ -529,7 +512,7 @@
 <script>try{var r=localStorage.getItem('diaryStandalone.data.v1');if(r){var s=(JSON.parse(r)||{}).settings;if(s){if(s.theme)document.body.dataset.theme=s.theme;if(s.fontSize)document.body.dataset.fontsize=s.fontSize;if(s.fontFamily)document.body.dataset.fontfamily=s.fontFamily;}}}catch(e){}</script>
 
   <!-- ======= SPLASH ======= -->
-  <div id="splash" class="wait"><div class="sbase"></div><div class="sgrad"></div></div>
+  <div id="splash" class="wait"></div>
 
   <!-- ======= LIST ======= -->
   <section id="view-list" class="view active">
@@ -1764,9 +1747,9 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.27';
-function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('play');
-  setTimeout(()=>{ const h=$('splash'); if(h && !h.classList.contains('hide')){ h.classList.add('hide'); setTimeout(()=>{ try{ h.remove(); }catch(e){} }, 280); } }, 1180); }
+const APP_VERSION='1.28';
+function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
+  setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0){ splashGo(); return; } /* 認証戻りの時は触らない */
   try{
