@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.43">
+<meta name="app-version" content="1.44">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -280,6 +280,7 @@
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
+  .tdclip { height: 100vh; height: 100dvh; overflow: hidden; }
   .tdpagenew { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 3; }
   #todowrap { position: relative; }
   #view-todo { padding-bottom: 76px; }
@@ -1750,7 +1751,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.43';
+const APP_VERSION='1.44';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1878,20 +1879,49 @@ function renderTodo() {
   const pg = wrap.querySelector('.tdpager');
   if (pg) { const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; }); if (i > 0) pg.scrollLeft = i * pg.clientWidth; attachPagerSync(pg); tdChipShownId = todoFolderId; centerChip(false); }
 }
+function sanitizeLayer(layer, folderIdForPager, S) {
+  if (!layer) return [];
+  const pg = layer.querySelector('.tdpager');
+  if (pg) {
+    const f = folderById(folderIdForPager) || (TodoDB.folders && TodoDB.folders[0]);
+    const stat = document.createElement('div');
+    if (f) stat.innerHTML = folderBodyHTML(f);
+    pg.replaceWith(stat);
+  }
+  const fixed = Array.prototype.slice.call(layer.querySelectorAll('.tdfab, .tdeditbar'));
+  fixed.forEach(function (el) { el.remove(); });
+  const clip = document.createElement('div');
+  clip.className = 'tdclip';
+  clip.style.marginTop = S + 'px';
+  const inner = document.createElement('div');
+  inner.style.transform = 'translateY(' + (-S) + 'px)';
+  inner.innerHTML = layer.innerHTML;
+  layer.innerHTML = '';
+  clip.appendChild(inner);
+  layer.appendChild(clip);
+  return fixed;
+}
 function slideTo(dir, applyFn) {
   tdUndo = null;
   const wrap = $('todowrap');
   if (!wrap || !TodoDB) { applyFn(); renderTodo(); return; }
+  const oldFolderId = todoFolderId;
   const oldHTML = wrap.innerHTML;
   applyFn();
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
   const newHTML = buildTodoHTML();
   if (!oldHTML || oldHTML === newHTML) { renderTodo(); return; }
   const h = wrap.offsetHeight;
-  wrap.innerHTML = '<div class="tdghost">' + oldHTML + '</div><div class="tdpagenew">' + newHTML + '</div>';
+  const rect = wrap.getBoundingClientRect();
+  const S = Math.max(0, Math.round(-rect.top));
+  wrap.innerHTML = '<div class="tdghost"></div><div class="tdpagenew"></div>';
   wrap.style.height = h + 'px'; wrap.style.overflow = 'hidden';
   const ghost = wrap.querySelector('.tdghost'), page = wrap.querySelector('.tdpagenew');
-  fixPagerScroll(ghost); fixPagerScroll(page);
+  ghost.innerHTML = oldHTML;
+  page.innerHTML = newHTML;
+  sanitizeLayer(ghost, oldFolderId, S);
+  const newFixed = sanitizeLayer(page, todoFolderId, S);
+  newFixed.forEach(function (el) { wrap.appendChild(el); });
   const ease = 'cubic-bezier(.32,.72,.28,1)';
   if (dir === 'push') {
     ghost.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-28%)' }], { duration: 300, easing: ease });
@@ -1940,12 +1970,6 @@ function centerChip(smooth) {
   try { bar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' }); } catch (e) { bar.scrollLeft = target; }
 }
 function pickFolderState(id) { todoFolderId = id; todoListId = null; todoSpecial = null; todoEdit = false; todoSel.clear(); }
-function fixPagerScroll(root) {
-  if (!root || !root.querySelector) return;
-  const pg = root.querySelector('.tdpager'); if (!pg) return;
-  const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; });
-  if (i > 0) pg.scrollLeft = i * pg.clientWidth;
-}
 let tdPagerTimer = null, tdChipShownId = null, tdTrackQueued = false;
 function chipCenterTarget(bar, pill) { return Math.max(0, pill.offsetLeft - (bar.clientWidth - pill.offsetWidth) / 2); }
 function tdPagerTrack(pg) {
