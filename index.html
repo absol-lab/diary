@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.11">
+<meta name="app-version" content="1.12">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -462,13 +462,60 @@ const LS_PENDING='diaryStandalone.pendingConnect';
 const SS_TOKEN='diaryStandalone.accessToken';
 
 const FONTFAMS=[
-  { id:'mincho', name:'明朝', stack:'"Hiragino Mincho ProN","Hiragino Mincho Pro","YuMincho","Yu Mincho","Noto Serif JP",serif' },
-  { id:'gothic', name:'ゴシック', stack:'-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif' },
-  { id:'maru', name:'丸ゴシック', stack:'"Hiragino Maru Gothic ProN","TsukuARdGothic","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif' },
-  { id:'shippori', name:'しっぽり明朝', stack:'"Shippori Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
-  { id:'zenmincho', name:'Zen明朝', stack:'"Zen Old Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
-  { id:'rounded', name:'M PLUS Rounded', stack:'"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
-  { id:'kurenaido', name:'手書き（Zen紅）', stack:'"Zen Kurenaido","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' }
+  { id:'mincho', name:'明朝', cat:'端末フォント', stack:'"Hiragino Mincho ProN","Hiragino Mincho Pro","YuMincho","Yu Mincho","Noto Serif JP",serif' },
+  { id:'gothic', name:'ゴシック', cat:'端末フォント', stack:'-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif' },
+  { id:'maru', name:'丸ゴシック', cat:'端末フォント', stack:'"Hiragino Maru Gothic ProN","TsukuARdGothic","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif' },
+  { id:'shippori', name:'しっぽり明朝', cat:'明朝', gf:'Shippori Mincho', w:'400;600', stack:'"Shippori Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'shipporib1', name:'しっぽり明朝B1', cat:'明朝', gf:'Shippori Mincho B1', w:'400;600', stack:'"Shippori Mincho B1","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'zenmincho', name:'Zen明朝', cat:'明朝', gf:'Zen Old Mincho', w:'400;700', stack:'"Zen Old Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'notoserif', name:'Noto明朝', cat:'明朝', gf:'Noto Serif JP', w:'400;600', stack:'"Noto Serif JP","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'sawarabimincho', name:'さわらび明朝', cat:'明朝', gf:'Sawarabi Mincho', w:'400', stack:'"Sawarabi Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'hina', name:'ひな明朝', cat:'明朝', gf:'Hina Mincho', w:'400', stack:'"Hina Mincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'bizmincho', name:'BIZ UD明朝', cat:'明朝', gf:'BIZ UDMincho', w:'400', stack:'"BIZ UDMincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'bizpmincho', name:'BIZ UDP明朝', cat:'明朝', gf:'BIZ UDPMincho', w:'400', stack:'"BIZ UDPMincho","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseitokumin', name:'解星 特ミン', cat:'明朝', gf:'Kaisei Tokumin', w:'400;800', stack:'"Kaisei Tokumin","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseiopti', name:'解星 オプティ', cat:'明朝', gf:'Kaisei Opti', w:'400;700', stack:'"Kaisei Opti","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseiharuno', name:'解星 春の海', cat:'明朝', gf:'Kaisei HarunoUmi', w:'400;700', stack:'"Kaisei HarunoUmi","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'kaiseidecol', name:'解星 デコール', cat:'明朝', gf:'Kaisei Decol', w:'400;700', stack:'"Kaisei Decol","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'shipporiantique', name:'しっぽりアンティーク', cat:'明朝', gf:'Shippori Antique', w:'400', stack:'"Shippori Antique","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'shipporiantiqueb1', name:'しっぽりアンティークB1', cat:'明朝', gf:'Shippori Antique B1', w:'400', stack:'"Shippori Antique B1","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'notosans', name:'Notoゴシック', cat:'ゴシック', gf:'Noto Sans JP', w:'400;700', stack:'"Noto Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'zenkaku', name:'Zen角ゴシック', cat:'ゴシック', gf:'Zen Kaku Gothic New', w:'400;700', stack:'"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'zenkakuantique', name:'Zen角ゴ アンティーク', cat:'ゴシック', gf:'Zen Kaku Gothic Antique', w:'400;700', stack:'"Zen Kaku Gothic Antique","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mplus1p', name:'M PLUS 1p', cat:'ゴシック', gf:'M PLUS 1p', w:'400;700', stack:'"M PLUS 1p","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mplus2', name:'M PLUS 2', cat:'ゴシック', gf:'M PLUS 2', w:'400;600', stack:'"M PLUS 2","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'ibmplex', name:'IBM Plex Sans JP', cat:'ゴシック', gf:'IBM Plex Sans JP', w:'400;600', stack:'"IBM Plex Sans JP","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kosugi', name:'小杉ゴシック', cat:'ゴシック', gf:'Kosugi', w:'400', stack:'"Kosugi","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'sawarabigothic', name:'さわらびゴシック', cat:'ゴシック', gf:'Sawarabi Gothic', w:'400', stack:'"Sawarabi Gothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'bizgothic', name:'BIZ UDゴシック', cat:'ゴシック', gf:'BIZ UDGothic', w:'400;700', stack:'"BIZ UDGothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'bizpgothic', name:'BIZ UDPゴシック', cat:'ゴシック', gf:'BIZ UDPGothic', w:'400;700', stack:'"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mpluscode', name:'M PLUS Code（等幅）', cat:'ゴシック', gf:'M PLUS 1 Code', w:'400;500', stack:'"M PLUS 1 Code","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'rounded', name:'M PLUS Rounded', cat:'丸ゴシック', gf:'M PLUS Rounded 1c', w:'400;500', stack:'"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'zenmaru', name:'Zen丸ゴシック', cat:'丸ゴシック', gf:'Zen Maru Gothic', w:'400;700', stack:'"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kosugimaru', name:'小杉丸ゴシック', cat:'丸ゴシック', gf:'Kosugi Maru', w:'400', stack:'"Kosugi Maru","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kiwi', name:'キウイ丸', cat:'丸ゴシック', gf:'Kiwi Maru', w:'400;500', stack:'"Kiwi Maru","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'klee', name:'クレー', cat:'丸ゴシック', gf:'Klee One', w:'400;600', stack:'"Klee One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'kurenaido', name:'手書き（Zen紅）', cat:'手書き・デザイン', gf:'Zen Kurenaido', w:'400', stack:'"Zen Kurenaido","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'yomogi', name:'よもぎ', cat:'手書き・デザイン', gf:'Yomogi', w:'400', stack:'"Yomogi","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'yujisyuku', name:'佑字・肅', cat:'手書き・デザイン', gf:'Yuji Syuku', w:'400', stack:'"Yuji Syuku","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'yujiboku', name:'佑字・朴', cat:'手書き・デザイン', gf:'Yuji Boku', w:'400', stack:'"Yuji Boku","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'yujimai', name:'佑字・舞', cat:'手書き・デザイン', gf:'Yuji Mai', w:'400', stack:'"Yuji Mai","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'tegomin', name:'ニューてごみん', cat:'手書き・デザイン', gf:'New Tegomin', w:'400', stack:'"New Tegomin","Hiragino Mincho ProN","Noto Serif JP",serif' },
+  { id:'yusei', name:'ゆせいマジック', cat:'手書き・デザイン', gf:'Yusei Magic', w:'400', stack:'"Yusei Magic","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'dot', name:'ドットゴシック', cat:'手書き・デザイン', gf:'DotGothic16', w:'400', stack:'"DotGothic16","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'dela', name:'デラゴシック', cat:'手書き・デザイン', gf:'Dela Gothic One', w:'400', stack:'"Dela Gothic One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'reggae', name:'レゲエ', cat:'手書き・デザイン', gf:'Reggae One', w:'400', stack:'"Reggae One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'rock', name:'ロックンロール', cat:'手書き・デザイン', gf:'RocknRoll One', w:'400', stack:'"RocknRoll One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'train', name:'トレイン', cat:'手書き・デザイン', gf:'Train One', w:'400', stack:'"Train One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mochiy', name:'もちポップ', cat:'手書き・デザイン', gf:'Mochiy Pop One', w:'400', stack:'"Mochiy Pop One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'mochiyp', name:'もちポップP', cat:'手書き・デザイン', gf:'Mochiy Pop P One', w:'400', stack:'"Mochiy Pop P One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'rampart', name:'ランパート', cat:'手書き・デザイン', gf:'Rampart One', w:'400', stack:'"Rampart One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'hachi', name:'ハチ丸ポップ', cat:'手書き・デザイン', gf:'Hachi Maru Pop', w:'400', stack:'"Hachi Maru Pop","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'daruma', name:'だるまドロップ', cat:'手書き・デザイン', gf:'Darumadrop One', w:'400', stack:'"Darumadrop One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'slack', name:'スラックサイド', cat:'手書き・デザイン', gf:'Slackside One', w:'400', stack:'"Slackside One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'aoboshi', name:'あおぼし', cat:'手書き・デザイン', gf:'Aoboshi One', w:'400', stack:'"Aoboshi One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'cherry', name:'チェリーボム', cat:'手書き・デザイン', gf:'Cherry Bomb One', w:'400', stack:'"Cherry Bomb One","Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif' },
+  { id:'monomaniac', name:'モノマニアック', cat:'手書き・デザイン', gf:'Monomaniac One', w:'400', stack:'"Monomaniac One","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif' },
 ];
 const LINEHEIGHTS=[
   { id:'narrow', name:'狭い', val:1.5 },
@@ -477,6 +524,16 @@ const LINEHEIGHTS=[
   { id:'xwide', name:'とても広い', val:2.1 }
 ];
 function fontFamById(id){ return FONTFAMS.find(f=>f.id===id) || FONTFAMS[0]; }
+const loadedFonts={};
+function ensureFontLoaded(f){
+  if(!f || !f.gf || loadedFonts[f.id]) return;
+  loadedFonts[f.id]=true;
+  const l=document.createElement('link');
+  l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(f.gf).replace(/%20/g,'+')+':wght@'+f.w+'&display=swap';
+  document.head.appendChild(l);
+}
+function ensureAllFontsLoaded(){ FONTFAMS.forEach(ensureFontLoaded); }
 function lineHeightById(id){ return LINEHEIGHTS.find(l=>l.id===id) || LINEHEIGHTS[1]; }
 function defaultSettings(){ return { theme:'sumi', fontSize:'standard', fontFamily:'mincho', lineHeight:'standard' }; }
 function normalizeEntry(e){
@@ -1030,6 +1087,7 @@ function applyAppearance(){
   document.body.dataset.fontsize=DB.settings.fontSize;
   document.body.dataset.fontfamily=DB.settings.fontFamily;
   document.body.style.fontFamily=fontFamById(DB.settings.fontFamily).stack;
+  ensureFontLoaded(fontFamById(DB.settings.fontFamily));
   document.body.style.setProperty('--lh', lineHeightById(DB.settings.lineHeight).val);
   const tc=document.querySelector('meta[name="theme-color"]');
   if(tc) tc.setAttribute('content', DB.settings.theme==='kinari' ? '#f1ebda' : '#000000');
@@ -1069,7 +1127,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.11', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.12', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1090,9 +1148,14 @@ function renderSettingsPanel(){
     $('fontsizeseg').innerHTML = sizes.map(s=>'<button class="seg'+(DB.settings.fontSize===s[0]?' on':'')+'" onclick="setFontSize(\''+s[0]+'\')">'+s[1]+'</button>').join('');
   }
   else if(settingsPanel==='font'){
-    p.innerHTML = panelShell('フォントスタイル', '<div class="groupcard" style="margin-bottom:14px">'+FONTFAMS.map(f=>
-      '<button class="srow" onclick="setFontFamily(\''+f.id+'\')"><span class="lb" style="font-family:'+f.stack.replace(/"/g,'&quot;')+'">'+esc(f.name)+'</span>'+(DB.settings.fontFamily===f.id?'<span style="color:var(--accent); font-size:19px">✓</span>':'')+'</button>'
-    ).join('')+'</div><div class="note">しっぽり明朝・Zen明朝・M PLUS Rounded・手書きはWebフォントです。ネット接続時に読み込まれ、オフラインでは端末の明朝／ゴシックで表示されます。</div>');
+    const cats=[]; FONTFAMS.forEach(f=>{ if(!cats.includes(f.cat)) cats.push(f.cat); });
+    let fhtml='';
+    cats.forEach(c=>{
+      fhtml+='<div class="taglabel" style="margin:16px 4px 8px">'+esc(c)+'</div><div class="groupcard" style="margin-bottom:6px">'+
+        FONTFAMS.filter(f=>f.cat===c).map(f=>'<button class="srow" onclick="setFontFamily(\''+f.id+'\')"><span class="lb" style="font-family:'+f.stack.replace(/"/g,'&quot;')+'">'+esc(f.name)+'</span>'+(DB.settings.fontFamily===f.id?'<span style="color:var(--accent); font-size:19px">✓</span>':'')+'</button>').join('')+'</div>';
+    });
+    p.innerHTML = panelShell('フォントスタイル', fhtml+'<div class="note">Webフォントはネット接続時に読み込まれます。一覧を開くとプレビューが順に読み込まれます。オフラインでは端末の明朝／ゴシックで表示されます（壊れはしません）。</div>');
+    ensureAllFontsLoaded();
   }
   else if(settingsPanel==='leading'){
     p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div><div class="note">日記の本文と入力欄に適用されます。</div></div>');
@@ -1122,7 +1185,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.11 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.12 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
@@ -1442,7 +1505,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.11';
+const APP_VERSION='1.12';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
