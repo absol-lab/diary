@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.42">
+<meta name="app-version" content="1.43">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1750,7 +1750,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.42';
+const APP_VERSION='1.43';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1876,7 +1876,7 @@ function renderTodo() {
   wrap.innerHTML = buildTodoHTML();
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
   const pg = wrap.querySelector('.tdpager');
-  if (pg) { const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; }); if (i > 0) pg.scrollLeft = i * pg.clientWidth; attachPagerSync(pg); }
+  if (pg) { const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; }); if (i > 0) pg.scrollLeft = i * pg.clientWidth; attachPagerSync(pg); tdChipShownId = todoFolderId; centerChip(false); }
 }
 function slideTo(dir, applyFn) {
   tdUndo = null;
@@ -1946,20 +1946,46 @@ function fixPagerScroll(root) {
   const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; });
   if (i > 0) pg.scrollLeft = i * pg.clientWidth;
 }
-let tdPagerTimer = null;
+let tdPagerTimer = null, tdChipShownId = null, tdTrackQueued = false;
+function chipCenterTarget(bar, pill) { return Math.max(0, pill.offsetLeft - (bar.clientWidth - pill.offsetWidth) / 2); }
+function tdPagerTrack(pg) {
+  if (!pg || !TodoDB) return;
+  const W = pg.clientWidth; if (!W) return;
+  const pos = pg.scrollLeft / W;
+  const bar = document.querySelector('#todowrap .tdfolders');
+  const pills = bar ? bar.querySelectorAll('.tdfpill') : [];
+  const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pos)));
+  const f = TodoDB.folders[i];
+  if (f && f.id !== tdChipShownId) {
+    tdChipShownId = f.id;
+    TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === f.id); });
+  }
+  if (bar && pills.length && bar.scrollWidth > bar.clientWidth) {
+    const i0 = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.floor(pos)));
+    const i1 = Math.min(TodoDB.folders.length - 1, i0 + 1);
+    const fr = Math.max(0, Math.min(1, pos - i0));
+    if (pills[i0]) {
+      const c0 = chipCenterTarget(bar, pills[i0]);
+      const c1 = pills[i1] ? chipCenterTarget(bar, pills[i1]) : c0;
+      bar.scrollLeft = c0 + (c1 - c0) * fr;
+    }
+  }
+}
 function syncPagerSettle(pg) {
   if (!pg || !document.contains(pg) || !TodoDB) return;
+  tdPagerTrack(pg);
   const W = pg.clientWidth; if (!W) return;
   const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pg.scrollLeft / W)));
   const f = TodoDB.folders[i]; if (!f || f.id === todoFolderId) return;
   pickFolderState(f.id);
-  const pills = document.querySelectorAll('#todowrap .tdfpill');
-  TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === f.id); });
-  centerChip(true);
 }
 function attachPagerSync(pg) {
   if (!pg) return;
   pg.addEventListener('scroll', function () {
+    if (!tdTrackQueued) {
+      tdTrackQueued = true;
+      requestAnimationFrame(function () { tdTrackQueued = false; tdPagerTrack(pg); });
+    }
     if (tdPagerTimer) clearTimeout(tdPagerTimer);
     tdPagerTimer = setTimeout(function () { syncPagerSettle(pg); }, 110);
   }, { passive: true });
@@ -2000,8 +2026,8 @@ function pickTodoFolder(id) {
     pickFolderState(id);
     const pills = document.querySelectorAll('#todowrap .tdfpill');
     TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === id); });
+    tdChipShownId = id;
     pg.scrollTo({ left: ni * pg.clientWidth, behavior: tdReducedMotion() ? 'auto' : 'smooth' });
-    centerChip(true);
     return;
   }
   pickFolderState(id); renderTodo();
