@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="app-version" content="1.11">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1068,7 +1069,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.10', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.11', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1121,7 +1122,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.10 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.11 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
@@ -1440,6 +1441,34 @@ async function syncNow(reason){
   }
 }
 
+/* ================= self update ================= */
+const APP_VERSION='1.11';
+function checkForUpdate(){
+  if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
+  try{
+    fetch(location.pathname+'?cv='+Date.now(), { cache:'no-store' })
+      .then(r=>r.text())
+      .then(t=>{
+        const m=t.match(/name="app-version" content="([0-9.]+)"/);
+        if(!m) return;
+        const latest=m[1];
+        if(latest===APP_VERSION) return;
+        let tried=null;
+        try{ tried=sessionStorage.getItem('diary.updateTried'); }catch(e){}
+        if(tried===latest) return; /* ループ防止：同じ版への再読み込みは1回だけ */
+        try{ sessionStorage.setItem('diary.updateTried', latest); }catch(e){}
+        location.replace(location.pathname+'?u='+Date.now());
+      })
+      .catch(()=>{});
+  }catch(e){}
+}
+let hiddenAt=0;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ hiddenAt=Date.now(); return; }
+  /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
+  if(hiddenAt && Date.now()-hiddenAt>=60000 && !editing) checkForUpdate();
+});
+
 /* ================= init ================= */
 (function init(){
   const sp=$('splash');
@@ -1464,6 +1493,7 @@ async function syncNow(reason){
   } else if(getClientId()){
     setTimeout(trySilentRefresh, 800);
   }
+  checkForUpdate();
 })();
 </script>
 </body>
