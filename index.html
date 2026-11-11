@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.31">
+<meta name="app-version" content="1.32">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1405,12 +1405,10 @@ function renderSettingsPanel(){
   else if(settingsPanel==='drive'){
     p.innerHTML = panelShell('Google Drive 同期',
       '<div class="setbox">'+
-      '<div class="setrow"><div class="setlabel">OAuth クライアントID</div><input class="textin" id="clientid" type="text" placeholder="xxxxxxxx.apps.googleusercontent.com" autocomplete="off" onchange="saveClientId()"></div>'+
       '<div class="setrow"><button class="btn primary" onclick="connectDrive()">Google Driveと接続</button><button class="btn" onclick="syncNow(\'manual\')">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">切断</button></div>'+
       '<div class="syncstat" id="syncstat"></div>'+
       '<div class="note">同期先は Drive 上の「diary.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>'+
       '</div>');
-    const cid=$('clientid'); const saved=getClientId(); if(document.activeElement!==cid) cid.value=saved;
     renderSyncStatus();
   }
   else if(settingsPanel==='data'){
@@ -1433,7 +1431,6 @@ function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); render
 function setFontSize(id){ DB.settings.fontSize=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
 function setFontFamily(id){ DB.settings.fontFamily=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
 function setLineHeight(id){ DB.settings.lineHeight=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
-function saveClientId(){ const el=$('clientid'); if(el) storeSet(LS_CID, el.value.trim()); }
 
 /* ---------- import / export ---------- */
 function onImportFile(input){
@@ -1546,7 +1543,7 @@ function scheduleSync(){
 function redirectUri(){ return location.origin + location.pathname; }
 
 function connectDrive(){
-  const cid=(($('clientid') ? $('clientid').value.trim() : '') || getClientId());
+  const cid=getClientId();
   if(!cid){ sheetInfo('Drive接続', '先に OAuth クライアントID を入力してください。'); return; }
   storeSet(LS_CID, cid);
   if(!(window.google && google.accounts && google.accounts.oauth2)){
@@ -1748,7 +1745,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.31';
+const APP_VERSION='1.32';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
