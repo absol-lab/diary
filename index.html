@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.54">
+<meta name="app-version" content="1.55">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1759,7 +1759,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.54';
+const APP_VERSION='1.55';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1805,6 +1805,7 @@ function normalizeTodo(d) {
   };
 }
 let TodoDB = null, todoSyncTimer = null;
+let priceCheckBusy = false, priceCheckSentAt = 0;
 function isSeedFossil(d) { return d && d.updatedAt === 1762782241412 && d.folders.length === 4 && d.lists.length === 6 && d.todos.length === 34; }
 function loadTodo() {
   try { const raw = localStorage.getItem(LS_TODO); if (raw) { const d = normalizeTodo(JSON.parse(raw)); if (d && !isSeedFossil(d)) { TodoDB = d; return; } } } catch (e) {}
@@ -1956,11 +1957,18 @@ function folderChipsHTML(f) {
     return '<button class="tdfpill' + (x.id === f.id ? ' on' : '') + '" onclick="pickTodoFolder(' + x.id + ')">' + esc(x.name) + '<span class="tdcnt">' + folderAllTodos(x.id).length + '</span></button>';
   }).join('') + '<button class="tdfpill add" onclick="openFolderForm()">＋</button></div>';
 }
+function isPriceFolder(f) { return !!(f && (f.id === 1 || f.name === '欲しいもの')); }
+function priceCheckBtnHTML() {
+  if (priceCheckBusy) return '<button disabled>依頼中…</button>';
+  if (priceCheckSentAt && Date.now() - priceCheckSentAt < 10000) return '<button onclick="requestPriceCheck()">依頼済み ✓</button>';
+  return '<button onclick="requestPriceCheck()">↻ 価格チェック</button>';
+}
 function folderBodyHTML(f) {
   const lists = listsInFolder(f.id);
   let direct = sortTodos(todosDirect(f.id), f.sort);
   if (f.showDone === false) direct = direct.filter(function (t) { return !t.done; });
   let h = '<div class="tdsub"><span></span><span class="tdsubR">'
+    + (isPriceFolder(f) ? priceCheckBtnHTML() : '')
     + (lists.length ? '<button onclick="openListForm()">＋ リスト</button>' : '')
     + (direct.length || !lists.length ? '<button onclick="enterEdit()">' + SVG_EDIT + '編集</button>' : '')
     + '<button onclick="openFolderPop(this)">' + SVG_MORE + 'その他</button></span></div>';
@@ -2128,6 +2136,38 @@ async function syncTodo() {
       await fetch(UPLOAD_API + '/files/' + encodeURIComponent(file.id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(TodoDB) });
     }
   } catch (e) { /* todo同期の失敗は日記同期を止めない */ }
+}
+async function requestPriceCheck() {
+  if (priceCheckBusy) return;
+  const tok = getValidToken();
+  if (!tok) { sheetInfo('価格チェック', 'Google同期が未接続のため、今すぐチェックを依頼できませんでした。設定タブでDriveに接続してから、もう一度押してください。'); return; }
+  priceCheckBusy = true; if (currentView === 'todo') renderTodo();
+  try {
+    const payload = JSON.stringify({ requestedAt: Date.now(), handledAt: 0, source: 'diary-app' });
+    const q = encodeURIComponent("name='price-check-request.json' and trashed=false");
+    const res = await driveFetch('/files?q=' + q + '&fields=' + encodeURIComponent('files(id,name,createdTime)') + '&orderBy=createdTime');
+    if (!res.ok) throw new Error('search HTTP ' + res.status);
+    const j = await res.json();
+    const files = (j.files || []).filter(function (f) { return f.name === 'price-check-request.json'; });
+    if (files.length) {
+      const up = await fetch(UPLOAD_API + '/files/' + encodeURIComponent(files[0].id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: payload });
+      if (!up.ok) throw new Error('update HTTP ' + up.status);
+    } else {
+      const meta = { name: 'price-check-request.json', mimeType: 'application/json' };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      form.append('file', new Blob([payload], { type: 'application/json' }), 'price-check-request.json');
+      const up = await fetch(UPLOAD_API + '/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: form });
+      if (!up.ok) throw new Error('create HTTP ' + up.status);
+    }
+    priceCheckBusy = false; priceCheckSentAt = Date.now();
+    if (currentView === 'todo') renderTodo();
+    setTimeout(function () { if (currentView === 'todo') renderTodo(); }, 10000);
+  } catch (e) {
+    priceCheckBusy = false;
+    if (currentView === 'todo') renderTodo();
+    sheetInfo('価格チェック', '依頼の送信に失敗しました。通信環境を確認して、もう一度押してください。');
+  }
 }
 /* ---- todo form overlay ---- */
 let TDOK = null;
@@ -2340,7 +2380,9 @@ function sortPageItems() {
 function openSortPop(anchor) { tdPopShow(anchor, sortPageItems()); }
 function openListPop(anchor) {
   const l = listById(todoListId); if (!l) return;
-  tdPopShow(anchor, [
+  const items = [];
+  if (isPriceFolder(folderById(l.folderId))) items.push({ label: '価格を今すぐチェック', fn: function () { requestPriceCheck(); } });
+  items.push(
     { label: 'リスト名を編集', fn: function () { openRename('list', l.id); } },
     { label: '並び替え', chev: true, fn: function () { tdPopShow(null, sortPageItems()); } },
     { label: '全てを完了済みに', fn: function () { setAllDone(true); } },
@@ -2349,7 +2391,8 @@ function openListPop(anchor) {
     { label: 'リストをコピー', fn: copyList },
     { label: 'リストをシェア', fn: shareList },
     { label: 'リストを削除', danger: true, fn: confirmDeleteList }
-  ]);
+  );
+  tdPopShow(anchor, items);
 }
 function openFolderPop(anchor) {
   const f = folderById(todoFolderId); if (!f) return;
