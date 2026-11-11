@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.53">
+<meta name="app-version" content="1.54">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -222,11 +222,11 @@
   .tdedithead { display: flex; align-items: center; justify-content: center; position: relative; min-height: 46px; padding: 0 0 4px; }
   .tdedithead .x { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; background: var(--card2); color: var(--text); font-size: 18px; display: flex; align-items: center; justify-content: center; padding: 0; }
   .tdedithead .t { font-size: 16.5px; font-weight: 700; font-family: var(--uifont); }
-  .tdfab { position: fixed; bottom: 96px; z-index: 35; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
-  .tdfab.plus { right: 18px; background: var(--text); color: var(--bg); font-size: 26px; font-weight: 300; }
+  .tdfab { position: fixed; bottom: 96px; z-index: 35; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .tdfab.plus { right: 18px; background: var(--text); color: var(--bg); font-size: 30px; font-weight: 300; }
   .tdfab.trash { left: 18px; background: var(--card2); color: var(--muted); }
-  .tdfab svg { width: 22px; height: 22px; }
-  .tdfab.undo { left: 82px; background: var(--card2); color: var(--text); }
+  .tdfab svg { width: 24px; height: 24px; }
+  .tdfab.undo { left: 90px; background: var(--card2); color: var(--text); }
   .tddonehead { font-family: var(--uifont); font-size: 13px; color: var(--muted); margin: 22px 4px 0; letter-spacing: .05em; }
   .tdeditbar { position: fixed; left: 14px; bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 22px; background: var(--card2); border-radius: 999px; padding: 7px 22px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
   .tdeditbar button { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text); }
@@ -1759,7 +1759,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.53';
+const APP_VERSION='1.54';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1888,7 +1888,7 @@ function buildTodoHTML() {
   if (todoEdit) { const c = curContainer(); if (c) return editHTML(c); todoEdit = false; }
   if (todoListId) return listHTML(listById(todoListId));
   if (todoFolderId) return folderHTML(folderById(todoFolderId));
-  return '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button></div><div class="tdnone">フォルダがありません</div><button class="tdfab primary" onclick="openFolderForm()" aria-label="フォルダを追加">＋</button>';
+  return '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button></div><div class="tdnone">フォルダがありません</div><button class="tdfab plus" onclick="openFolderForm()" aria-label="フォルダを追加">＋</button>';
 }
 function renderTodo() {
   const wrap = $('todowrap'); if (!wrap) return;
