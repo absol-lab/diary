@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.18">
+<meta name="app-version" content="1.19">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -190,23 +190,81 @@
   button:active, .calcell:active { filter: brightness(1.32); }
 
   /* ---------- todo ---------- */
-  .tdfolders { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; scrollbar-width: none; }
+  .tdfolders { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; scrollbar-width: none; }
   .tdfolders::-webkit-scrollbar { display: none; }
-  .tdfpill { flex: 0 0 auto; padding: 8px 16px; border-radius: 999px; background: var(--card); color: var(--muted); font-size: 14px; font-weight: 600; font-family: var(--uifont); }
+  .tdfpill { flex: 0 0 auto; padding: 8px 15px; border-radius: 999px; background: var(--card); color: var(--muted); font-size: 14px; font-weight: 600; font-family: var(--uifont); }
   .tdfpill.on { background: var(--text); color: var(--bg); }
-  .tdcard { background: var(--card); border-radius: 18px; padding: 4px 14px 8px; margin-bottom: 14px; }
-  .tdlisthead { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 2px; font-weight: 700; font-size: 15px; font-family: var(--uifont); }
-  .tdlisthead .cnt { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 8px; }
-  .tdadd { color: var(--muted); font-size: 19px; line-height: 1; padding: 4px 8px; }
-  .tdrow { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-top: 1px solid var(--line); }
-  .tdcheck { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
+  .tdfpill .tdcnt { opacity: .65; font-weight: 500; margin-left: 3px; }
+  .tdfpill.add { padding: 8px 13px; }
+  .tdsub { display: flex; align-items: center; justify-content: space-between; min-height: 34px; padding: 0 2px 4px; }
+  .tdsub button { color: var(--muted); font-size: 13.5px; font-family: var(--uifont); padding: 6px 8px; }
+  .tdsub .tdsubR { display: flex; gap: 2px; }
+  .tdlistrow { display: flex; align-items: center; width: 100%; padding: 17px 4px; border-bottom: 1px solid var(--line); font-size: 16px; color: var(--text); text-align: left; font-family: var(--bodyfont); }
+  .tdlistrow .nm { flex: 1; }
+  .tdlistrow .tdcnt { color: var(--muted); font-size: 15px; margin-right: 10px; }
+  .tdlistrow .chev { color: var(--muted); font-size: 18px; }
+  .tdrow { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
-  .tdtitle { flex: 1; font-size: 15px; }
+  .tdmain { flex: 1; min-width: 0; }
+  .tdtitle { font-size: 15.5px; }
   .tdtitle.done { color: var(--muted); text-decoration: line-through; }
-  .tddel { color: var(--muted); font-size: 14px; padding: 4px 6px; }
-  .tdempty { color: var(--muted); font-size: 13px; padding: 8px 0 6px; }
-  .tdactions { display: flex; gap: 8px; margin: 2px 0 12px; }
-  .tdactions button { flex: 1; padding: 11px 0; border-radius: 12px; background: var(--card); color: var(--text); font-size: 13px; font-weight: 600; font-family: var(--uifont); }
+  .tddue { display: inline-block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-family: var(--uifont); }
+  .tddue.over { color: #e5484d; }
+  .tdhandle { flex: 0 0 auto; color: var(--muted); font-size: 17px; padding: 6px 8px; cursor: grab; touch-action: none; }
+  .tdrow.dragging { position: relative; z-index: 5; background: var(--card2); border-radius: 10px; }
+  .tdnone { color: var(--muted); text-align: center; padding: 52px 0; font-size: 14px; }
+  .tdbackbar { display: flex; align-items: center; gap: 6px; padding: 2px 0 6px; }
+  .tdback { font-size: 24px; color: var(--text); padding: 2px 10px 2px 2px; line-height: 1; }
+  .tdltitle { flex: 1; font-size: 16px; font-weight: 700; font-family: var(--uifont); text-align: center; }
+  .tdiconbtn { color: var(--text); padding: 6px; display: flex; }
+  .tdiconbtn svg { width: 21px; height: 21px; }
+  .tdedithead { display: flex; align-items: center; gap: 10px; padding: 0 0 4px; }
+  .tdedithead .x { font-size: 17px; color: var(--text); padding: 6px 10px 6px 2px; }
+  .tdedithead .t { font-size: 16px; font-weight: 700; font-family: var(--uifont); }
+  .tdfab { position: fixed; bottom: 96px; z-index: 35; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .tdfab.plus { right: 18px; background: var(--text); color: var(--bg); font-size: 26px; font-weight: 300; }
+  .tdfab.trash { left: 18px; background: var(--card2); color: var(--muted); }
+  .tdfab svg { width: 22px; height: 22px; }
+  .tdeditbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 4px; background: var(--card2); border-radius: 999px; padding: 7px 10px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+  .tdeditbar button { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text); }
+  .tdeditbar button.off { opacity: .35; }
+  .tdeditbar button svg { width: 20px; height: 20px; }
+  .tdeditbar .tddelbtn { color: #e5484d; }
+  /* todo full-screen form overlay */
+  #tdoverlay { position: fixed; inset: 0; z-index: 90; background: var(--bg2); display: none; flex-direction: column; }
+  #tdoverlay.open { display: flex; }
+  .tdfhead { display: flex; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px 10px; }
+  .tdfx { width: 40px; height: 40px; border-radius: 50%; background: var(--card2); color: var(--text); font-size: 17px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .tdfttl { flex: 1; text-align: center; font-size: 16px; font-weight: 700; font-family: var(--uifont); }
+  .tdfok { width: 40px; height: 40px; border-radius: 50%; background: var(--text); color: var(--bg); font-size: 17px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .tdfbody { flex: 1; overflow-y: auto; padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  .tdfinput { width: 100%; box-sizing: border-box; background: var(--card); border: none; border-radius: 14px; color: var(--text); font-size: 16px; padding: 14px 16px; font-family: var(--bodyfont); }
+  .tdfinput::placeholder { color: var(--muted); }
+  textarea.tdfinput { min-height: 180px; resize: vertical; line-height: 1.7; }
+  .tdfcard { background: var(--card); border-radius: 16px; margin-top: 16px; overflow: hidden; }
+  .tdfopt { display: flex; align-items: center; width: 100%; padding: 15px 16px; font-size: 15px; color: var(--text); text-align: left; border-bottom: 1px solid var(--line); font-family: var(--uifont); }
+  .tdfopt:last-child { border-bottom: none; }
+  .tdfopt .lb { flex: 1; }
+  .tdfopt .vl { color: var(--muted); margin-right: 8px; }
+  .tdfopt .chev { color: var(--muted); }
+  .tdfopt .chk { color: var(--text); font-weight: 700; }
+  .tdfnote { color: var(--muted); font-size: 12px; margin-top: 10px; line-height: 1.6; }
+  .tdfsub { color: var(--muted); font-size: 12.5px; display: block; margin-top: 2px; }
+  .tdseg { display: flex; background: var(--card); border-radius: 12px; padding: 3px; margin-top: 16px; }
+  .tdseg button { flex: 1; padding: 9px 0; border-radius: 9px; color: var(--muted); font-size: 14px; font-family: var(--uifont); }
+  .tdseg button.on { background: var(--card2); color: var(--text); font-weight: 600; }
+  .tdcolors { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+  .tdcolor { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
+  .tdcolor.on { border-color: var(--text); box-shadow: 0 0 0 2px var(--bg2), 0 0 0 4px var(--text); }
+  .tdflabel { font-size: 13px; color: var(--muted); font-family: var(--uifont); margin: 18px 0 8px; }
+  .tdadminrow { display: flex; align-items: center; gap: 10px; padding: 13px 4px; border-bottom: 1px solid var(--line); background: var(--bg2); }
+  .tdminus { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: #e5484d; color: #fff; font-size: 15px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .tdadminrow .nm { flex: 1; font-size: 15.5px; text-align: left; color: var(--text); }
+  .tdmenuitem { display: block; width: 100%; text-align: left; padding: 13px 6px; font-size: 15px; color: var(--text); border-bottom: 1px solid var(--line); font-family: var(--uifont); }
+  .tdmenuitem:last-child { border-bottom: none; }
+  .tdmenuitem.danger { color: #e5484d; }
+  .tdmenuitem .chev { float: right; color: var(--muted); }
 
   /* ---------- calendar ---------- */
   .calhead2 { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 2px 14px; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
@@ -439,9 +497,9 @@
   <!-- ======= TODO ======= -->
   <section id="view-todo" class="view">
     <div class="topbar">
-      <div class="spacer44"></div>
+      <button class="tdiconbtn" onclick="openFolderAdmin()" aria-label="フォルダの並び替え・編集"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="ttl">Todo</div>
-      <div class="spacer44"></div>
+      <button class="tdiconbtn" onclick="openTodoSearch()" aria-label="検索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></button>
     </div>
     <main><div id="todowrap"></div></main>
   </section>
@@ -471,6 +529,10 @@
 
   <div class="overlay" id="overlay" onclick="if(event.target===this) closeSheet()">
     <div class="sheet" id="sheet"></div>
+  </div>
+
+  <div id="tdoverlay">
+    <div id="tdsheet" style="display:flex;flex-direction:column;height:100%"></div>
   </div>
 
   <input type="file" id="importfile" accept=".json,application/json" style="display:none" onchange="onImportFile(this)">
@@ -1587,7 +1649,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.18';
+const APP_VERSION='1.19';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
@@ -1615,155 +1677,594 @@ document.addEventListener('visibilitychange', ()=>{
 });
 
 /* ================= todo ================= */
-const LS_TODO='diaryStandalone.todo.v1';
-const TODO_SEED={ updatedAt:1762782241412,
-  folders:[{id:1,name:'欲しいもの'},{id:2,name:'やること'},{id:3,name:'今日行く場所'},{id:4,name:'今日買うもの'}],
-  lists:[{id:1,folderId:1,name:'持ってくるもの'},{id:2,folderId:1,name:'欲しい作品集'},{id:3,folderId:1,name:'画材'},{id:4,folderId:1,name:'今日買うもの'},{id:5,folderId:1,name:'ほしいもの'},{id:6,folderId:1,name:'ほしいもの②'}],
-  todos:[
-    {id:1,listId:3,folderId:null,title:'グラファイト棒',done:false},
-    {id:2,listId:3,folderId:null,title:'左官道具',done:false},
-    {id:3,listId:3,folderId:null,title:'gac100 golden',done:false},
-    {id:4,listId:3,folderId:null,title:'ガラス板',done:false},
-    {id:5,listId:3,folderId:null,title:'Grand brush',done:false},
-    {id:6,listId:3,folderId:null,title:'オイルスティック',done:false},
-    {id:7,listId:3,folderId:null,title:'長めの細筆',done:false},
-    {id:8,listId:3,folderId:null,title:'ホルベイン　アンティークブルー',done:false},
-    {id:9,listId:3,folderId:null,title:'鉄スキージー',done:false},
-    {id:10,listId:3,folderId:null,title:'オリエンタルブルー',done:false},
-    {id:11,listId:3,folderId:null,title:'ダーマトグラフ　三菱　7600',done:false},
-    {id:12,listId:3,folderId:null,title:'吸取り紙',done:false},
-    {id:13,listId:1,folderId:null,title:'透明標本',done:false},
-    {id:14,listId:1,folderId:null,title:'ハンドミキサー　いるか？',done:false},
-    {id:15,listId:1,folderId:null,title:'化粧品',done:false},
-    {id:16,listId:1,folderId:null,title:'電球とスイッチ',done:false},
-    {id:17,listId:1,folderId:null,title:'艶出しスプレー',done:false},
-    {id:18,listId:1,folderId:null,title:'強力懐中電灯',done:false},
-    {id:19,listId:1,folderId:null,title:'ぶっ壊れデニム',done:false},
-    {id:20,listId:1,folderId:null,title:'ポスカ',done:false},
-    {id:21,listId:1,folderId:null,title:'スクレーパーペン',done:false},
-    {id:22,listId:1,folderId:null,title:'アクリル絵の具',done:false},
-    {id:23,listId:1,folderId:null,title:'アイロン',done:false},
-    {id:24,listId:1,folderId:null,title:'冬服',done:false},
-    {id:25,listId:1,folderId:null,title:'ペン類',done:false},
-    {id:26,listId:null,folderId:2,title:'ボンド塗る',done:false},
-    {id:27,listId:null,folderId:2,title:'奨学金返済',done:false},
-    {id:28,listId:null,folderId:2,title:'年金のやつ',done:false}
-  ]};
-function normalizeTodo(d){
-  return { updatedAt: d.updatedAt||0,
-    folders: (d.folders||[]).map(f=>({ id:f.id, name:String(f.name||'') })),
-    lists: (d.lists||[]).map(l=>({ id:l.id, folderId:l.folderId, name:String(l.name||'') })),
-    todos: (d.todos||[]).map(t=>({ id:t.id, listId:(t.listId==null?null:t.listId), folderId:(t.folderId==null?null:t.folderId), title:String(t.title||''), done:!!t.done })) };
+const LS_TODO = 'diaryStandalone.todo.v1';
+const TODO_COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#3e9bff', '#8e4ec6', '#9c9ca4'];
+const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別' };
+const TODO_SEED = {"updatedAt":1762782241412,"folders":[{"id":1,"name":"欲しいもの"},{"id":2,"name":"やること"},{"id":3,"name":"今日行く場所"},{"id":4,"name":"今日買うもの"}],"lists":[{"id":1,"folderId":1,"name":"持ってくるもの"},{"id":2,"folderId":1,"name":"欲しい作品集"},{"id":3,"folderId":1,"name":"画材"},{"id":4,"folderId":1,"name":"今日買うもの"},{"id":5,"folderId":1,"name":"ほしいもの"},{"id":6,"folderId":1,"name":"ほしいもの②"}],"todos":[{"id":1,"listId":2,"folderId":null,"title":"我が愛しのファウスト","done":false},{"id":2,"listId":2,"folderId":null,"title":"彼女は30歳で画家になった","done":false},{"id":3,"listId":2,"folderId":null,"title":"大野裕『祈りの言葉』","done":false},{"id":4,"listId":2,"folderId":null,"title":"カルロ・ドルチ画集","done":false},{"id":5,"listId":2,"folderId":null,"title":"プロの時代","done":false},{"id":6,"listId":3,"folderId":null,"title":"透明標本","done":false},{"id":7,"listId":3,"folderId":null,"title":"ハンドミキサー　いるか？","done":false},{"id":8,"listId":3,"folderId":null,"title":"化粧品","done":false},{"id":9,"listId":3,"folderId":null,"title":"電球とスイッチ","done":false},{"id":10,"listId":3,"folderId":null,"title":"艶出しスプレー","done":false},{"id":11,"listId":3,"folderId":null,"title":"強力懐中電灯","done":false},{"id":12,"listId":3,"folderId":null,"title":"ぶっ壊れデニム","done":false},{"id":13,"listId":3,"folderId":null,"title":"ポスカ","done":false},{"id":14,"listId":3,"folderId":null,"title":"スクレーパーペン","done":false},{"id":15,"listId":3,"folderId":null,"title":"アクリル絵の具","done":false},{"id":16,"listId":3,"folderId":null,"title":"アイロン","done":false},{"id":17,"listId":3,"folderId":null,"title":"冬服","done":false},{"id":18,"listId":3,"folderId":null,"title":"ペン類","done":false},{"id":19,"listId":1,"folderId":null,"title":"リゲイン","done":false},{"id":20,"listId":1,"folderId":null,"title":"洗濯バサミ","done":false},{"id":21,"listId":1,"folderId":null,"title":"マスキングテープ","done":false},{"id":22,"listId":1,"folderId":null,"title":"白い靴","done":false},{"id":23,"listId":1,"folderId":null,"title":"木炭","done":false},{"id":24,"listId":1,"folderId":null,"title":"筆洗","done":false},{"id":25,"listId":1,"folderId":null,"title":"パーマネントホワイト","done":false},{"id":26,"listId":1,"folderId":null,"title":"吸取り紙","done":false},{"id":27,"listId":1,"folderId":null,"title":"パーマネントマットバニッシュ","done":false},{"id":28,"listId":1,"folderId":null,"title":"つまようじ","done":false},{"id":29,"listId":1,"folderId":null,"title":"練りゴム","done":false},{"id":30,"listId":1,"folderId":null,"title":"パステルの紙","done":false},{"id":31,"listId":1,"folderId":null,"title":"着て行く服","done":false},{"id":32,"listId":null,"folderId":2,"title":"ボンド塗る","done":false},{"id":33,"listId":null,"folderId":2,"title":"奨学金返済","done":false},{"id":34,"listId":null,"folderId":2,"title":"年金のやつ","done":false}]};
+function normalizeTodo(d) {
+  if (!d || typeof d !== 'object') return null;
+  return {
+    updatedAt: d.updatedAt || 0,
+    folders: (d.folders || []).map(function (f) { return { id: f.id, name: f.name, sort: f.sort || 'custom' }; }),
+    lists: (d.lists || []).map(function (l) { return { id: l.id, folderId: l.folderId, name: l.name, sort: l.sort || 'custom' }; }),
+    todos: (d.todos || []).map(function (t) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: t.title, done: !!t.done, due: t.due || null, color: t.color || null }; })
+  };
 }
-function loadTodo(){
-  try{ const raw=storeGet(LS_TODO); if(raw){ const d=JSON.parse(raw); if(d && Array.isArray(d.folders)) return normalizeTodo(d); } }catch(e){}
-  return JSON.parse(JSON.stringify(TODO_SEED));
+let TodoDB = null, todoSyncTimer = null;
+function loadTodo() {
+  try { const raw = localStorage.getItem(LS_TODO); if (raw) { TodoDB = normalizeTodo(JSON.parse(raw)); if (TodoDB) return; } } catch (e) {}
+  TodoDB = normalizeTodo(JSON.parse(JSON.stringify(TODO_SEED)));
+  saveTodoLocal();
 }
-let TodoDB=loadTodo();
-let todoFolderId=(TodoDB.folders[0]||{}).id;
-let todoSyncRunning=false, todoSyncTimer=null;
-function saveTodoLocal(){ storeSet(LS_TODO, JSON.stringify(TodoDB)); }
-function touchTodo(){ TodoDB.updatedAt=Date.now(); saveTodoLocal(); scheduleTodoSync(); }
-function scheduleTodoSync(){ if(todoSyncTimer) clearTimeout(todoSyncTimer); todoSyncTimer=setTimeout(()=>{ syncTodo(); }, 1600); }
-function todoById(id){ return TodoDB.todos.find(t=>t.id===id) || null; }
-function todoRowHTML(t){
-  return '<div class="tdrow"><button class="tdcheck'+(t.done?' done':'')+'" onclick="toggleTodo('+t.id+')" aria-label="完了切替">'+(t.done?'✓':'')+'</button>'
-    +'<div class="tdtitle'+(t.done?' done':'')+'">'+esc(t.title)+'</div>'
-    +'<button class="tddel" onclick="confirmDeleteTodo('+t.id+')" aria-label="削除">✕</button></div>';
+function saveTodoLocal() { try { localStorage.setItem(LS_TODO, JSON.stringify(TodoDB)); } catch (e) {} }
+function touchTodo() { TodoDB.updatedAt = Date.now(); saveTodoLocal(); scheduleTodoSync(); }
+function scheduleTodoSync() { if (todoSyncTimer) clearTimeout(todoSyncTimer); todoSyncTimer = setTimeout(function () { if (tokenClient && accessToken) syncNow(true); }, 1600); }
+let todoFolderId = null, todoListId = null, todoEdit = false, todoSel = new Set();
+function folderById(id) { return TodoDB.folders.find(function (f) { return f.id === id; }); }
+function listById(id) { return TodoDB.lists.find(function (l) { return l.id === id; }); }
+function todosInList(listId) { return TodoDB.todos.filter(function (t) { return t.listId === listId; }); }
+function todosDirect(folderId) { return TodoDB.todos.filter(function (t) { return !t.listId && t.folderId === folderId; }); }
+function listsInFolder(folderId) { return TodoDB.lists.filter(function (l) { return l.folderId === folderId; }); }
+function folderAllTodos(folderId) { return TodoDB.todos.filter(function (t) { return t.folderId === folderId || (t.listId && (function (l) { return l && l.folderId === folderId; })(listById(t.listId))); }); }
+function cmpDue(a, b, dir) { const x = a.due || '9999-99-99', y = b.due || '9999-99-99'; return (x < y ? -1 : x > y ? 1 : 0) * dir; }
+function sortTodos(arr, mode) {
+  const a = arr.slice();
+  if (mode === 'dueAsc') a.sort(function (x, y) { return cmpDue(x, y, 1); });
+  else if (mode === 'dueDesc') a.sort(function (x, y) { return cmpDue(x, y, -1); });
+  else if (mode === 'color') a.sort(function (x, y) { const ix = x.color ? TODO_COLORS.indexOf(x.color) : 99, iy = y.color ? TODO_COLORS.indexOf(y.color) : 99; return ix - iy; });
+  return a;
 }
-function renderTodo(){
-  const wrap=$('todowrap'); if(!wrap) return;
-  if(!TodoDB.folders.some(f=>f.id===todoFolderId)) todoFolderId=(TodoDB.folders[0]||{}).id;
-  let html='<div class="tdfolders">'+TodoDB.folders.map(f=>'<button class="tdfpill'+(f.id===todoFolderId?' on':'')+'" onclick="pickTodoFolder('+f.id+')">'+esc(f.name)+'</button>').join('')+'</div>';
-  const direct=TodoDB.todos.filter(t=>t.folderId===todoFolderId && t.listId==null);
-  if(direct.length) html+='<div class="tdcard">'+direct.map(todoRowHTML).join('')+'</div>';
-  const lists=TodoDB.lists.filter(l=>l.folderId===todoFolderId);
-  for(const l of lists){
-    const ts=TodoDB.todos.filter(t=>t.listId===l.id);
-    const doneN=ts.filter(t=>t.done).length;
-    html+='<div class="tdcard"><div class="tdlisthead"><span>'+esc(l.name)+'<span class="cnt">'+doneN+'/'+ts.length+'</span></span><button class="tdadd" onclick="openAddTodo(\'list\','+l.id+')" aria-label="ToDoを追加">＋</button></div>'
-      +(ts.length ? ts.map(todoRowHTML).join('') : '<div class="tdempty">まだありません</div>')+'</div>';
-  }
-  if(!direct.length && !lists.length) html+='<div class="empty">このフォルダは空です。</div>';
-  html+='<div class="tdactions"><button onclick="openAddTodo(\'folder\','+todoFolderId+')">＋ ToDo</button><button onclick="openAddList()">＋ リスト</button><button onclick="openAddFolder()">＋ フォルダ</button></div>';
-  wrap.innerHTML=html;
+function curContainer() {
+  if (todoListId) { const l = listById(todoListId); if (l) return { kind: 'list', obj: l, items: todosInList(l.id) }; }
+  const f = folderById(todoFolderId); if (f) return { kind: 'folder', obj: f, items: todosDirect(f.id) };
+  return null;
 }
-function pickTodoFolder(id){ todoFolderId=id; renderTodo(); }
-function toggleTodo(id){ const t=todoById(id); if(!t) return; t.done=!t.done; touchTodo(); renderTodo(); }
-function confirmDeleteTodo(id){
-  const t=todoById(id); if(!t) return;
-  openSheet('<h3>このToDoを削除しますか？</h3><div style="margin:4px 0 14px; color:var(--muted)">'+esc(t.title)+'</div>'
-    +'<button class="sheetbtn danger" onclick="deleteTodo('+id+')">削除する</button>'
-    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+function reorderGlobal(sortedItems) {
+  const ids = new Set(sortedItems.map(function (t) { return t.id; })); let i = 0;
+  TodoDB.todos = TodoDB.todos.map(function (t) { return ids.has(t.id) ? sortedItems[i++] : t; });
 }
-function deleteTodo(id){ TodoDB.todos=TodoDB.todos.filter(t=>t.id!==id); touchTodo(); closeSheet(); renderTodo(); }
-function openAddTodo(kind, id){
-  openSheet('<h3>ToDoを追加</h3><input class="textin" id="tdnewtext" type="text" placeholder="やること" autocomplete="off">'
-    +'<button class="sheetbtn primary" onclick="saveNewTodo(\''+kind+'\','+id+')">追加する</button>'
-    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
-  setTimeout(()=>{ try{ $('tdnewtext').focus(); }catch(e){} }, 80);
+function tdYmd(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function dueLabel(due) {
+  if (!due) return '';
+  const p = due.split('-'); const today = tdYmd(new Date());
+  let lb = (+p[1]) + '/' + (+p[2]);
+  if (due === today) lb = '今日 ' + lb; else if (due === tdYmd(new Date(Date.now() + 86400000))) lb = '明日 ' + lb;
+  return '<span class="tddue' + (due < today ? ' over' : '') + '">' + lb + '</span>';
 }
-function saveNewTodo(kind, id){
-  const v=($('tdnewtext').value||'').trim(); if(!v) return;
-  const nid=Date.now();
-  if(kind==='list') TodoDB.todos.push({ id:nid, listId:id, folderId:null, title:v, done:false });
-  else TodoDB.todos.push({ id:nid, listId:null, folderId:id, title:v, done:false });
-  touchTodo(); closeSheet(); renderTodo();
+const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7"/></svg>';
+const SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>';
+function todoRowHTML(t) {
+  const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
+  return '<div class="tdrow"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
+    + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div></div>';
 }
-function openAddList(){
-  openSheet('<h3>リストを追加</h3><input class="textin" id="tdnewlist" type="text" placeholder="リスト名" autocomplete="off">'
-    +'<button class="sheetbtn primary" onclick="saveNewList()">追加する</button>'
-    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
-  setTimeout(()=>{ try{ $('tdnewlist').focus(); }catch(e){} }, 80);
+function todoEditRowHTML(t) {
+  const on = todoSel.has(t.id);
+  const st = t.color ? ' style="border-color:' + t.color + '"' : '';
+  return '<div class="tdrow" data-dragid="' + t.id + '"><button class="tdcheck' + (on ? ' done' : '') + '"' + st + ' onclick="toggleSel(' + t.id + ')">' + (on ? '✓' : '') + '</button>'
+    + '<div class="tdmain"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div><span class="tdhandle">☰</span></div>';
 }
-function saveNewList(){
-  const v=($('tdnewlist').value||'').trim(); if(!v) return;
-  TodoDB.lists.push({ id:Date.now(), folderId:todoFolderId, name:v });
-  touchTodo(); closeSheet(); renderTodo();
+function renderTodo() {
+  const wrap = $('todowrap'); if (!wrap || !TodoDB) return;
+  if (todoListId && !listById(todoListId)) { todoListId = null; todoEdit = false; }
+  if (!todoListId && (!todoFolderId || !folderById(todoFolderId))) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
+  if (todoEdit) { const c = curContainer(); if (c) { wrap.innerHTML = editHTML(c); return; } todoEdit = false; }
+  if (todoListId) wrap.innerHTML = listHTML(listById(todoListId));
+  else if (todoFolderId) wrap.innerHTML = folderHTML(folderById(todoFolderId));
+  else wrap.innerHTML = '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button></div><div class="tdnone">フォルダがありません</div>';
 }
-function openAddFolder(){
-  openSheet('<h3>フォルダを追加</h3><input class="textin" id="tdnewfolder" type="text" placeholder="フォルダ名" autocomplete="off">'
-    +'<button class="sheetbtn primary" onclick="saveNewFolder()">追加する</button>'
-    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
-  setTimeout(()=>{ try{ $('tdnewfolder').focus(); }catch(e){} }, 80);
+function folderHTML(f) {
+  const lists = listsInFolder(f.id), direct = sortTodos(todosDirect(f.id), f.sort);
+  let h = '<div class="tdfolders">' + TodoDB.folders.map(function (x) {
+    return '<button class="tdfpill' + (x.id === f.id ? ' on' : '') + '" onclick="pickTodoFolder(' + x.id + ')">' + esc(x.name) + '<span class="tdcnt">' + folderAllTodos(x.id).length + '</span></button>';
+  }).join('') + '<button class="tdfpill add" onclick="openFolderForm()">＋</button></div>';
+  h += '<div class="tdsub"><span>' + (lists.length ? '<button onclick="openListForm()">＋ リスト</button>' : '') + '</span><span class="tdsubR">'
+    + '<button class="tdiconbtn" onclick="openTodoSearch()">' + SVG_SEARCH + '</button>'
+    + (direct.length || !lists.length ? '<button onclick="enterEdit()">編集</button>' : '')
+    + '<button onclick="openFolderMenu()">… その他</button></span></div>';
+  if (lists.length) h += lists.map(function (l) { return '<button class="tdlistrow" onclick="openTodoList(' + l.id + ')"><span class="nm">' + esc(l.name) + '</span><span class="tdcnt">' + todosInList(l.id).length + '</span><span class="chev">›</span></button>'; }).join('');
+  if (direct.length) h += direct.map(todoRowHTML).join('');
+  if (!lists.length && !direct.length) h += '<div class="tdnone">ToDoはありません</div>';
+  h += '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
+    + '<button class="tdfab plus" onclick="folderFab()">＋</button>';
+  return h;
 }
-function saveNewFolder(){
-  const v=($('tdnewfolder').value||'').trim(); if(!v) return;
-  const nid=Date.now();
-  TodoDB.folders.push({ id:nid, name:v });
-  todoFolderId=nid;
-  touchTodo(); closeSheet(); renderTodo();
+function listHTML(l) {
+  const items = sortTodos(todosInList(l.id), l.sort);
+  let h = '<div class="tdbackbar"><button class="tdback" onclick="closeTodoList()">‹</button><div class="tdltitle">' + esc(l.name) + '</div><button class="tdiconbtn" onclick="openTodoSearch()">' + SVG_SEARCH + '</button></div>';
+  h += '<div class="tdsub"><span></span><span class="tdsubR"><button onclick="enterEdit()">編集</button><button onclick="openListMenu()">… その他</button></span></div>';
+  h += items.length ? items.map(todoRowHTML).join('') : '<div class="tdnone">ToDoはありません</div>';
+  h += '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
+    + '<button class="tdfab plus" onclick="openTodoAddForm()">＋</button>';
+  return h;
 }
-async function syncTodo(){
-  if(todoSyncRunning) return;
-  const tok=getValidToken(); if(!tok) return;
-  todoSyncRunning=true;
-  try{
-    const q=encodeURIComponent("name='todo.json' and trashed=false");
-    const res=await driveFetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
-    if(!res.ok) return;
-    const j=await res.json();
-    const f=(j.files||[]).filter(x=>x.name==='todo.json')[0];
-    if(!f){
-      const meta={ name:'todo.json', mimeType:'application/json' };
-      const form=new FormData();
-      form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
-      form.append('file', new Blob([JSON.stringify(TodoDB)], { type:'application/json' }), 'todo.json');
-      await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
-    } else {
-      const dl=await driveFetch('/files/'+encodeURIComponent(f.id)+'?alt=media');
-      if(!dl.ok) return;
-      const remote=JSON.parse(await dl.text());
-      if(remote && (remote.updatedAt||0)>(TodoDB.updatedAt||0)){
-        TodoDB=normalizeTodo(remote); saveTodoLocal();
-        if(currentView==='todo') renderTodo();
-      } else if((TodoDB.updatedAt||0)>((remote&&remote.updatedAt)||0)){
-        await uploadDiaryUpdate(f.id, TodoDB);
-      }
+function editHTML(c) {
+  const items = sortTodos(c.items, c.obj.sort);
+  let h = '<div class="tdedithead"><button class="x" onclick="exitEdit()">✕</button><span class="t">編集</span></div>';
+  h += '<div class="tdsub"><button onclick="toggleSelectAll()">✓ 全て選択</button><button onclick="openSortMenu()">↓↑ 並び替え</button></div>';
+  h += '<div data-dragkind="todos">' + (items.length ? items.map(todoEditRowHTML).join('') : '<div class="tdnone">ToDoはありません</div>') + '</div>';
+  const off = todoSel.size ? '' : ' off';
+  h += '<div class="tdeditbar">'
+    + '<button class="' + off.trim() + '" onclick="bulkDue()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>'
+    + '<button class="' + off.trim() + '" onclick="bulkColor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="7.6" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="10" r="1.2" fill="currentColor" stroke="none"/><path d="M12 21c1-3 3-3.4 4.5-3.4"/></svg></button>'
+    + '<button class="' + off.trim() + '" onclick="bulkMove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>'
+    + '<button class="' + off.trim() + '" onclick="bulkDup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
+    + '<button class="tddelbtn ' + off.trim() + '" onclick="bulkDelete()">' + SVG_TRASH + '</button></div>';
+  return h;
+}
+function pickTodoFolder(id) { todoFolderId = id; todoListId = null; todoEdit = false; todoSel.clear(); renderTodo(); }
+function openTodoList(id) { const l = listById(id); if (!l) return; todoListId = id; todoFolderId = l.folderId; todoEdit = false; todoSel.clear(); renderTodo(); }
+function closeTodoList() { todoListId = null; todoEdit = false; todoSel.clear(); renderTodo(); }
+function folderFab() { const f = folderById(todoFolderId); if (f && listsInFolder(f.id).length && !todosDirect(f.id).length) openListForm(); else openTodoAddForm(); }
+function toggleTodo(id) { const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return; t.done = !t.done; touchTodo(); renderTodo(); }
+function enterEdit() { todoEdit = true; todoSel.clear(); renderTodo(); }
+function exitEdit() { todoEdit = false; todoSel.clear(); renderTodo(); }
+function toggleSel(id) { if (todoSel.has(id)) todoSel.delete(id); else todoSel.add(id); renderTodo(); }
+function toggleSelectAll() { const c = curContainer(); if (!c) return; if (todoSel.size >= c.items.length && c.items.length) todoSel.clear(); else c.items.forEach(function (t) { todoSel.add(t.id); }); renderTodo(); }
+async function syncTodo() {
+  try {
+    if (!TodoDB) return;
+    const q = encodeURIComponent("name='todo.json' and trashed=false");
+    const res = await driveFetch('/files?q=' + q + '&fields=' + encodeURIComponent('files(id,name,createdTime)') + '&orderBy=createdTime');
+    if (!res.ok) return;
+    const j = await res.json();
+    const files = (j.files || []).filter(function (f) { return f.name === 'todo.json'; });
+    const tok = getValidToken(); if (!tok) return;
+    if (!files.length) {
+      const meta = { name: 'todo.json', mimeType: 'application/json' };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+      form.append('file', new Blob([JSON.stringify(TodoDB)], { type: 'application/json' }), 'todo.json');
+      await fetch(UPLOAD_API + '/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: form });
+      return;
     }
-  }catch(e){ /* todo sync is best-effort; it must never disturb diary sync */ }
-  finally{ todoSyncRunning=false; }
+    const file = files[0];
+    const dl = await driveFetch('/files/' + encodeURIComponent(file.id) + '?alt=media');
+    if (!dl.ok) return;
+    const remote = normalizeTodo(JSON.parse(await dl.text()));
+    if (remote && (remote.updatedAt || 0) > (TodoDB.updatedAt || 0)) {
+      TodoDB = remote; saveTodoLocal();
+      if (currentView === 'todo') renderTodo();
+    } else if ((TodoDB.updatedAt || 0) > (remote ? (remote.updatedAt || 0) : 0)) {
+      await fetch(UPLOAD_API + '/files/' + encodeURIComponent(file.id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(TodoDB) });
+    }
+  } catch (e) { /* todo同期の失敗は日記同期を止めない */ }
 }
+/* ---- todo form overlay ---- */
+let TDOK = null;
+function tdOpen(html) { $('tdsheet').innerHTML = html; $('tdoverlay').classList.add('open'); }
+function tdClose() { $('tdoverlay').classList.remove('open'); $('tdsheet').innerHTML = ''; TDOK = null; }
+function tdOkClick() { if (TDOK) TDOK(); }
+function tdHead(title, withOk, backFn) {
+  return '<div class="tdfhead">' + (backFn ? '<button class="tdfx" onclick="' + backFn + '">‹</button>' : '<button class="tdfx" onclick="tdClose()">✕</button>')
+    + '<div class="tdfttl">' + esc(title) + '</div>' + (withOk ? '<button class="tdfok" onclick="tdOkClick()">✓</button>' : '<span style="width:40px"></span>') + '</div>';
+}
+function tdConfirm(title, msg, okLabel, fn) {
+  tdOpen(tdHead(title, false) + '<div class="tdfbody"><p style="line-height:1.8;font-size:15px">' + esc(msg) + '</p>'
+    + '<button class="sheetbtn danger" onclick="TDCONFIRM()">' + esc(okLabel) + '</button>'
+    + '<button class="sheetbtn" onclick="tdClose()">キャンセル</button></div>');
+  window.TDCONFIRM = function () { tdClose(); fn(); };
+}
+/* ---- list form ---- */
+let lf = null;
+function openListForm() {
+  lf = { name: '', folderId: todoFolderId, pos: 'first', sort: 'custom' };
+  renderListForm();
+}
+function renderListForm() {
+  TDOK = saveListForm;
+  const f = lf.folderId ? folderById(lf.folderId) : null;
+  tdOpen(tdHead('リストの追加', true) + '<div class="tdfbody">'
+    + '<input id="lfname" class="tdfinput" placeholder="リスト名" value="' + escA(lf.name) + '">'
+    + '<div class="tdfcard">'
+    + '<button class="tdfopt" onclick="lfFolderScreen()"><span class="lb">フォルダ</span><span class="vl">' + esc(f ? f.name : 'なし') + '</span><span class="chev">›</span></button>'
+    + '<button class="tdfopt" onclick="lfPosToggle()"><span class="lb">リストの挿入位置</span><span class="vl">' + (lf.pos === 'first' ? '先頭' : '最末尾') + '</span><span class="chev">⇅</span></button>'
+    + '<button class="tdfopt" onclick="lfSortScreen()"><span class="lb">ToDoの並び順</span><span class="vl">' + SORT_LABEL[lf.sort] + '</span><span class="chev">›</span></button>'
+    + '</div></div>');
+  const inp = $('lfname'); inp.addEventListener('input', function () { lf.name = inp.value; });
+  setTimeout(function () { inp.focus(); }, 80);
+}
+function lfPosToggle() { lf.pos = lf.pos === 'first' ? 'last' : 'first'; renderListForm(); }
+function lfFolderScreen() {
+  TDOK = null;
+  tdOpen(tdHead('フォルダ選択', false, 'renderListForm()') + '<div class="tdfbody">'
+    + '<input id="lfnf" class="tdfinput" placeholder="＋ 新しいフォルダ">'
+    + '<div class="tdfcard"><button class="tdfopt" onclick="lfPickFolder(null)"><span class="lb">なし</span>' + (!lf.folderId ? '<span class="chk">✓</span>' : '') + '</button>'
+    + TodoDB.folders.map(function (f) { return '<button class="tdfopt" onclick="lfPickFolder(' + f.id + ')"><span class="lb">' + esc(f.name) + '</span>' + (lf.folderId === f.id ? '<span class="chk">✓</span>' : '') + '</button>'; }).join('')
+    + '</div><p class="tdfnote">「＋ 新しいフォルダ」に名前を入れて Enter でも作れます。フォルダ「なし」のリストは、いま開いているフォルダに入ります。</p></div>');
+  const inp = $('lfnf');
+  inp.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { const nm = inp.value.trim(); if (!nm) return; const f = { id: Date.now(), name: nm, sort: 'custom' }; TodoDB.folders.push(f); touchTodo(); lf.folderId = f.id; renderListForm(); }
+  });
+}
+function lfPickFolder(id) { lf.folderId = id || todoFolderId; renderListForm(); }
+function lfSortScreen() {
+  TDOK = null;
+  const opt = function (key, sub) { return '<button class="tdfopt" onclick="lfPickSort(\'' + key + '\')"><span class="lb">' + SORT_LABEL[key] + (sub ? '<span class="tdfsub">' + sub + '</span>' : '') + '</span>' + (lf.sort === key ? '<span class="chk">✓</span>' : '') + '</button>'; };
+  tdOpen(tdHead('並び順の選択', false, 'renderListForm()') + '<div class="tdfbody"><div class="tdfcard">'
+    + opt('custom', '手動で並び替え') + opt('dueDesc', '') + opt('dueAsc', '') + opt('color', '')
+    + '</div><p class="tdfnote">この設定は、その他の並び替えからいつでも変更できます</p></div>');
+}
+function lfPickSort(key) { lf.sort = key; renderListForm(); }
+function saveListForm() {
+  const nm = (lf.name || '').trim(); if (!nm) return;
+  const l = { id: Date.now(), folderId: lf.folderId || todoFolderId, name: nm, sort: lf.sort };
+  const arr = TodoDB.lists;
+  if (lf.pos === 'first') { const idx = arr.findIndex(function (x) { return x.folderId === l.folderId; }); if (idx < 0) arr.push(l); else arr.splice(idx, 0, l); }
+  else arr.push(l);
+  touchTodo(); todoFolderId = l.folderId; tdClose(); renderTodo();
+}
+/* ---- folder form ---- */
+let ff = null;
+function openFolderForm() { ff = { name: '', pos: 'first' }; renderFolderForm(); }
+function renderFolderForm() {
+  TDOK = saveFolderForm;
+  tdOpen(tdHead('フォルダの追加', true) + '<div class="tdfbody">'
+    + '<input id="ffname" class="tdfinput" placeholder="フォルダ名" value="' + escA(ff.name) + '">'
+    + '<div class="tdflabel">フォルダの挿入位置</div><div class="tdseg" style="margin-top:0">'
+    + '<button class="' + (ff.pos === 'first' ? 'on' : '') + '" onclick="ffPos(\'first\')">先頭</button>'
+    + '<button class="' + (ff.pos === 'last' ? 'on' : '') + '" onclick="ffPos(\'last\')">最末尾</button></div></div>');
+  const inp = $('ffname'); inp.addEventListener('input', function () { ff.name = inp.value; });
+  setTimeout(function () { inp.focus(); }, 80);
+}
+function ffPos(p) { ff.pos = p; renderFolderForm(); }
+function saveFolderForm() {
+  const nm = (ff.name || '').trim(); if (!nm) return;
+  const f = { id: Date.now(), name: nm, sort: 'custom' };
+  if (ff.pos === 'first') TodoDB.folders.unshift(f); else TodoDB.folders.push(f);
+  todoFolderId = f.id; todoListId = null; touchTodo(); tdClose(); renderTodo();
+}
+/* ---- todo add / edit form ---- */
+let tf = null;
+function openTodoAddForm() {
+  const c = curContainer(); if (!c) return;
+  tf = { todoId: null, listId: c.kind === 'list' ? c.obj.id : null, folderId: c.kind === 'folder' ? c.obj.id : null, title: '', due: '', color: null };
+  renderTodoForm();
+}
+function openTodoEditForm(id) {
+  const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return;
+  tf = { todoId: t.id, listId: t.listId, folderId: t.folderId, title: t.title, due: t.due || '', color: t.color || null };
+  renderTodoForm();
+}
+function renderTodoForm() {
+  TDOK = saveTodoForm;
+  tdOpen(tdHead(tf.todoId ? 'ToDoを編集' : 'ToDoの追加', true) + '<div class="tdfbody">'
+    + '<input id="tftitle" class="tdfinput" placeholder="ToDo名" value="' + escA(tf.title) + '">'
+    + '<div class="tdflabel">期限</div><div style="display:flex;gap:8px;align-items:center">'
+    + '<input id="tfdue" type="date" class="tdfinput" style="flex:1" value="' + esc(tf.due || '') + '">'
+    + '<button class="tdfx" style="border-radius:12px;width:auto;padding:0 14px;font-size:13px" onclick="tfClearDue()">クリア</button></div>'
+    + '<div class="tdflabel">色</div><div class="tdcolors">'
+    + '<button class="tdcolor' + (!tf.color ? ' on' : '') + '" style="background:var(--card2)" onclick="tfPickColor(null)">✕</button>'
+    + TODO_COLORS.map(function (col) { return '<button class="tdcolor' + (tf.color === col ? ' on' : '') + '" style="background:' + col + '" onclick="tfPickColor(\'' + col + '\')"></button>'; }).join('')
+    + '</div>'
+    + (tf.todoId ? '<button class="sheetbtn danger" style="margin-top:34px" onclick="tfDelete()">このToDoを削除</button>' : '')
+    + '</div>');
+  const inp = $('tftitle'); inp.addEventListener('input', function () { tf.title = inp.value; });
+  $('tfdue').addEventListener('change', function (e) { tf.due = e.target.value; });
+  if (!tf.todoId) setTimeout(function () { inp.focus(); }, 80);
+}
+function tfClearDue() { tf.due = ''; const d = $('tfdue'); if (d) d.value = ''; }
+function tfPickColor(col) { tf.color = col; renderTodoForm(); }
+function saveTodoForm() {
+  const nm = (tf.title || '').trim(); if (!nm) return;
+  if (tf.todoId) {
+    const t = TodoDB.todos.find(function (x) { return x.id === tf.todoId; });
+    if (t) { t.title = nm; t.due = tf.due || null; t.color = tf.color || null; }
+  } else {
+    TodoDB.todos.push({ id: Date.now(), listId: tf.listId, folderId: tf.folderId, title: nm, done: false, due: tf.due || null, color: tf.color || null });
+  }
+  touchTodo(); tdClose(); renderTodo();
+}
+function tfDelete() {
+  const id = tf.todoId;
+  tdConfirm('ToDoを削除', 'このToDoを削除しますか？', '削除する', function () {
+    TodoDB.todos = TodoDB.todos.filter(function (t) { return t.id !== id; });
+    touchTodo(); renderTodo();
+  });
+}
+/* ---- bulk register ---- */
+let brk = null;
+function openBulkRegister() {
+  const c = curContainer(); if (!c) return; brk = c;
+  TDOK = saveBulkRegister;
+  tdOpen(tdHead('Todoをまとめて登録', true) + '<div class="tdfbody">'
+    + '<textarea id="brtext" class="tdfinput" placeholder="1行に1つずつ入力"></textarea>'
+    + '<p class="tdfnote">改行ごとに1件のToDoとして「' + esc(c.obj.name) + '」へ登録します。</p></div>');
+  setTimeout(function () { $('brtext').focus(); }, 80);
+}
+function saveBulkRegister() {
+  const lines = $('brtext').value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!lines.length) { tdClose(); return; }
+  const base = Date.now();
+  lines.forEach(function (title, i) {
+    TodoDB.todos.push({ id: base + i, listId: brk.kind === 'list' ? brk.obj.id : null, folderId: brk.kind === 'folder' ? brk.obj.id : null, title: title, done: false, due: null, color: null });
+  });
+  touchTodo(); tdClose(); renderTodo();
+}
+/* ---- menus (diary sheet) ---- */
+function tdMenuSheet(title, items) {
+  openSheet('<h3>' + esc(title) + '</h3>' + items.map(function (it, i) {
+    return '<button class="tdmenuitem' + (it.danger ? ' danger' : '') + '" data-tdm="' + i + '">' + esc(it.label) + (it.chev ? '<span class="chev">›</span>' : '') + '</button>';
+  }).join(''));
+  Array.from(document.querySelectorAll('[data-tdm]')).forEach(function (b) {
+    b.onclick = function () { const it = items[+b.getAttribute('data-tdm')]; closeSheet(); if (it.fn) setTimeout(it.fn, 30); };
+  });
+}
+function openListMenu() {
+  const l = listById(todoListId); if (!l) return;
+  tdMenuSheet(l.name, [
+    { label: 'リスト名を編集', fn: function () { openRename('list', l.id); } },
+    { label: '並び替え', chev: true, fn: openSortMenu },
+    { label: '全てを完了済みに', fn: function () { setAllDone(true); } },
+    { label: '全てを未完了に', fn: function () { setAllDone(false); } },
+    { label: 'Todoをまとめて登録', fn: openBulkRegister },
+    { label: 'リストをコピー', fn: copyList },
+    { label: 'リストをシェア', fn: shareList },
+    { label: 'リストを削除', danger: true, fn: confirmDeleteList }
+  ]);
+}
+function openFolderMenu() {
+  const f = folderById(todoFolderId); if (!f) return;
+  const hasLists = listsInFolder(f.id).length > 0;
+  const items = [{ label: 'フォルダ名を編集', fn: function () { openRename('folder', f.id); } }];
+  if (hasLists) items.push({ label: 'リストを追加', fn: openListForm });
+  else {
+    items.push({ label: '並び替え', chev: true, fn: openSortMenu });
+    items.push({ label: 'Todoをまとめて登録', fn: openBulkRegister });
+  }
+  items.push({ label: '全てを完了済みに', fn: function () { setAllDone(true); } });
+  items.push({ label: '全てを未完了に', fn: function () { setAllDone(false); } });
+  items.push({ label: 'フォルダを削除', danger: true, fn: confirmDeleteFolder });
+  tdMenuSheet(f.name, items);
+}
+function openSortMenu() {
+  const c = curContainer(); if (!c) return;
+  const once = function (mode) { return function () { reorderGlobal(sortTodos(c.items, mode)); touchTodo(); renderTodo(); }; };
+  const fix = function (mode) { return function () { c.obj.sort = mode; touchTodo(); renderTodo(); }; };
+  tdMenuSheet('並び替え（現在：' + SORT_LABEL[c.obj.sort] + '）', [
+    { label: '並び順を固定：' + SORT_LABEL.dueDesc, fn: fix('dueDesc') },
+    { label: '並び順を固定：' + SORT_LABEL.dueAsc, fn: fix('dueAsc') },
+    { label: '並び順を固定：色別', fn: fix('color') },
+    { label: '並び順を固定：カスタム', fn: fix('custom') },
+    { label: '一度だけ並び替え：' + SORT_LABEL.dueDesc, fn: once('dueDesc') },
+    { label: '一度だけ並び替え：' + SORT_LABEL.dueAsc, fn: once('dueAsc') },
+    { label: '一度だけ並び替え：色別', fn: once('color') }
+  ]);
+}
+function setAllDone(v) {
+  const c = curContainer(); if (!c) return;
+  const scope = c.kind === 'folder' ? folderAllTodos(c.obj.id) : c.items;
+  scope.forEach(function (t) { t.done = v; });
+  touchTodo(); renderTodo();
+}
+function copyList() {
+  const l = listById(todoListId); if (!l) return;
+  const nl = { id: Date.now(), folderId: l.folderId, name: l.name + 'のコピー', sort: l.sort };
+  TodoDB.lists.push(nl);
+  const base = Date.now();
+  todosInList(l.id).forEach(function (t, i) { TodoDB.todos.push({ id: base + i + 1, listId: nl.id, folderId: null, title: t.title, done: false, due: t.due, color: t.color }); });
+  touchTodo(); renderTodo();
+}
+function shareList() {
+  const c = curContainer(); if (!c) return;
+  const text = c.obj.name + '\n' + sortTodos(c.items, c.obj.sort).map(function (t) { return (t.done ? '✓ ' : '・') + t.title; }).join('\n');
+  const done = function () { openSheet('<h3>コピーしました</h3><p class="msg">リストの内容をテキストでコピーしました。貼り付けて送れます。</p><button class="sheetbtn primary" onclick="closeSheet()">閉じる</button>'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+  else { fallbackCopy(text); done(); }
+}
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove();
+}
+function confirmDeleteList() {
+  const l = listById(todoListId); if (!l) return;
+  openSheet('<h3>リストを削除</h3><p class="msg">「' + esc(l.name) + '」とその中身をすべて削除します。</p>'
+    + '<button class="sheetbtn danger" onclick="doDeleteList()">削除する</button>'
+    + '<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+}
+function doDeleteList() {
+  const id = todoListId;
+  TodoDB.todos = TodoDB.todos.filter(function (t) { return t.listId !== id; });
+  TodoDB.lists = TodoDB.lists.filter(function (l) { return l.id !== id; });
+  todoListId = null; touchTodo(); closeSheet(); renderTodo();
+}
+function confirmDeleteFolder() {
+  const f = folderById(todoFolderId); if (!f) return;
+  openSheet('<h3>フォルダを削除</h3><p class="msg">「' + esc(f.name) + '」の中のリストとToDoをすべて削除します。</p>'
+    + '<button class="sheetbtn danger" onclick="doDeleteFolder(' + f.id + ')">削除する</button>'
+    + '<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+}
+function doDeleteFolder(id) {
+  const listIds = new Set(listsInFolder(id).map(function (l) { return l.id; }));
+  TodoDB.todos = TodoDB.todos.filter(function (t) { return t.folderId !== id && !listIds.has(t.listId); });
+  TodoDB.lists = TodoDB.lists.filter(function (l) { return l.folderId !== id; });
+  TodoDB.folders = TodoDB.folders.filter(function (f) { return f.id !== id; });
+  if (todoFolderId === id) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
+  todoListId = null; touchTodo(); closeSheet(); renderTodo();
+}
+function clearCompleted() {
+  const c = curContainer(); if (!c) return;
+  const scope = c.kind === 'folder' ? folderAllTodos(c.obj.id) : c.items;
+  const done = scope.filter(function (t) { return t.done; });
+  if (!done.length) { openSheet('<h3>完了済みはありません</h3><button class="sheetbtn primary" onclick="closeSheet()">閉じる</button>'); return; }
+  openSheet('<h3>完了済みを削除</h3><p class="msg">完了済みのToDo ' + done.length + '件を削除します。</p>'
+    + '<button class="sheetbtn danger" onclick="doClearCompleted()">削除する</button>'
+    + '<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+}
+function doClearCompleted() {
+  const c = curContainer(); if (!c) { closeSheet(); return; }
+  const scope = c.kind === 'folder' ? folderAllTodos(c.obj.id) : c.items;
+  const ids = new Set(scope.filter(function (t) { return t.done; }).map(function (t) { return t.id; }));
+  TodoDB.todos = TodoDB.todos.filter(function (t) { return !ids.has(t.id); });
+  touchTodo(); closeSheet(); renderTodo();
+}
+/* ---- rename ---- */
+let rn = null;
+function openRename(kind, id) {
+  const obj = kind === 'list' ? listById(id) : folderById(id); if (!obj) return;
+  rn = { kind: kind, id: id };
+  TDOK = saveRename;
+  tdOpen(tdHead(kind === 'list' ? 'リスト名編集' : 'フォルダ名編集', true) + '<div class="tdfbody">'
+    + '<input id="rnname" class="tdfinput" value="' + escA(obj.name) + '"></div>');
+  const inp = $('rnname'); setTimeout(function () { inp.focus(); inp.select(); }, 80);
+}
+function saveRename() {
+  const nm = $('rnname').value.trim(); if (!nm) return;
+  const obj = rn.kind === 'list' ? listById(rn.id) : folderById(rn.id);
+  if (obj) obj.name = nm;
+  touchTodo(); tdClose(); renderTodo();
+}
+/* ---- bulk ops (edit mode) ---- */
+function selTodos() { return TodoDB.todos.filter(function (t) { return todoSel.has(t.id); }); }
+function bulkDue() {
+  if (!todoSel.size) return;
+  TDOK = function () { const v = $('bddate').value || null; selTodos().forEach(function (t) { t.due = v; }); touchTodo(); tdClose(); renderTodo(); };
+  tdOpen(tdHead('期限を設定', true) + '<div class="tdfbody"><p class="tdfnote" style="margin:0 0 12px">選択中の ' + todoSel.size + '件すべてに同じ期限を設定します。</p>'
+    + '<input id="bddate" type="date" class="tdfinput">'
+    + '<button class="sheetbtn" style="margin-top:16px" onclick="bulkDueClear()">期限をクリア</button></div>');
+}
+function bulkDueClear() { selTodos().forEach(function (t) { t.due = null; }); touchTodo(); tdClose(); renderTodo(); }
+function bulkColor() {
+  if (!todoSel.size) return;
+  TDOK = null;
+  tdOpen(tdHead('色を設定', false) + '<div class="tdfbody"><p class="tdfnote" style="margin:0 0 12px">選択中の ' + todoSel.size + '件すべてに色をつけます。</p><div class="tdcolors">'
+    + '<button class="tdcolor" style="background:var(--card2)" onclick="bulkColorPick(null)">✕</button>'
+    + TODO_COLORS.map(function (col) { return '<button class="tdcolor" style="background:' + col + '" onclick="bulkColorPick(\'' + col + '\')"></button>'; }).join('')
+    + '</div></div>');
+}
+function bulkColorPick(col) { selTodos().forEach(function (t) { t.color = col; }); touchTodo(); tdClose(); renderTodo(); }
+function bulkMove() {
+  if (!todoSel.size) return;
+  TDOK = null;
+  let rows = TodoDB.folders.map(function (f) {
+    let r = '<button class="tdfopt" onclick="bulkMoveTo(\'folder\',' + f.id + ')"><span class="lb">' + esc(f.name) + '<span class="tdfsub">フォルダ直下</span></span></button>';
+    listsInFolder(f.id).forEach(function (l) { r += '<button class="tdfopt" onclick="bulkMoveTo(\'list\',' + l.id + ')"><span class="lb">' + esc(l.name) + '<span class="tdfsub">' + esc(f.name) + '</span></span></button>'; });
+    return r;
+  }).join('');
+  tdOpen(tdHead('移動先を選択', false) + '<div class="tdfbody"><div class="tdfcard">' + rows + '</div></div>');
+}
+function bulkMoveTo(kind, id) {
+  selTodos().forEach(function (t) {
+    if (kind === 'list') { t.listId = id; t.folderId = null; } else { t.listId = null; t.folderId = id; }
+  });
+  touchTodo(); tdClose(); exitEdit();
+}
+function bulkDup() {
+  if (!todoSel.size) return;
+  const c = curContainer(); if (!c) return;
+  const base = Date.now();
+  sortTodos(c.items, c.obj.sort).filter(function (t) { return todoSel.has(t.id); })
+    .forEach(function (t, i) { TodoDB.todos.push({ id: base + i, listId: t.listId, folderId: t.folderId, title: t.title, done: false, due: t.due, color: t.color }); });
+  todoSel.clear(); touchTodo(); renderTodo();
+}
+function bulkDelete() {
+  if (!todoSel.size) return;
+  const n = todoSel.size;
+  tdConfirm('選択中のToDoを削除', n + '件のToDoを削除しますか？', '削除する', function () {
+    TodoDB.todos = TodoDB.todos.filter(function (t) { return !todoSel.has(t.id); });
+    todoSel.clear(); todoEdit = false; touchTodo(); renderTodo();
+  });
+}
+/* ---- search ---- */
+function openTodoSearch() {
+  TDOK = null;
+  tdOpen(tdHead('ToDoを検索', false) + '<div class="tdfbody">'
+    + '<input id="tsq" class="tdfinput" placeholder="キーワード">'
+    + '<div id="tsresults" style="margin-top:10px"></div></div>');
+  const inp = $('tsq');
+  inp.addEventListener('input', function () { renderTodoSearch(inp.value.trim()); });
+  setTimeout(function () { inp.focus(); }, 80);
+}
+function renderTodoSearch(q) {
+  const box = $('tsresults'); if (!box) return;
+  if (!q) { box.innerHTML = ''; return; }
+  const hits = TodoDB.todos.filter(function (t) { return t.title.indexOf(q) >= 0; }).slice(0, 60);
+  box.innerHTML = hits.length ? hits.map(function (t) {
+    const where = t.listId ? (listById(t.listId) ? listById(t.listId).name : '') : (folderById(t.folderId) ? folderById(t.folderId).name + '（直下）' : '');
+    return '<button class="tdfopt" style="border-bottom:1px solid var(--line)" onclick="gotoTodo(' + t.id + ')"><span class="lb">' + esc(t.title) + '<span class="tdfsub">' + esc(where) + '</span></span></button>';
+  }).join('') : '<div class="tdnone">見つかりませんでした</div>';
+}
+function gotoTodo(id) {
+  const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return;
+  tdClose(); todoEdit = false; todoSel.clear();
+  if (t.listId) { const l = listById(t.listId); todoFolderId = l ? l.folderId : todoFolderId; todoListId = t.listId; }
+  else { todoListId = null; todoFolderId = t.folderId; }
+  showView('todo'); renderTodo();
+}
+/* ---- folder admin (並び替え・編集) ---- */
+function openFolderAdmin() { renderFolderAdmin(); }
+function renderFolderAdmin() {
+  TDOK = null;
+  tdOpen(tdHead('フォルダの並び替え・編集', false) + '<div class="tdfbody">'
+    + '<p class="tdfnote" style="margin:0 0 6px">項目をタップすると名前を編集できます。☰で並び替え、赤いボタンで削除。</p>'
+    + '<div data-dragkind="folders">'
+    + TodoDB.folders.map(function (f) {
+      return '<div class="tdadminrow" data-dragid="' + f.id + '"><button class="tdminus" onclick="adminDeleteFolder(' + f.id + ')">−</button>'
+        + '<button class="nm" onclick="adminRenameFolder(' + f.id + ')">' + esc(f.name) + '</button><span class="tdhandle">☰</span></div>';
+    }).join('') + '</div></div>');
+}
+function adminRenameFolder(id) {
+  const f = folderById(id); if (!f) return;
+  TDOK = function () { const nm = $('afname').value.trim(); if (nm) { f.name = nm; touchTodo(); } renderFolderAdmin(); };
+  tdOpen(tdHead('フォルダ名編集', true, 'renderFolderAdmin()') + '<div class="tdfbody"><input id="afname" class="tdfinput" value="' + escA(f.name) + '"></div>');
+  const inp = $('afname'); setTimeout(function () { inp.focus(); inp.select(); }, 80);
+}
+function adminDeleteFolder(id) {
+  const f = folderById(id); if (!f) return;
+  tdConfirm('フォルダを削除', '「' + f.name + '」の中のリストとToDoをすべて削除しますか？', '削除する', function () {
+    doDeleteFolderSilent(id); renderFolderAdmin(); renderTodo();
+  });
+}
+function doDeleteFolderSilent(id) {
+  const listIds = new Set(listsInFolder(id).map(function (l) { return l.id; }));
+  TodoDB.todos = TodoDB.todos.filter(function (t) { return t.folderId !== id && !listIds.has(t.listId); });
+  TodoDB.lists = TodoDB.lists.filter(function (l) { return l.folderId !== id; });
+  TodoDB.folders = TodoDB.folders.filter(function (f) { return f.id !== id; });
+  if (todoFolderId === id) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
+  todoListId = null; touchTodo();
+}
+/* ---- drag reorder (pointer events, delegated) ---- */
+let dragCtx = null;
+document.addEventListener('pointerdown', function (e) {
+  const h = e.target.closest ? e.target.closest('.tdhandle') : null; if (!h) return;
+  const row = h.closest('[data-dragid]'); if (!row || !row.parentElement) return;
+  const rows = Array.prototype.slice.call(row.parentElement.querySelectorAll('[data-dragid]'));
+  dragCtx = { row: row, rows: rows, idx: rows.indexOf(row), newIdx: rows.indexOf(row), y0: e.clientY, hh: Math.max(30, row.offsetHeight), kind: row.parentElement.getAttribute('data-dragkind') };
+  row.classList.add('dragging');
+  try { row.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+document.addEventListener('pointermove', function (e) {
+  if (!dragCtx) return;
+  const dy = e.clientY - dragCtx.y0;
+  const shift = Math.max(-dragCtx.idx, Math.min(dragCtx.rows.length - 1 - dragCtx.idx, Math.round(dy / dragCtx.hh)));
+  dragCtx.newIdx = dragCtx.idx + shift;
+  dragCtx.row.style.transform = 'translateY(' + dy + 'px)';
+  dragCtx.rows.forEach(function (r, i) {
+    if (r === dragCtx.row) return;
+    let t = 0;
+    if (dragCtx.idx < i && i <= dragCtx.newIdx) t = -dragCtx.hh;
+    else if (dragCtx.newIdx <= i && i < dragCtx.idx) t = dragCtx.hh;
+    r.style.transform = t ? 'translateY(' + t + 'px)' : '';
+  });
+});
+document.addEventListener('pointerup', function () {
+  if (!dragCtx) return;
+  const ctx = dragCtx; dragCtx = null;
+  ctx.rows.forEach(function (r) { r.style.transform = ''; r.classList.remove('dragging'); });
+  if (ctx.newIdx === ctx.idx) return;
+  const ids = ctx.rows.map(function (r) { return +r.getAttribute('data-dragid'); });
+  const moved = ids.splice(ctx.idx, 1)[0]; ids.splice(ctx.newIdx, 0, moved);
+  if (ctx.kind === 'todos') {
+    const c = curContainer(); if (!c) return;
+    const map = {}; c.items.forEach(function (t) { map[t.id] = t; });
+    reorderGlobal(ids.map(function (id) { return map[id]; }).filter(Boolean));
+    c.obj.sort = 'custom'; touchTodo(); renderTodo();
+  } else if (ctx.kind === 'folders') {
+    TodoDB.folders = ids.map(function (id) { return folderById(id); }).filter(Boolean);
+    touchTodo(); renderFolderAdmin(); renderTodo();
+  }
+});
 
 /* ================= init ================= */
 (function init(){
