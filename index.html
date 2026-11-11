@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.30">
+<meta name="app-version" content="1.31">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1410,7 +1410,7 @@ function renderSettingsPanel(){
       '<div class="syncstat" id="syncstat"></div>'+
       '<div class="note">同期先は Drive 上の「diary.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>'+
       '</div>');
-    const cid=$('clientid'); const saved=storeGet(LS_CID)||''; if(document.activeElement!==cid) cid.value=saved;
+    const cid=$('clientid'); const saved=getClientId(); if(document.activeElement!==cid) cid.value=saved;
     renderSyncStatus();
   }
   else if(settingsPanel==='data'){
@@ -1506,7 +1506,8 @@ let lastSyncAt=0;
 let syncTimer=null;
 let syncRunning=false;
 
-function getClientId(){ return (storeGet(LS_CID)||'').trim(); }
+const DEFAULT_CLIENT_ID='386087008053-de53ufnkvcnbjslkuhmq2l2pm9fj4c2t.apps.googleusercontent.com';
+function getClientId(){ return (storeGet(LS_CID)||'').trim() || DEFAULT_CLIENT_ID; }
 function getValidToken(){
   const tok=storeGet(SS_TOKEN);
   const exp=+(storeGet(LS_TOKEN_EXP)||0);
@@ -1545,7 +1546,7 @@ function scheduleSync(){
 function redirectUri(){ return location.origin + location.pathname; }
 
 function connectDrive(){
-  const cid=($('clientid') ? $('clientid').value.trim() : getClientId());
+  const cid=(($('clientid') ? $('clientid').value.trim() : '') || getClientId());
   if(!cid){ sheetInfo('Drive接続', '先に OAuth クライアントID を入力してください。'); return; }
   storeSet(LS_CID, cid);
   if(!(window.google && google.accounts && google.accounts.oauth2)){
@@ -1747,7 +1748,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.30';
+const APP_VERSION='1.31';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
