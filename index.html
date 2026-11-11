@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.61">
+<meta name="app-version" content="1.62">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -96,8 +96,9 @@
   .spacer44 { width: 44px; flex: none; }
 
   #syncbar { text-align: center; font-size: calc(var(--fs) * .72); color: var(--muted); padding: 0 16px 6px; min-height: 1.2em; }
-  #tdsyncnote { text-align: center; font-size: calc(var(--fs) * .72); color: var(--muted); padding: 0 16px 4px; cursor: pointer; }
-  #drivebanner { position: fixed; top: 0; left: 0; right: 0; z-index: 50; width: 100%; border: 0; background: #b3261e; color: #fff; font-family: var(--uifont); font-size: 14px; font-weight: 600; text-align: center; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; cursor: pointer; }
+  #tdsyncnote { text-align: center; font-size: calc(var(--fs) * .72); color: var(--muted); padding: 7px 12px; margin: 10px 14px 4px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+  #drivebanner { display: block; width: 100%; border: 0; background: #b3261e; color: #fff; font-family: var(--uifont); font-size: 14px; font-weight: 600; text-align: center; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; cursor: pointer; }
+  body.banner-on .topbar { padding-top: 10px; }
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
@@ -1549,6 +1550,7 @@ function renderDriveBanner(){
   const el=$('drivebanner'); if(!el) return;
   const show = !!getClientId() && !getValidToken() && (Date.now()-bootAt>3000 || lastRefreshTry>0);
   el.style.display = show ? '' : 'none';
+  if (document.body) document.body.classList.toggle('banner-on', show);
 }
 function storeToken(tok, expiresInSec){
   storeSet(SS_TOKEN, tok);
@@ -1786,7 +1788,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.61';
+const APP_VERSION='1.62';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
