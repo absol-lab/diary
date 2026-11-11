@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.65">
+<meta name="app-version" content="1.66">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1792,7 +1792,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.65';
+const APP_VERSION='1.66';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1842,35 +1842,90 @@ setInterval(function(){
 const LS_TODO = 'diaryStandalone.todo.v1';
 const TODO_COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#3e9bff', '#8e4ec6', '#9c9ca4'];
 const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別' };
-const TODO_SEED = {"updatedAt":0,"folders":[],"lists":[],"todos":[],"trash":[]};
+const TODO_SEED = {"updatedAt":0,"folders":[],"lists":[],"todos":[],"trash":[],"goneFolders":[],"goneLists":[]};
 function todoNorm(t) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: t.title, done: !!t.done, due: t.due || null, color: t.color || null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : null }; }
 function normalizeTodo(d) {
   if (!d || typeof d !== 'object') return null;
   return {
     updatedAt: d.updatedAt || 0,
     folders: (d.folders || []).map(function (f) { return { id: f.id, name: f.name, sort: f.sort || 'custom', showDone: f.showDone !== false }; }),
-    lists: (d.lists || []).map(function (l) { return { id: l.id, folderId: l.folderId, name: l.name, sort: l.sort || 'custom' }; }),
+    lists: (d.lists || []).map(function (l) { return { id: l.id, folderId: l.folderId || null, name: l.name, sort: l.sort || 'custom' }; }),
     todos: (d.todos || []).map(todoNorm),
-    trash: (d.trash || []).map(function (t) { const n = todoNorm(t); n.deletedAt = t.deletedAt || 0; return n; })
+    trash: (d.trash || []).map(function (t) { const n = todoNorm(t); n.deletedAt = t.deletedAt || 0; return n; }),
+    goneFolders: (d.goneFolders || []).filter(function (x) { return typeof x === 'number'; }),
+    goneLists: (d.goneLists || []).filter(function (x) { return typeof x === 'number'; })
   };
 }
 let TodoDB = null, todoSyncTimer = null;
 let priceCheckBusy = false, priceCheckSentAt = 0;
 function isSeedFossil(d) { return d && d.updatedAt === 1762782241412 && d.folders.length === 4 && d.lists.length === 6 && d.todos.length === 34; }
 function loadTodo() {
-  try { const raw = localStorage.getItem(LS_TODO); if (raw) { const d = normalizeTodo(JSON.parse(raw)); if (d && !isSeedFossil(d)) { TodoDB = d; return; } } } catch (e) {}
+  try { const raw = localStorage.getItem(LS_TODO); if (raw) { const d = normalizeTodo(JSON.parse(raw)); if (d && !isSeedFossil(d)) { TodoDB = d; if (migrateTodoStructure()) { TodoDB.updatedAt = Date.now(); todoDirty = true; todoEditSeq++; saveTodoLocal(); } return; } } } catch (e) {}
   TodoDB = normalizeTodo(JSON.parse(JSON.stringify(TODO_SEED)));
   saveTodoLocal();
 }
 function saveTodoLocal() { try { localStorage.setItem(LS_TODO, JSON.stringify(TodoDB)); } catch (e) {} }
 function touchTodo() { TodoDB.updatedAt = Date.now(); todoDirty = true; todoEditSeq++; saveTodoLocal(); renderSyncStatus(); renderTodoDirty(); scheduleTodoSync(); }
 function scheduleTodoSync() { if (todoSyncTimer) clearTimeout(todoSyncTimer); todoSyncTimer = setTimeout(function () { if (canSync()) syncNow(true); else attemptTodoRescue(); }, 1600); }
-let todoFolderId = null, todoListId = null, todoEdit = false, todoSel = new Set();
+let todoFolderId = null, todoListId = null, todoTopListId = null, todoEdit = false, todoSel = new Set();
 function folderById(id) { return TodoDB.folders.find(function (f) { return f.id === id; }); }
 function listById(id) { return TodoDB.lists.find(function (l) { return l.id === id; }); }
 function todosInList(listId) { return TodoDB.todos.filter(function (t) { return t.listId === listId; }); }
 function todosDirect(folderId) { return TodoDB.todos.filter(function (t) { return !t.listId && t.folderId === folderId; }); }
 function listsInFolder(folderId) { return TodoDB.lists.filter(function (l) { return l.folderId === folderId; }); }
+function topLists() { return TodoDB.lists.filter(function (l) { return !l.folderId; }); }
+function todoTabs() { const t = TodoDB.folders.map(function (f) { return { kind: 'folder', id: f.id }; }); topLists().forEach(function (l) { t.push({ kind: 'list', id: l.id }); }); return t; }
+function tabKeyOf(kind, id) { return (kind === 'folder' ? 'f' : 'l') + id; }
+function currentTabKey() { if (todoTopListId) return 'l' + todoTopListId; if (todoFolderId) return 'f' + todoFolderId; return null; }
+let tdIdSeq = 0;
+function newTdId() { return Date.now() * 1000 + (tdIdSeq = (tdIdSeq + 1) % 1000); }
+function isPriceList(l) { if (!l || l.folderId) return false; const n = String(l.name || '').replace(/\s+/g, ''); return n.indexOf('欲しいもの') === 0 || n.indexOf('ほしいもの') === 0; }
+function todoInPriceScope(t) {
+  if (t.listId) { const l = listById(t.listId); if (!l) return false; if (isPriceList(l)) return true; return isPriceFolder(folderById(l.folderId)); }
+  if (t.folderId) return isPriceFolder(folderById(t.folderId));
+  return false;
+}
+function migrateTodoStructure() {
+  if (!TodoDB) return false;
+  let changed = false;
+  if (!Array.isArray(TodoDB.goneFolders)) TodoDB.goneFolders = [];
+  if (!Array.isArray(TodoDB.goneLists)) TodoDB.goneLists = [];
+  const all = TodoDB.todos.concat(TodoDB.trash);
+  TodoDB.folders.slice().forEach(function (f) {
+    const direct = all.filter(function (t) { return !t.listId && t.folderId === f.id; });
+    if (!direct.length) return;
+    const lists = listsInFolder(f.id);
+    if (lists.length) {
+      direct.forEach(function (t) { t.listId = lists[0].id; });
+      changed = true;
+    } else {
+      const nl = { id: newTdId(), folderId: null, name: f.name, sort: f.sort || 'custom' };
+      TodoDB.lists.push(nl);
+      direct.forEach(function (t) { t.listId = nl.id; t.folderId = null; });
+      TodoDB.folders = TodoDB.folders.filter(function (x) { return x.id !== f.id; });
+      if (TodoDB.goneFolders.indexOf(f.id) < 0) TodoDB.goneFolders.push(f.id);
+      if (todoFolderId === f.id) { todoFolderId = null; todoTopListId = nl.id; }
+      changed = true;
+    }
+  });
+  TodoDB.lists.forEach(function (l) { if (l.folderId && !folderById(l.folderId)) { l.folderId = null; changed = true; } });
+  all.forEach(function (t) {
+    if (!t.listId && t.folderId && !folderById(t.folderId)) {
+      const tl = topLists();
+      if (tl.length) { t.listId = tl[0].id; t.folderId = null; }
+      else if (TodoDB.folders.length && listsInFolder(TodoDB.folders[0].id).length) { t.listId = listsInFolder(TodoDB.folders[0].id)[0].id; t.folderId = TodoDB.folders[0].id; }
+      else { const nl = { id: newTdId(), folderId: null, name: 'リスト', sort: 'custom' }; TodoDB.lists.push(nl); t.listId = nl.id; t.folderId = null; }
+      changed = true;
+    }
+  });
+  return changed;
+}
+function fixTabAfterDelete() {
+  if (todoListId && !listById(todoListId)) todoListId = null;
+  if (todoTopListId && !listById(todoTopListId)) todoTopListId = null;
+  if (todoFolderId && !folderById(todoFolderId)) todoFolderId = null;
+  if (!todoListId && !todoTopListId && !todoFolderId) { const tabs = todoTabs(); if (tabs.length) { if (tabs[0].kind === 'folder') todoFolderId = tabs[0].id; else todoTopListId = tabs[0].id; } }
+}
 function folderAllTodos(folderId) { return TodoDB.todos.filter(function (t) { return t.folderId === folderId || (t.listId && (function (l) { return l && l.folderId === folderId; })(listById(t.listId))); }); }
 function cmpDue(a, b, dir) { const x = a.due || '9999-99-99', y = b.due || '9999-99-99'; return (x < y ? -1 : x > y ? 1 : 0) * dir; }
 function sortTodos(arr, mode) {
@@ -1882,6 +1937,7 @@ function sortTodos(arr, mode) {
 }
 function curContainer() {
   if (todoListId) { const l = listById(todoListId); if (l) return { kind: 'list', obj: l, items: todosInList(l.id) }; }
+  if (todoTopListId) { const l = listById(todoTopListId); if (l) return { kind: 'list', obj: l, items: todosInList(l.id) }; }
   const f = folderById(todoFolderId); if (f) return { kind: 'folder', obj: f, items: todosDirect(f.id) };
   return null;
 }
@@ -1904,10 +1960,7 @@ const SVG_MORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>';
 function priceHTML(t) {
   if (t.price == null) return '';
-  let f = null;
-  if (t.folderId) f = folderById(t.folderId);
-  else if (t.listId) { const l = listById(t.listId); if (l) f = folderById(l.folderId); }
-  if (!isPriceFolder(f)) return '';
+  if (!todoInPriceScope(t)) return '';
   return '<span class="tdprice">¥' + Number(t.price).toLocaleString('ja-JP') + '</span>';
 }
 function todoRowHTML(t) {
@@ -1935,11 +1988,16 @@ function buildTodoHTML() {
   if (!TodoDB) return '';
   if (todoSpecial) return specialHTML(todoSpecial);
   if (todoListId && !listById(todoListId)) { todoListId = null; todoEdit = false; }
-  if (!todoListId && (!todoFolderId || !folderById(todoFolderId))) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
+  if (todoTopListId && !listById(todoTopListId)) todoTopListId = null;
+  if (!todoListId && !todoTopListId && (!todoFolderId || !folderById(todoFolderId))) {
+    todoFolderId = null;
+    const tabs = todoTabs();
+    if (tabs.length) { if (tabs[0].kind === 'folder') todoFolderId = tabs[0].id; else todoTopListId = tabs[0].id; }
+  }
   if (todoEdit) { const c = curContainer(); if (c) return editHTML(c); todoEdit = false; }
   if (todoListId) return listHTML(listById(todoListId));
-  if (todoFolderId) return folderHTML(folderById(todoFolderId));
-  return '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button></div><div class="tdnone">フォルダがありません</div><button class="tdfab plus" onclick="openFolderForm()" aria-label="フォルダを追加">＋</button>';
+  if (todoFolderId || todoTopListId) return tabsHTML();
+  return '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button><button class="tdfpill add" onclick="openListForm()">＋ リストを追加</button></div><div class="tdnone">フォルダもリストもありません</div><button class="tdfab plus" onclick="openListForm()" aria-label="リストを追加">＋</button>';
 }
 function renderTodo() {
   const wrap = $('todowrap'); if (!wrap) return;
@@ -1948,15 +2006,20 @@ function renderTodo() {
   wrap.innerHTML = buildTodoHTML();
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
   const pg = wrap.querySelector('.tdpager');
-  if (pg) { const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; }); if (i > 0) pg.scrollLeft = i * pg.clientWidth; attachPagerSync(pg); tdChipShownId = todoFolderId; centerChip(false); }
+  if (pg) { const tabs = todoTabs(); const ck = currentTabKey(); const i = tabs.findIndex(function (t) { return tabKeyOf(t.kind, t.id) === ck; }); if (i > 0) pg.scrollLeft = i * pg.clientWidth; attachPagerSync(pg); tdChipShownId = ck; centerChip(false); }
 }
-function sanitizeLayer(layer, folderIdForPager, S) {
+function tabBodyByKey(key) {
+  if (!key) { const tabs = todoTabs(); if (!tabs.length) return ''; key = tabKeyOf(tabs[0].kind, tabs[0].id); }
+  const id = +key.slice(1);
+  if (key.charAt(0) === 'f') { const f = folderById(id); return f ? folderBodyHTML(f) : ''; }
+  const l = listById(id); return l ? topListBodyHTML(l) : '';
+}
+function sanitizeLayer(layer, tabKeyForPager, S) {
   if (!layer) return [];
   const pg = layer.querySelector('.tdpager');
   if (pg) {
-    const f = folderById(folderIdForPager) || (TodoDB.folders && TodoDB.folders[0]);
     const stat = document.createElement('div');
-    if (f) stat.innerHTML = folderBodyHTML(f);
+    stat.innerHTML = tabBodyByKey(tabKeyForPager);
     pg.replaceWith(stat);
   }
   const fixed = Array.prototype.slice.call(layer.querySelectorAll('.tdfab, .tdeditbar, .tddelFab'));
@@ -1976,7 +2039,7 @@ function slideTo(dir, applyFn) {
   tdUndo = null;
   const wrap = $('todowrap');
   if (!wrap || !TodoDB) { applyFn(); renderTodo(); return; }
-  const oldFolderId = todoFolderId;
+  const oldTabKey = currentTabKey();
   const oldHTML = wrap.innerHTML;
   applyFn();
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
@@ -1990,8 +2053,8 @@ function slideTo(dir, applyFn) {
   const ghost = wrap.querySelector('.tdghost'), page = wrap.querySelector('.tdpagenew');
   ghost.innerHTML = oldHTML;
   page.innerHTML = newHTML;
-  sanitizeLayer(ghost, oldFolderId, S);
-  const newFixed = sanitizeLayer(page, todoFolderId, S);
+  sanitizeLayer(ghost, oldTabKey, S);
+  const newFixed = sanitizeLayer(page, currentTabKey(), S);
   newFixed.forEach(function (el) { wrap.appendChild(el); });
   const ease = 'cubic-bezier(.32,.72,.28,1)';
   if (dir === 'push') {
@@ -2003,9 +2066,11 @@ function slideTo(dir, applyFn) {
   }
   setTimeout(function () { wrap.style.height = ''; wrap.style.overflow = ''; renderTodo(); const mn = wrap.closest('main'); if (mn) mn.scrollTop = 0; }, 310);
 }
-function folderChipsHTML(f) {
-  return '<div class="tdfolders">' + TodoDB.folders.map(function (x) {
-    return '<button class="tdfpill' + (x.id === f.id ? ' on' : '') + '" onclick="pickTodoFolder(' + x.id + ')">' + esc(x.name) + '<span class="tdcnt">' + folderAllTodos(x.id).length + '</span></button>';
+function tabChipsHTML() {
+  const ck = currentTabKey();
+  return '<div class="tdfolders">' + todoTabs().map(function (t) {
+    if (t.kind === 'folder') { const x = folderById(t.id); return '<button class="tdfpill' + (ck === 'f' + t.id ? ' on' : '') + '" onclick="pickTodoTab(\'folder\',' + t.id + ')">' + esc(x.name) + '<span class="tdcnt">' + folderAllTodos(x.id).length + '</span></button>'; }
+    const x = listById(t.id); return '<button class="tdfpill' + (ck === 'l' + t.id ? ' on' : '') + '" onclick="pickTodoTab(\'list\',' + t.id + ')">' + esc(x.name) + '<span class="tdcnt">' + todosInList(x.id).length + '</span></button>';
   }).join('') + '<button class="tdfpill add" onclick="openFolderForm()">＋</button></div>';
 }
 function isPriceFolder(f) {
@@ -2021,26 +2086,31 @@ function priceCheckBtnHTML() {
 }
 function folderBodyHTML(f) {
   const lists = listsInFolder(f.id);
-  let direct = sortTodos(todosDirect(f.id), f.sort);
-  if (f.showDone === false) direct = direct.filter(function (t) { return !t.done; });
   let h = '<div class="tdsub"><span></span><span class="tdsubR">'
     + (isPriceFolder(f) ? priceCheckBtnHTML() : '')
     + '<button onclick="openListForm()">＋ リスト</button>'
-    + (direct.length || !lists.length ? '<button onclick="enterEdit()">' + SVG_EDIT + '編集</button>' : '')
     + '<button onclick="openFolderPop(this)">' + SVG_MORE + 'その他</button></span></div>';
   if (lists.length) h += lists.map(function (l) { return '<button class="tdlistrow" onclick="openTodoList(' + l.id + ')"><span class="nm">' + esc(l.name) + '</span><span class="tdcnt">' + todosInList(l.id).length + '</span><span class="chev">›</span></button>'; }).join('');
-  if (direct.length) h += todoRowsHTML(direct);
-  if (!lists.length && !direct.length) h += '<div class="tdnone">ToDoはありません</div>';
+  else h += '<div class="tdnone">リストはありません</div>';
+  return h;
+}
+function topListBodyHTML(l) {
+  const items = sortTodos(todosInList(l.id), l.sort);
+  let h = '<div class="tdsub"><span></span><span class="tdsubR">'
+    + (isPriceList(l) ? priceCheckBtnHTML() : '')
+    + '<button onclick="enterEdit()">' + SVG_EDIT + '編集</button>'
+    + '<button onclick="openTopListPop(this)">' + SVG_MORE + 'その他</button></span></div>';
+  h += items.length ? todoRowsHTML(items) : '<div class="tdnone">ToDoはありません</div>';
   return h;
 }
 function folderFabsHTML() {
   return '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
     + (tdUndo ? '<button class="tdfab undo" onclick="undoToggle()">' + SVG_UNDO + '</button>' : '')
-    + '<button class="tdfab plus" onclick="folderFab()">＋</button>';
+    + '<button class="tdfab plus" onclick="smartAdd()">＋</button>';
 }
-function folderHTML(f) {
-  return folderChipsHTML(f) + '<div class="tdpager" id="tdpager">'
-    + TodoDB.folders.map(function (x) { return '<div class="tdpage2" data-fid="' + x.id + '">' + folderBodyHTML(x) + '</div>'; }).join('')
+function tabsHTML() {
+  return tabChipsHTML() + '<div class="tdpager" id="tdpager">'
+    + todoTabs().map(function (t) { return '<div class="tdpage2" data-tab="' + tabKeyOf(t.kind, t.id) + '">' + (t.kind === 'folder' ? folderBodyHTML(folderById(t.id)) : topListBodyHTML(listById(t.id))) + '</div>'; }).join('')
     + '</div>' + folderFabsHTML();
 }
 /* ---- folder pager: full-width side-by-side slide, like the original app ---- */
@@ -2052,7 +2122,8 @@ function centerChip(smooth) {
   const target = Math.max(0, on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2);
   try { bar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' }); } catch (e) { bar.scrollLeft = target; }
 }
-function pickFolderState(id) { todoFolderId = id; todoListId = null; todoSpecial = null; todoEdit = false; todoSel.clear(); }
+function pickTabState(kind, id) { todoListId = null; todoSpecial = null; todoEdit = false; todoSel.clear(); if (kind === 'folder') { todoFolderId = id; todoTopListId = null; } else { todoTopListId = id; todoFolderId = null; } }
+function pickFolderState(id) { pickTabState('folder', id); }
 let tdPagerTimer = null, tdChipShownId = null, tdTrackQueued = false, tdChipLockId = null;
 function chipCenterTarget(bar, pill) { return Math.max(0, pill.offsetLeft - (bar.clientWidth - pill.offsetWidth) / 2); }
 function tdPagerTrack(pg) {
@@ -2061,15 +2132,16 @@ function tdPagerTrack(pg) {
   const pos = pg.scrollLeft / W;
   const bar = document.querySelector('#todowrap .tdfolders');
   const pills = bar ? bar.querySelectorAll('.tdfpill') : [];
-  const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pos)));
-  const f = TodoDB.folders[i];
-  if (f && f.id !== tdChipShownId && tdChipLockId === null) {
-    tdChipShownId = f.id;
-    TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === f.id); });
+  const tabs = todoTabs(); if (!tabs.length) return;
+  const i = Math.max(0, Math.min(tabs.length - 1, Math.round(pos)));
+  const key = tabKeyOf(tabs[i].kind, tabs[i].id);
+  if (key !== tdChipShownId && tdChipLockId === null) {
+    tdChipShownId = key;
+    tabs.forEach(function (t, k) { if (pills[k]) pills[k].classList.toggle('on', tabKeyOf(t.kind, t.id) === key); });
   }
   if (bar && pills.length && bar.scrollWidth > bar.clientWidth) {
-    const i0 = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.floor(pos)));
-    const i1 = Math.min(TodoDB.folders.length - 1, i0 + 1);
+    const i0 = Math.max(0, Math.min(tabs.length - 1, Math.floor(pos)));
+    const i1 = Math.min(tabs.length - 1, i0 + 1);
     const fr = Math.max(0, Math.min(1, pos - i0));
     if (pills[i0]) {
       const c0 = chipCenterTarget(bar, pills[i0]);
@@ -2082,10 +2154,12 @@ function syncPagerSettle(pg) {
   if (!pg || !document.contains(pg) || !TodoDB) return;
   tdPagerTrack(pg);
   const W = pg.clientWidth; if (!W) return;
-  const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pg.scrollLeft / W)));
-  if (tdChipLockId !== null) { const li = TodoDB.folders.findIndex(function (x) { return x.id === tdChipLockId; }); if (li === i) tdChipLockId = null; }
-  const f = TodoDB.folders[i]; if (!f || f.id === todoFolderId) return;
-  pickFolderState(f.id);
+  const tabs = todoTabs(); if (!tabs.length) return;
+  const i = Math.max(0, Math.min(tabs.length - 1, Math.round(pg.scrollLeft / W)));
+  const key = tabKeyOf(tabs[i].kind, tabs[i].id);
+  if (tdChipLockId !== null && tdChipLockId === key) tdChipLockId = null;
+  if (key === currentTabKey()) return;
+  pickTabState(tabs[i].kind, tabs[i].id);
 }
 function attachPagerSync(pg) {
   if (!pg) return;
@@ -2126,28 +2200,37 @@ function editHTML(c) {
     + '<button class="tddelFab' + off + '" onclick="bulkDelete()">' + SVG_TRASH + '</button>';
   return h;
 }
-function pickTodoFolder(id) {
-  if (!todoListId && !todoSpecial && !todoEdit && todoFolderId === id) return;
-  const plain = !todoListId && !todoSpecial && !todoEdit && todoFolderId != null;
-  const ni = TodoDB.folders.findIndex(function (x) { return x.id === id; });
+function pickTodoTab(kind, id) {
+  const key = tabKeyOf(kind, id);
+  if (!todoListId && !todoSpecial && !todoEdit && currentTabKey() === key) return;
+  const plain = !todoListId && !todoSpecial && !todoEdit && currentTabKey() != null;
+  const tabs = todoTabs();
+  const ni = tabs.findIndex(function (t) { return tabKeyOf(t.kind, t.id) === key; });
   const pg = document.querySelector('#todowrap .tdpager');
   if (plain && pg && ni >= 0) {
-    pickFolderState(id);
+    pickTabState(kind, id);
     const pills = document.querySelectorAll('#todowrap .tdfpill');
-    TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === id); });
-    tdChipShownId = id;
-    tdChipLockId = id;
-    setTimeout(function () { if (tdChipLockId === id) tdChipLockId = null; }, 700);
+    tabs.forEach(function (t, k) { if (pills[k]) pills[k].classList.toggle('on', tabKeyOf(t.kind, t.id) === key); });
+    tdChipShownId = key;
+    tdChipLockId = key;
+    setTimeout(function () { if (tdChipLockId === key) tdChipLockId = null; }, 700);
     pg.scrollTo({ left: ni * pg.clientWidth, behavior: tdReducedMotion() ? 'auto' : 'smooth' });
     return;
   }
-  pickFolderState(id); renderTodo();
+  pickTabState(kind, id); renderTodo();
 }
-function openTodoList(id) { const l = listById(id); if (!l) return; slideTo('push', function () { todoListId = id; todoFolderId = l.folderId; todoSpecial = null; todoEdit = false; todoSel.clear(); }); }
+function pickTodoFolder(id) { pickTodoTab('folder', id); }
+function openTodoList(id) { const l = listById(id); if (!l) return; slideTo('push', function () { todoListId = id; if (l.folderId) { todoFolderId = l.folderId; todoTopListId = null; } else { todoTopListId = id; todoFolderId = null; } todoSpecial = null; todoEdit = false; todoSel.clear(); }); }
 function closeTodoList() { slideTo('pop', function () { todoListId = null; todoEdit = false; todoSel.clear(); }); }
 function openSpecial(kind) { slideTo('push', function () { todoSpecial = kind; todoEdit = false; todoSel.clear(); }); }
 function closeSpecial() { slideTo('pop', function () { todoSpecial = null; }); }
-function folderFab() { openTodoAddForm(); }
+function smartAdd() {
+  if (todoListId || todoTopListId) { openTodoAddForm(); return; }
+  const f = folderById(todoFolderId); if (!f) { openListForm(); return; }
+  if (!listsInFolder(f.id).length) { openListForm(); return; }
+  openTodoAddForm();
+}
+function folderFab() { smartAdd(); }
 let tdUndo = null;
 function flipTodoRow(id, apply) {
   const wrap = $('todowrap');
@@ -2168,6 +2251,8 @@ function exitEdit() { todoEdit = false; todoSel.clear(); renderTodo(); }
 function toggleSel(id) { if (todoSel.has(id)) todoSel.delete(id); else todoSel.add(id); renderTodo(); }
 function toggleSelectAll() { const c = curContainer(); if (!c) return; if (todoSel.size >= c.items.length && c.items.length) todoSel.clear(); else c.items.forEach(function (t) { todoSel.add(t.id); }); renderTodo(); }
 function mergeTodoDb(local, remote) {
+  const goneF = new Set((local.goneFolders || []).concat(remote.goneFolders || []));
+  const goneL = new Set((local.goneLists || []).concat(remote.goneLists || []));
   const lTrash = {}, rTrash = {};
   (local.trash || []).forEach(function (t) { lTrash[t.id] = true; });
   (remote.trash || []).forEach(function (t) { rTrash[t.id] = true; });
@@ -2193,10 +2278,12 @@ function mergeTodoDb(local, remote) {
   });
   return {
     updatedAt: Math.max(local.updatedAt || 0, remote.updatedAt || 0),
-    folders: unionLocalFirst(local.folders, remote.folders),
-    lists: unionLocalFirst(local.lists, remote.lists),
+    folders: unionLocalFirst(local.folders, remote.folders).filter(function (f) { return !goneF.has(f.id); }),
+    lists: unionLocalFirst(local.lists, remote.lists).filter(function (l) { return !goneL.has(l.id); }),
     todos: todos,
-    trash: unionLocalFirst(local.trash, remote.trash)
+    trash: unionLocalFirst(local.trash, remote.trash),
+    goneFolders: Array.from(goneF),
+    goneLists: Array.from(goneL)
   };
 }
 let pricePollTimers = [];
@@ -2209,13 +2296,7 @@ function startPricePolls() {
 }
 function hasUnpricedWishlist(db) {
   if (!db) return false;
-  return (db.todos || []).some(function (t) {
-    if (t.done || t.price != null) return false;
-    let f = null;
-    if (t.folderId) f = folderById(t.folderId);
-    else if (t.listId) { const l = listById(t.listId); if (l) f = folderById(l.folderId); }
-    return isPriceFolder(f);
-  });
+  return (db.todos || []).some(function (t) { return !t.done && t.price == null && todoInPriceScope(t); });
 }
 function attemptTodoRescue() {
   if (syncRunning) return;
@@ -2272,7 +2353,9 @@ async function syncTodo() {
     const snap = function (d) { return JSON.stringify({ f: d.folders, l: d.lists, t: d.todos, r: d.trash }); };
     const remoteSnap = snap(remote);
     const merged = mergeTodoDb(TodoDB, remote);
-    TodoDB = merged; saveTodoLocal();
+    TodoDB = merged;
+    if (migrateTodoStructure()) { TodoDB.updatedAt = Date.now(); }
+    saveTodoLocal();
     if (currentView === 'todo') renderTodo();
     if (snap(merged) !== remoteSnap) {
       TodoDB.updatedAt = Date.now(); saveTodoLocal();
@@ -2352,7 +2435,10 @@ function tdConfirm(title, msg, okLabel, fn) {
 /* ---- list form ---- */
 let lf = null;
 function openListForm() {
-  lf = { name: '', folderId: todoFolderId, pos: 'first', sort: 'custom' };
+  let fid = todoFolderId;
+  if (todoListId) { const cl = listById(todoListId); fid = cl ? cl.folderId : null; }
+  else if (todoTopListId) fid = null;
+  lf = { name: '', folderId: fid, pos: 'first', sort: 'custom' };
   renderListForm();
 }
 function renderListForm() {
@@ -2361,7 +2447,7 @@ function renderListForm() {
   tdOpen(tdHead('リストの追加', true) + '<div class="tdfbody">'
     + '<input id="lfname" class="tdfinput" placeholder="リスト名" value="' + escA(lf.name) + '">'
     + '<div class="tdfcard">'
-    + '<button class="tdfopt" onclick="lfFolderScreen()"><span class="lb">フォルダ</span><span class="vl">' + esc(f ? f.name : 'なし') + '</span><span class="chev">›</span></button>'
+    + '<button class="tdfopt" onclick="lfFolderScreen()"><span class="lb">フォルダ</span><span class="vl">' + esc(f ? f.name : 'なし（最上位）') + '</span><span class="chev">›</span></button>'
     + '<button class="tdfopt" onclick="lfPosToggle()"><span class="lb">リストの挿入位置</span><span class="vl">' + (lf.pos === 'first' ? '先頭' : '最末尾') + '</span><span class="chev">⇅</span></button>'
     + '<button class="tdfopt" onclick="lfSortScreen()"><span class="lb">ToDoの並び順</span><span class="vl">' + SORT_LABEL[lf.sort] + '</span><span class="chev">›</span></button>'
     + '</div></div>');
@@ -2373,15 +2459,15 @@ function lfFolderScreen() {
   TDOK = null;
   tdOpen(tdHead('フォルダ選択', false, 'renderListForm()') + '<div class="tdfbody">'
     + '<input id="lfnf" class="tdfinput" placeholder="＋ 新しいフォルダ">'
-    + '<div class="tdfcard"><button class="tdfopt" onclick="lfPickFolder(null)"><span class="lb">なし</span>' + (!lf.folderId ? '<span class="chk">✓</span>' : '') + '</button>'
+    + '<div class="tdfcard"><button class="tdfopt" onclick="lfPickFolder(null)"><span class="lb">なし（最上位）</span>' + (!lf.folderId ? '<span class="chk">✓</span>' : '') + '</button>'
     + TodoDB.folders.map(function (f) { return '<button class="tdfopt" onclick="lfPickFolder(' + f.id + ')"><span class="lb">' + esc(f.name) + '</span>' + (lf.folderId === f.id ? '<span class="chk">✓</span>' : '') + '</button>'; }).join('')
-    + '</div><p class="tdfnote">「＋ 新しいフォルダ」に名前を入れて Enter でも作れます。フォルダ「なし」のリストは、いま開いているフォルダに入ります。</p></div>');
+    + '</div><p class="tdfnote">「＋ 新しいフォルダ」に名前を入れて Enter でも作れます。フォルダ「なし」のリストは、最上位（フォルダの外）に置かれます。</p></div>');
   const inp = $('lfnf');
   inp.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { const nm = inp.value.trim(); if (!nm) return; const f = { id: Date.now(), name: nm, sort: 'custom' }; TodoDB.folders.push(f); touchTodo(); lf.folderId = f.id; renderListForm(); }
   });
 }
-function lfPickFolder(id) { lf.folderId = id || todoFolderId; renderListForm(); }
+function lfPickFolder(id) { lf.folderId = id; renderListForm(); }
 function lfSortScreen() {
   TDOK = null;
   const opt = function (key, sub) { return '<button class="tdfopt" onclick="lfPickSort(\'' + key + '\')"><span class="lb">' + SORT_LABEL[key] + (sub ? '<span class="tdfsub">' + sub + '</span>' : '') + '</span>' + (lf.sort === key ? '<span class="chk">✓</span>' : '') + '</button>'; };
@@ -2392,11 +2478,11 @@ function lfSortScreen() {
 function lfPickSort(key) { lf.sort = key; renderListForm(); }
 function saveListForm() {
   const nm = (lf.name || '').trim(); if (!nm) return;
-  const l = { id: Date.now(), folderId: lf.folderId || todoFolderId, name: nm, sort: lf.sort };
+  const l = { id: Date.now(), folderId: lf.folderId, name: nm, sort: lf.sort };
   const arr = TodoDB.lists;
   if (lf.pos === 'first') { const idx = arr.findIndex(function (x) { return x.folderId === l.folderId; }); if (idx < 0) arr.push(l); else arr.splice(idx, 0, l); }
   else arr.push(l);
-  touchTodo(); todoFolderId = l.folderId; tdClose(); renderTodo();
+  touchTodo(); todoListId = null; if (l.folderId) { todoFolderId = l.folderId; todoTopListId = null; } else { todoTopListId = l.id; todoFolderId = null; } tdClose(); renderTodo();
 }
 /* ---- folder form ---- */
 let ff = null;
@@ -2416,15 +2502,23 @@ function saveFolderForm() {
   const nm = (ff.name || '').trim(); if (!nm) return;
   const f = { id: Date.now(), name: nm, sort: 'custom' };
   if (ff.pos === 'first') TodoDB.folders.unshift(f); else TodoDB.folders.push(f);
-  todoFolderId = f.id; todoListId = null; touchTodo(); tdClose(); renderTodo();
+  todoFolderId = f.id; todoListId = null; todoTopListId = null; touchTodo(); tdClose(); renderTodo();
 }
 /* ---- todo add / edit form ---- */
 let tf = null;
 function openTodoAddForm() {
   const c = curContainer(); if (!c) return;
-  tf = { todoId: null, listId: c.kind === 'list' ? c.obj.id : null, folderId: c.kind === 'folder' ? c.obj.id : null, title: '', due: '', color: null };
+  tf = { todoId: null, listId: c.kind === 'list' ? c.obj.id : null, folderId: c.kind === 'folder' ? c.obj.id : null, title: '', due: '', color: null, pickList: c.kind === 'folder' };
+  if (tf.pickList) { const ls = listsInFolder(tf.folderId); if (ls.length) tf.listId = ls[0].id; }
   renderTodoForm();
 }
+function tfListScreen() {
+  TDOK = null;
+  tdOpen(tdHead('入れるリスト', false, 'renderTodoForm()') + '<div class="tdfbody"><div class="tdfcard">'
+    + listsInFolder(tf.folderId).map(function (l) { return '<button class="tdfopt" onclick="tfPickList(' + l.id + ')"><span class="lb">' + esc(l.name) + '</span>' + (tf.listId === l.id ? '<span class="chk">✓</span>' : '') + '</button>'; }).join('')
+    + '</div></div>');
+}
+function tfPickList(id) { tf.listId = id; renderTodoForm(); }
 function openTodoEditForm(id) {
   const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return;
   tf = { todoId: t.id, listId: t.listId, folderId: t.folderId, title: t.title, due: t.due || '', color: t.color || null };
@@ -2434,6 +2528,7 @@ function renderTodoForm() {
   TDOK = saveTodoForm;
   tdOpen(tdHead(tf.todoId ? 'ToDoを編集' : 'ToDoの追加', true) + '<div class="tdfbody">'
     + '<input id="tftitle" class="tdfinput" placeholder="ToDo名" value="' + escA(tf.title) + '">'
+    + (tf.pickList ? '<div class="tdfcard" style="margin-top:14px"><button class="tdfopt" onclick="tfListScreen()"><span class="lb">入れるリスト</span><span class="vl">' + esc((listById(tf.listId) || {}).name || '') + '</span><span class="chev">›</span></button></div>' : '')
     + '<div class="tdflabel">期限</div><div style="display:flex;gap:8px;align-items:center">'
     + '<input id="tfdue" type="date" class="tdfinput" style="flex:1" value="' + esc(tf.due || '') + '">'
     + '<button class="tdfx" style="border-radius:12px;width:auto;padding:0 14px;font-size:13px" onclick="tfClearDue()">クリア</button></div>'
@@ -2527,41 +2622,31 @@ function sortPageItems() {
   ];
 }
 function openSortPop(anchor) { tdPopShow(anchor, sortPageItems()); }
-function openListPop(anchor) {
-  const l = listById(todoListId); if (!l) return;
+function listPopItems(l) {
   const items = [];
-  if (isPriceFolder(folderById(l.folderId))) items.push({ label: '全件再チェック', fn: function () { requestPriceCheck(); } });
+  if (isPriceFolder(folderById(l.folderId)) || isPriceList(l)) items.push({ label: '全件再チェック', fn: function () { requestPriceCheck(); } });
   items.push(
     { label: 'リスト名を編集', fn: function () { openRename('list', l.id); } },
     { label: '並び替え', chev: true, fn: function () { tdPopShow(null, sortPageItems()); } },
     { label: '全てを完了済みに', fn: function () { setAllDone(true); } },
     { label: '全てを未完了に', fn: function () { setAllDone(false); } },
     { label: 'Todoをまとめて登録', fn: openBulkRegister },
-    { label: 'リストをコピー', fn: copyList },
+    { label: 'リストをコピー', fn: function () { copyListById(l.id); } },
     { label: 'リストをシェア', fn: shareList },
-    { label: 'リストを削除', danger: true, fn: confirmDeleteList }
+    { label: 'リストを削除', danger: true, fn: function () { confirmDeleteListById(l.id); } }
   );
-  tdPopShow(anchor, items);
+  return items;
 }
+function openListPop(anchor) { const l = listById(todoListId); if (!l) return; tdPopShow(anchor, listPopItems(l)); }
+function openTopListPop(anchor) { const l = listById(todoTopListId); if (!l) return; tdPopShow(anchor, listPopItems(l)); }
 function openFolderPop(anchor) {
   const f = folderById(todoFolderId); if (!f) return;
-  if (listsInFolder(f.id).length) {
-    tdPopShow(anchor, [
-      { label: 'フォルダ名の編集', fn: function () { openRename('folder', f.id); } },
-      { label: 'リスト順の並び替え', fn: function () { openAdminLists(f.id); } },
-      { label: '表示設定', chev: true, fn: function () { tdPopShow(null, displayItems(f)); } },
-      { label: 'フォルダの削除', danger: true, fn: confirmDeleteFolder }
-    ]);
-  } else {
-    tdPopShow(anchor, [
-      { label: 'フォルダ名を編集', fn: function () { openRename('folder', f.id); } },
-      { label: '並び替え', chev: true, fn: function () { tdPopShow(null, sortPageItems()); } },
-      { label: '全てを完了済みに', fn: function () { setAllDone(true); } },
-      { label: '全てを未完了に', fn: function () { setAllDone(false); } },
-      { label: 'Todoをまとめて登録', fn: openBulkRegister },
-      { label: 'フォルダの削除', danger: true, fn: confirmDeleteFolder }
-    ]);
-  }
+  tdPopShow(anchor, [
+    { label: 'フォルダ名の編集', fn: function () { openRename('folder', f.id); } },
+    { label: 'リスト順の並び替え', fn: function () { openAdminLists(f.id); } },
+    { label: '表示設定', chev: true, fn: function () { tdPopShow(null, displayItems(f)); } },
+    { label: 'フォルダの削除', danger: true, fn: confirmDeleteFolder }
+  ]);
 }
 function displayItems(f) {
   return [
@@ -2575,8 +2660,8 @@ function setAllDone(v) {
   scope.forEach(function (t) { t.done = v; });
   touchTodo(); renderTodo();
 }
-function copyList() {
-  const l = listById(todoListId); if (!l) return;
+function copyListById(lid) {
+  const l = listById(lid); if (!l) return;
   const nl = { id: Date.now(), folderId: l.folderId, name: l.name + 'のコピー', sort: l.sort };
   TodoDB.lists.push(nl);
   const base = Date.now();
@@ -2594,18 +2679,19 @@ function fallbackCopy(text) {
   const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
   document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove();
 }
-function confirmDeleteList() {
-  const l = listById(todoListId); if (!l) return;
+function confirmDeleteListById(lid) {
+  const l = listById(lid); if (!l) return;
   openSheet('<h3>リストを削除</h3><p class="msg">「' + esc(l.name) + '」とその中身をすべて削除します。</p>'
-    + '<button class="sheetbtn danger" onclick="doDeleteList()">削除する</button>'
+    + '<button class="sheetbtn danger" onclick="doDeleteListById(' + lid + ')">削除する</button>'
     + '<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
 }
-function doDeleteList() {
-  const id = todoListId;
+function doDeleteListById(id) {
   moveToTrash(todosInList(id));
   TodoDB.todos = TodoDB.todos.filter(function (t) { return t.listId !== id; });
   TodoDB.lists = TodoDB.lists.filter(function (l) { return l.id !== id; });
-  todoListId = null; touchTodo(); closeSheet(); renderTodo();
+  if (TodoDB.goneLists.indexOf(id) < 0) TodoDB.goneLists.push(id);
+  fixTabAfterDelete();
+  touchTodo(); closeSheet(); renderTodo();
 }
 function confirmDeleteFolder() {
   const f = folderById(todoFolderId); if (!f) return;
@@ -2619,8 +2705,10 @@ function doDeleteFolder(id) {
   TodoDB.todos = TodoDB.todos.filter(function (t) { return t.folderId !== id && !listIds.has(t.listId); });
   TodoDB.lists = TodoDB.lists.filter(function (l) { return l.folderId !== id; });
   TodoDB.folders = TodoDB.folders.filter(function (f) { return f.id !== id; });
-  if (todoFolderId === id) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
-  todoListId = null; touchTodo(); closeSheet(); renderTodo();
+  if (TodoDB.goneFolders.indexOf(id) < 0) TodoDB.goneFolders.push(id);
+  listIds.forEach(function (lid) { if (TodoDB.goneLists.indexOf(lid) < 0) TodoDB.goneLists.push(lid); });
+  fixTabAfterDelete();
+  touchTodo(); closeSheet(); renderTodo();
 }
 function clearCompleted() {
   const c = curContainer(); if (!c) return;
@@ -2679,16 +2767,14 @@ function bulkMove() {
   if (!todoSel.size) return;
   TDOK = null;
   let rows = TodoDB.folders.map(function (f) {
-    let r = '<button class="tdfopt" onclick="bulkMoveTo(\'folder\',' + f.id + ')"><span class="lb">' + esc(f.name) + '<span class="tdfsub">フォルダ直下</span></span></button>';
-    listsInFolder(f.id).forEach(function (l) { r += '<button class="tdfopt" onclick="bulkMoveTo(\'list\',' + l.id + ')"><span class="lb">' + esc(l.name) + '<span class="tdfsub">' + esc(f.name) + '</span></span></button>'; });
-    return r;
+    return listsInFolder(f.id).map(function (l) { return '<button class="tdfopt" onclick="bulkMoveTo(\'list\',' + l.id + ')"><span class="lb">' + esc(l.name) + '<span class="tdfsub">' + esc(f.name) + '</span></span></button>'; }).join('');
   }).join('');
+  rows += topLists().map(function (l) { return '<button class="tdfopt" onclick="bulkMoveTo(\'list\',' + l.id + ')"><span class="lb">' + esc(l.name) + '<span class="tdfsub">最上位</span></span></button>'; }).join('');
   tdOpen(tdHead('移動先を選択', false) + '<div class="tdfbody"><div class="tdfcard">' + rows + '</div></div>');
 }
 function bulkMoveTo(kind, id) {
-  selTodos().forEach(function (t) {
-    if (kind === 'list') { t.listId = id; t.folderId = null; } else { t.listId = null; t.folderId = id; }
-  });
+  const l = listById(id); if (!l) return;
+  selTodos().forEach(function (t) { t.listId = id; t.folderId = l.folderId; });
   touchTodo(); tdClose(); exitEdit();
 }
 function bulkDup() {
@@ -2730,8 +2816,8 @@ function renderTodoSearch(q) {
 function gotoTodo(id) {
   const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return;
   tdClose(); todoEdit = false; todoSel.clear();
-  if (t.listId) { const l = listById(t.listId); todoFolderId = l ? l.folderId : todoFolderId; todoListId = t.listId; }
-  else { todoListId = null; todoFolderId = t.folderId; }
+  if (t.listId) { const l = listById(t.listId); if (l && !l.folderId) { todoTopListId = l.id; todoFolderId = null; } else { todoFolderId = l ? l.folderId : todoFolderId; todoTopListId = null; } todoListId = t.listId; }
+  else { todoListId = null; todoFolderId = t.folderId; todoTopListId = null; }
   showView('todo'); renderTodo();
 }
 /* ---- trash ---- */
@@ -2743,8 +2829,20 @@ function restoreTodo(id) {
   const i = TodoDB.trash.findIndex(function (t) { return t.id === id; }); if (i < 0) return;
   const t = TodoDB.trash[i]; TodoDB.trash.splice(i, 1);
   if (t.listId && !listById(t.listId)) t.listId = null;
-  if (!t.listId && (!t.folderId || !folderById(t.folderId))) t.folderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
-  if (t.listId) t.folderId = null;
+  if (t.listId) { t.folderId = listById(t.listId).folderId; }
+  else {
+    let f = t.folderId ? folderById(t.folderId) : null;
+    if (!f) f = TodoDB.folders[0] || null;
+    if (f) {
+      const ls = listsInFolder(f.id);
+      if (ls.length) { t.listId = ls[0].id; t.folderId = f.id; }
+      else { const nl = { id: newTdId(), folderId: f.id, name: f.name, sort: 'custom' }; TodoDB.lists.push(nl); t.listId = nl.id; t.folderId = f.id; }
+    } else {
+      const tl = topLists();
+      if (tl.length) { t.listId = tl[0].id; t.folderId = null; }
+      else { const nl = { id: newTdId(), folderId: null, name: 'リスト', sort: 'custom' }; TodoDB.lists.push(nl); t.listId = nl.id; t.folderId = null; }
+    }
+  }
   delete t.deletedAt;
   TodoDB.todos.push(t); touchTodo(); renderTodo();
 }
@@ -2822,6 +2920,7 @@ function openDrawer() {
 function closeDrawer() { const d = $('tddrawer'); d.classList.remove('show'); setTimeout(function () { d.classList.remove('open'); }, 300); }
 function drawerGo(kind) { closeDrawer(); setTimeout(function () { openSpecial(kind); }, 80); }
 function drawerGoFolder(id) { closeDrawer(); setTimeout(function () { pickTodoFolder(id); }, 80); }
+function drawerGoList(id) { closeDrawer(); setTimeout(function () { pickTodoTab('list', id); }, 80); }
 function drawerAddList() { closeDrawer(); setTimeout(openListForm, 80); }
 function drawerAddFolder() { closeDrawer(); setTimeout(openFolderForm, 80); }
 function drawerTabSetting() { openSheet('<h3>タブ表示・起動画面設定</h3><p class="msg">このアプリではタブ（リスト／カレンダー／Todo／設定）は固定です。</p><button class="sheetbtn primary" onclick="closeSheet()">閉じる</button>'); }
@@ -2837,6 +2936,9 @@ function renderDrawer() {
   h += '<div class="tddr-sec"><span class="t">作成したリスト</span><button onclick="openAdminRoot()">編集</button></div>';
   h += TodoDB.folders.map(function (f) {
     return '<button class="tddr-row" onclick="drawerGoFolder(' + f.id + ')">' + SVG_FOLDER + '<span class="nm">' + esc(f.name) + '</span><span class="tdcnt">' + folderAllTodos(f.id).length + '</span><span class="chev">›</span></button>';
+  }).join('');
+  h += topLists().map(function (l) {
+    return '<button class="tddr-row" onclick="drawerGoList(' + l.id + ')">' + SVG_EDIT + '<span class="nm">' + esc(l.name) + '</span><span class="tdcnt">' + todosInList(l.id).length + '</span></button>';
   }).join('');
   h += '<div class="tddr-bottom"><button class="tddr-add" onclick="drawerAddList()">＋ リストを追加</button><button class="tddr-fadd" onclick="drawerAddFolder()">' + SVG_FOLDERADD + '</button></div>';
   $('tdpanel').innerHTML = h;
@@ -2856,7 +2958,13 @@ function renderAdminRoot() {
       + (listsInFolder(f.id).length ? '<button style="color:var(--muted);font-size:19px;padding:4px 8px" onclick="openAdminLists(' + f.id + ')">›</button>' : '')
       + '<span class="tdhandle">☰</span></div>';
   }).join('');
-  tdModalOpen(tmHead('リストの並び替え・編集') + '<p class="tmnote">項目をタップすると名前を編集できます</p><div class="tmcard" data-dragkind="folders">' + rows + '</div>');
+  const tlRows = topLists().map(function (l) {
+    return '<div class="tmrow" data-dragid="' + l.id + '"><button class="tdminus" onclick="adminDelList(' + l.id + ', true)">−</button>'
+      + '<button class="nm" onclick="adminRename(\'list\',' + l.id + ')">' + esc(l.name) + '</button>'
+      + '<span class="tdhandle">☰</span></div>';
+  }).join('');
+  tdModalOpen(tmHead('リストの並び替え・編集') + '<p class="tmnote">項目をタップすると名前を編集できます</p><div class="tmcard" data-dragkind="folders">' + rows + '</div>'
+    + (tlRows ? '<p class="tmnote" style="margin-top:14px">最上位のリスト</p><div class="tmcard" data-dragkind="toplists">' + tlRows + '</div>' : ''));
 }
 let adminListFolder = null;
 function openAdminLists(folderId) { adminListFolder = folderId; renderAdminLists(); }
@@ -2873,7 +2981,7 @@ let admRn = null;
 function adminRename(kind, id) {
   const obj = kind === 'list' ? listById(id) : folderById(id); if (!obj) return;
   admRn = { kind: kind, id: id };
-  const back = kind === 'list' ? 'renderAdminLists()' : 'renderAdminRoot()';
+  const back = (kind === 'list' && obj.folderId) ? 'renderAdminLists()' : 'renderAdminRoot()';
   tdModalOpen(tmHead(kind === 'list' ? 'リスト名編集' : 'フォルダ名編集', back)
     + '<input id="admname" class="tdfinput" value="' + escA(obj.name) + '">'
     + '<button class="sheetbtn primary" style="margin-top:16px" onclick="adminRenameSave()">保存</button>');
@@ -2884,7 +2992,7 @@ function adminRenameSave() {
   const obj = admRn.kind === 'list' ? listById(admRn.id) : folderById(admRn.id);
   if (obj) obj.name = nm;
   touchTodo(); renderTodo();
-  if (admRn.kind === 'list') renderAdminLists(); else renderAdminRoot();
+  if (admRn.kind === 'list' && obj && obj.folderId) renderAdminLists(); else renderAdminRoot();
 }
 function adminDelFolder(id) {
   const f = folderById(id); if (!f) return;
@@ -2892,14 +3000,15 @@ function adminDelFolder(id) {
     doDeleteFolderSilent(id); renderAdminRoot(); renderTodo();
   });
 }
-function adminDelList(id) {
+function adminDelList(id, fromRoot) {
   const l = listById(id); if (!l) return;
   tdConfirm('リストを削除', '「' + l.name + '」の中のToDoをすべてゴミ箱に移動しますか？', '削除する', function () {
     moveToTrash(todosInList(id));
     TodoDB.todos = TodoDB.todos.filter(function (t) { return t.listId !== id; });
     TodoDB.lists = TodoDB.lists.filter(function (x) { return x.id !== id; });
-    if (todoListId === id) todoListId = null;
-    touchTodo(); renderAdminLists(); renderTodo();
+    if (TodoDB.goneLists.indexOf(id) < 0) TodoDB.goneLists.push(id);
+    fixTabAfterDelete();
+    touchTodo(); if (fromRoot) renderAdminRoot(); else renderAdminLists(); renderTodo();
   });
 }
 function doDeleteFolderSilent(id) {
@@ -2908,8 +3017,10 @@ function doDeleteFolderSilent(id) {
   TodoDB.todos = TodoDB.todos.filter(function (t) { return t.folderId !== id && !listIds.has(t.listId); });
   TodoDB.lists = TodoDB.lists.filter(function (l) { return l.folderId !== id; });
   TodoDB.folders = TodoDB.folders.filter(function (f) { return f.id !== id; });
-  if (todoFolderId === id) todoFolderId = TodoDB.folders.length ? TodoDB.folders[0].id : null;
-  todoListId = null; touchTodo();
+  if (TodoDB.goneFolders.indexOf(id) < 0) TodoDB.goneFolders.push(id);
+  listIds.forEach(function (lid) { if (TodoDB.goneLists.indexOf(lid) < 0) TodoDB.goneLists.push(lid); });
+  fixTabAfterDelete();
+  touchTodo();
 }
 /* ---- swipe back ---- */
 let tdSwipe = null;
@@ -3077,6 +3188,13 @@ document.addEventListener('pointerup', function () {
     const idSet = new Set(mine.map(function (l) { return l.id; })); let i = 0;
     TodoDB.lists = TodoDB.lists.map(function (l) { return idSet.has(l.id) ? sorted[i++] : l; });
     touchTodo(); renderAdminLists(); renderTodo();
+  } else if (ctx.kind === 'toplists') {
+    const mine = topLists();
+    const map = {}; mine.forEach(function (l) { map[l.id] = l; });
+    const sorted = ids.map(function (id) { return map[id]; }).filter(Boolean);
+    const idSet = new Set(mine.map(function (l) { return l.id; })); let i = 0;
+    TodoDB.lists = TodoDB.lists.map(function (l) { return idSet.has(l.id) ? sorted[i++] : l; });
+    touchTodo(); renderAdminRoot(); renderTodo();
   }
 });
 
