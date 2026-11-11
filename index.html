@@ -21,6 +21,7 @@
   html, body { margin: 0; padding: 0; }
   body {
     --fs: 16px;
+    --uifont: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
     background: var(--bg); color: var(--text);
     font-size: var(--fs); line-height: var(--lh, 1.7);
     padding-bottom: 108px;
@@ -59,6 +60,16 @@
   }
 
   button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+  /* UIの文字は常にゴシック体（本文とカードのタイトル／プレビューだけ選択フォント） */
+  #syncbar, .searchbar input, .searchcount, .empty, .taglabel, .tagchip, .tagnote, .tagclear,
+  .card .when, .card .tagline, .card .photomark,
+  .datepill, .photoline, .editmeta label,
+  .sheet h3, .sheet .msg, .sheetbtn, .yearitem,
+  .srow, .pillrow, .panelnav, .setlabel, .note, .syncstat, .seg, .btn, .textin,
+  .setgroup > h2, .caldayhead, .addphoto {
+    font-family: var(--uifont);
+  }
+  .tagnote { color: var(--muted); font-size: calc(var(--fs) * .85); margin: 0 4px; }
   input, textarea, select { font: inherit; color: inherit; }
   a { color: var(--accent); }
 
@@ -821,7 +832,7 @@ function renderSearch(){
       '<div class="taglabel">タグ</div>'+
       (tags.length
         ? '<div class="tagcloud">'+tags.map(tc=>tagChipHTML(tc[0], tc[1])).join('')+'</div>'
-        : '<div style="color:var(--muted); font-size:calc(var(--fs) * .85); margin:0 4px">まだタグはありません。本文に #制作 のように書くと、ここに自動で集まります。</div>');
+        : '<div class="tagnote">まだタグはありません。本文に #制作 のように書くと、ここに自動で集まります。</div>');
     return;
   }
   const es=visibleEntries().filter(e=>(e.text||'').includes(q)).sort(cmpDesc);
@@ -1057,7 +1068,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.9', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.10', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1110,7 +1121,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.9 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.10 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
