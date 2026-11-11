@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.35">
+<meta name="app-version" content="1.36">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -220,6 +220,8 @@
   .tdfab.plus { right: 18px; background: var(--text); color: var(--bg); font-size: 26px; font-weight: 300; }
   .tdfab.trash { left: 18px; background: var(--card2); color: var(--muted); }
   .tdfab svg { width: 22px; height: 22px; }
+  .tdfab.undo { left: 82px; background: var(--card2); color: var(--text); }
+  .tddonehead { font-family: var(--uifont); font-size: 13px; color: var(--muted); margin: 22px 4px 0; letter-spacing: .05em; }
   .tdeditbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 4px; background: var(--card2); border-radius: 999px; padding: 7px 10px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
   .tdeditbar button { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text); }
   .tdeditbar button.off { opacity: .35; }
@@ -1744,7 +1746,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.35';
+const APP_VERSION='1.36';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1831,13 +1833,21 @@ function dueLabel(due) {
   return '<span class="tddue' + (due < today ? ' over' : '') + '">' + lb + '</span>';
 }
 const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7"/></svg>';
+const SVG_UNDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>';
 const SVG_MORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><circle cx="8.2" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.8" cy="12" r="1.25" fill="currentColor" stroke="none"/></svg>';
 const SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>';
 function todoRowHTML(t) {
   const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
-  return '<div class="tdrow"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
+  return '<div class="tdrow" data-tid="' + t.id + '"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
     + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div></div>';
+}
+function todoRowsHTML(items) {
+  const act = items.filter(function (t) { return !t.done; });
+  const done = items.filter(function (t) { return t.done; });
+  let h = act.map(todoRowHTML).join('');
+  if (done.length) h += '<div class="tddonehead">完了済み</div>' + done.map(todoRowHTML).join('');
+  return h;
 }
 function todoEditRowHTML(t) {
   const on = todoSel.has(t.id);
@@ -1863,6 +1873,7 @@ function renderTodo() {
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
 }
 function slideTo(dir, applyFn) {
+  tdUndo = null;
   const wrap = $('todowrap');
   if (!wrap || !TodoDB) { applyFn(); renderTodo(); return; }
   const oldHTML = wrap.innerHTML;
@@ -1896,9 +1907,10 @@ function folderHTML(f) {
     + (direct.length || !lists.length ? '<button onclick="enterEdit()">' + SVG_EDIT + '編集</button>' : '')
     + '<button onclick="openFolderPop(this)">' + SVG_MORE + 'その他</button></span></div>';
   if (lists.length) h += lists.map(function (l) { return '<button class="tdlistrow" onclick="openTodoList(' + l.id + ')"><span class="nm">' + esc(l.name) + '</span><span class="tdcnt">' + todosInList(l.id).length + '</span><span class="chev">›</span></button>'; }).join('');
-  if (direct.length) h += direct.map(todoRowHTML).join('');
+  if (direct.length) h += todoRowsHTML(direct);
   if (!lists.length && !direct.length) h += '<div class="tdnone">ToDoはありません</div>';
   h += '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
+    + (tdUndo ? '<button class="tdfab undo" onclick="undoToggle()">' + SVG_UNDO + '</button>' : '')
     + '<button class="tdfab plus" onclick="folderFab()">＋</button>';
   return h;
 }
@@ -1908,8 +1920,9 @@ function listHTML(l) {
   if (of && of.showDone === false) items = items.filter(function (t) { return !t.done; });
   let h = '<div class="tdbackbar"><button class="tdback" onclick="closeTodoList()">‹</button><div class="tdltitle">' + esc(l.name) + '</div><button class="tdiconbtn" onclick="openTodoSearch()">' + SVG_SEARCH + '</button></div>';
   h += '<div class="tdsub"><span></span><span class="tdsubR"><button onclick="enterEdit()">' + SVG_EDIT + '編集</button><button onclick="openListPop(this)">' + SVG_MORE + 'その他</button></span></div>';
-  h += items.length ? items.map(todoRowHTML).join('') : '<div class="tdnone">ToDoはありません</div>';
+  h += items.length ? todoRowsHTML(items) : '<div class="tdnone">ToDoはありません</div>';
   h += '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
+    + (tdUndo ? '<button class="tdfab undo" onclick="undoToggle()">' + SVG_UNDO + '</button>' : '')
     + '<button class="tdfab plus" onclick="openTodoAddForm()">＋</button>';
   return h;
 }
@@ -1933,7 +1946,21 @@ function closeTodoList() { slideTo('pop', function () { todoListId = null; todoE
 function openSpecial(kind) { slideTo('push', function () { todoSpecial = kind; todoEdit = false; todoSel.clear(); }); }
 function closeSpecial() { slideTo('pop', function () { todoSpecial = null; }); }
 function folderFab() { const f = folderById(todoFolderId); if (f && listsInFolder(f.id).length && !todosDirect(f.id).length) openListForm(); else openTodoAddForm(); }
-function toggleTodo(id) { const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return; t.done = !t.done; touchTodo(); renderTodo(); }
+let tdUndo = null;
+function flipTodoRow(id, apply) {
+  const wrap = $('todowrap');
+  let fromTop = null, hadHead = false;
+  if (wrap) { const el = wrap.querySelector('[data-tid="' + id + '"]'); if (el) fromTop = el.getBoundingClientRect().top; hadHead = !!wrap.querySelector('.tddonehead'); }
+  apply(); touchTodo(); renderTodo();
+  if (wrap && fromTop !== null) {
+    const el2 = wrap.querySelector('[data-tid="' + id + '"]');
+    if (el2) { const dy = fromTop - el2.getBoundingClientRect().top; if (dy) { el2.style.position = 'relative'; el2.style.zIndex = '3'; el2.animate([{ transform: 'translateY(' + dy + 'px)' }, { transform: 'translateY(0px)' }], { duration: 380, easing: 'cubic-bezier(.32,.72,.28,1)' }); } }
+    const head = wrap.querySelector('.tddonehead');
+    if (head && !hadHead) head.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' });
+  }
+}
+function toggleTodo(id) { const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return; const prev = t.done; if (!todoSpecial) tdUndo = { id: id, prev: prev }; flipTodoRow(id, function () { t.done = !prev; }); }
+function undoToggle() { if (!tdUndo) return; const u = tdUndo; tdUndo = null; const t = TodoDB.todos.find(function (x) { return x.id === u.id; }); if (!t) { renderTodo(); return; } flipTodoRow(u.id, function () { t.done = u.prev; }); }
 function enterEdit() { todoEdit = true; todoSel.clear(); renderTodo(); }
 function exitEdit() { todoEdit = false; todoSel.clear(); renderTodo(); }
 function toggleSel(id) { if (todoSel.has(id)) todoSel.delete(id); else todoSel.add(id); renderTodo(); }
@@ -2406,7 +2433,7 @@ function tdBackbar(title) { return '<div class="tdbackbar"><button class="tdback
 function specialRowHTML(t) {
   const where = t.listId ? (listById(t.listId) ? listById(t.listId).name : '') : (folderById(t.folderId) ? folderById(t.folderId).name : '');
   const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
-  return '<div class="tdrow"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
+  return '<div class="tdrow" data-tid="' + t.id + '"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
     + '<div class="tdmain"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div><div class="tdwhere">' + esc(where) + '</div>' + dueLabel(t.due) + '</div></div>';
 }
 function specialHTML(kind) {
