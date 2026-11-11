@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.64">
+<meta name="app-version" content="1.65">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1792,7 +1792,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.64';
+const APP_VERSION='1.65';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -2025,7 +2025,7 @@ function folderBodyHTML(f) {
   if (f.showDone === false) direct = direct.filter(function (t) { return !t.done; });
   let h = '<div class="tdsub"><span></span><span class="tdsubR">'
     + (isPriceFolder(f) ? priceCheckBtnHTML() : '')
-    + (lists.length ? '<button onclick="openListForm()">＋ リスト</button>' : '')
+    + '<button onclick="openListForm()">＋ リスト</button>'
     + (direct.length || !lists.length ? '<button onclick="enterEdit()">' + SVG_EDIT + '編集</button>' : '')
     + '<button onclick="openFolderPop(this)">' + SVG_MORE + 'その他</button></span></div>';
   if (lists.length) h += lists.map(function (l) { return '<button class="tdlistrow" onclick="openTodoList(' + l.id + ')"><span class="nm">' + esc(l.name) + '</span><span class="tdcnt">' + todosInList(l.id).length + '</span><span class="chev">›</span></button>'; }).join('');
@@ -2147,7 +2147,7 @@ function openTodoList(id) { const l = listById(id); if (!l) return; slideTo('pus
 function closeTodoList() { slideTo('pop', function () { todoListId = null; todoEdit = false; todoSel.clear(); }); }
 function openSpecial(kind) { slideTo('push', function () { todoSpecial = kind; todoEdit = false; todoSel.clear(); }); }
 function closeSpecial() { slideTo('pop', function () { todoSpecial = null; }); }
-function folderFab() { const f = folderById(todoFolderId); if (f && listsInFolder(f.id).length && !todosDirect(f.id).length) openListForm(); else openTodoAddForm(); }
+function folderFab() { openTodoAddForm(); }
 let tdUndo = null;
 function flipTodoRow(id, apply) {
   const wrap = $('todowrap');
