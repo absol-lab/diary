@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.48">
+<meta name="app-version" content="1.49">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1758,7 +1758,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.48';
+const APP_VERSION='1.49';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1791,7 +1791,7 @@ document.addEventListener('visibilitychange', ()=>{
 const LS_TODO = 'diaryStandalone.todo.v1';
 const TODO_COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#3e9bff', '#8e4ec6', '#9c9ca4'];
 const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別' };
-const TODO_SEED = {"updatedAt":1762782241412,"folders":[{"id":1,"name":"欲しいもの"},{"id":2,"name":"やること"},{"id":3,"name":"今日行く場所"},{"id":4,"name":"今日買うもの"}],"lists":[{"id":1,"folderId":1,"name":"持ってくるもの"},{"id":2,"folderId":1,"name":"欲しい作品集"},{"id":3,"folderId":1,"name":"画材"},{"id":4,"folderId":1,"name":"今日買うもの"},{"id":5,"folderId":1,"name":"ほしいもの"},{"id":6,"folderId":1,"name":"ほしいもの②"}],"todos":[{"id":1,"listId":2,"folderId":null,"title":"我が愛しのファウスト","done":false},{"id":2,"listId":2,"folderId":null,"title":"彼女は30歳で画家になった","done":false},{"id":3,"listId":2,"folderId":null,"title":"大野裕『祈りの言葉』","done":false},{"id":4,"listId":2,"folderId":null,"title":"カルロ・ドルチ画集","done":false},{"id":5,"listId":2,"folderId":null,"title":"プロの時代","done":false},{"id":6,"listId":3,"folderId":null,"title":"透明標本","done":false},{"id":7,"listId":3,"folderId":null,"title":"ハンドミキサー　いるか？","done":false},{"id":8,"listId":3,"folderId":null,"title":"化粧品","done":false},{"id":9,"listId":3,"folderId":null,"title":"電球とスイッチ","done":false},{"id":10,"listId":3,"folderId":null,"title":"艶出しスプレー","done":false},{"id":11,"listId":3,"folderId":null,"title":"強力懐中電灯","done":false},{"id":12,"listId":3,"folderId":null,"title":"ぶっ壊れデニム","done":false},{"id":13,"listId":3,"folderId":null,"title":"ポスカ","done":false},{"id":14,"listId":3,"folderId":null,"title":"スクレーパーペン","done":false},{"id":15,"listId":3,"folderId":null,"title":"アクリル絵の具","done":false},{"id":16,"listId":3,"folderId":null,"title":"アイロン","done":false},{"id":17,"listId":3,"folderId":null,"title":"冬服","done":false},{"id":18,"listId":3,"folderId":null,"title":"ペン類","done":false},{"id":19,"listId":1,"folderId":null,"title":"リゲイン","done":false},{"id":20,"listId":1,"folderId":null,"title":"洗濯バサミ","done":false},{"id":21,"listId":1,"folderId":null,"title":"マスキングテープ","done":false},{"id":22,"listId":1,"folderId":null,"title":"白い靴","done":false},{"id":23,"listId":1,"folderId":null,"title":"木炭","done":false},{"id":24,"listId":1,"folderId":null,"title":"筆洗","done":false},{"id":25,"listId":1,"folderId":null,"title":"パーマネントホワイト","done":false},{"id":26,"listId":1,"folderId":null,"title":"吸取り紙","done":false},{"id":27,"listId":1,"folderId":null,"title":"パーマネントマットバニッシュ","done":false},{"id":28,"listId":1,"folderId":null,"title":"つまようじ","done":false},{"id":29,"listId":1,"folderId":null,"title":"練りゴム","done":false},{"id":30,"listId":1,"folderId":null,"title":"パステルの紙","done":false},{"id":31,"listId":1,"folderId":null,"title":"着て行く服","done":false},{"id":32,"listId":null,"folderId":2,"title":"ボンド塗る","done":false},{"id":33,"listId":null,"folderId":2,"title":"奨学金返済","done":false},{"id":34,"listId":null,"folderId":2,"title":"年金のやつ","done":false}]};
+const TODO_SEED = {"updatedAt":0,"folders":[],"lists":[],"todos":[],"trash":[]};
 function todoNorm(t) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: t.title, done: !!t.done, due: t.due || null, color: t.color || null }; }
 function normalizeTodo(d) {
   if (!d || typeof d !== 'object') return null;
@@ -1876,7 +1876,7 @@ function buildTodoHTML() {
   if (todoEdit) { const c = curContainer(); if (c) return editHTML(c); todoEdit = false; }
   if (todoListId) return listHTML(listById(todoListId));
   if (todoFolderId) return folderHTML(folderById(todoFolderId));
-  return '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button></div><div class="tdnone">フォルダがありません</div>';
+  return '<div class="tdfolders"><button class="tdfpill add" onclick="openFolderForm()">＋ フォルダを追加</button></div><div class="tdnone">フォルダがありません<br>同期するとデータが表示されます</div>';
 }
 function renderTodo() {
   const wrap = $('todowrap'); if (!wrap) return;
