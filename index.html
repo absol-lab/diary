@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.16">
+<meta name="app-version" content="1.17">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -99,13 +99,14 @@
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
   .view { display: none; min-height: calc(100dvh + 2px); }
-  .view.active { display: block; }
+  .view.active { display: block; animation: viewin .18s ease-out; }
+  @keyframes viewin { from { opacity: 0; } }
 
   /* ---------- splash (opening) ---------- */
   #splash {
     position: fixed; inset: 0; z-index: 200; background: var(--bg);
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-    transition: opacity .38s ease;
+    transition: opacity .22s ease;
   }
   #splash.hide { opacity: 0; pointer-events: none; }
   #splash img { width: 92px; height: 92px; border-radius: 22px; animation: splashIn .55s cubic-bezier(.25,.9,.3,1) both; }
@@ -180,6 +181,7 @@
     border: 1px solid color-mix(in srgb, var(--text) 16%, transparent);
     box-shadow: inset 0 1px 0 rgba(255,255,255,.25), inset 0 -6px 10px rgba(255,255,255,.05), 0 2px 10px rgba(0,0,0,.20);
     will-change: transform;
+    transition: transform .45s cubic-bezier(.25,1,.3,1), width .45s cubic-bezier(.25,1,.3,1);
   }
   #pillnav button { position: relative; z-index: 1; flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0; border-radius: 999px; font-size: 10px; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color .3s; }
   #pillnav button svg { width: 21px; height: 21px; }
@@ -589,10 +591,13 @@ let LocalPhotos = {};   // entryId -> [dataUrl,...]（端末内のみ・同期JS
 try{ const raw=storeGet(LS_PHOTOS); if(raw) LocalPhotos=JSON.parse(raw)||{}; }catch(e){ LocalPhotos={}; }
 
 let saveWarned=false;
+let dataRev=0, photoRev=0;
 function saveDB(){
+  dataRev++;
   if(!storeSet(LS_DATA, JSON.stringify(DB)) && !saveWarned){ saveWarned=true; alert('端末の保存容量がいっぱいで、保存できませんでした。写真を減らすか、Driveへ同期してください。'); }
 }
 function saveLocalPhotos(){
+  photoRev++;
   if(!storeSet(LS_PHOTOS, JSON.stringify(LocalPhotos)) && !saveWarned){ saveWarned=true; alert('端末の保存容量がいっぱいで、写真を保存できませんでした。'); }
 }
 function visibleEntries(){ return DB.entries.filter(e=>!e.deleted); }
@@ -659,12 +664,7 @@ function moveNavInd(animate){
   const from=lastNavX, to=x;
   ind.style.transform='translateX('+to+'px)';
   lastNavX=to;
-  if(animate && from!==null && from!==to && ind.animate){
-    ind.animate([
-      { transform:'translateX('+from+'px)' },
-      { transform:'translateX('+to+'px)' }
-    ], { duration:430, easing:'cubic-bezier(.30,1.25,.35,1)' });
-  }
+  if(!animate){ ind.style.transition='none'; requestAnimationFrame(()=>{ ind.style.transition=''; }); }
 }
 function pinNav(){
   /* iOS standalone shrinks the fixed-position frame when the page is not
@@ -724,6 +724,9 @@ function entryCardHTML(e){
     '</div></button></div>';
 }
 function renderList(){
+  const key=dataRev+'|'+photoRev+'|'+selectedYear;
+  if(key===renderList._key && $('listwrap').innerHTML) return; /* unchanged: skip the heavy rebuild so tab switches stay smooth */
+  renderList._key=key;
   const es=visibleEntries().filter(e=>+e.date.slice(0,4)===selectedYear).sort(cmpDesc);
   if(!es.length){ $('listwrap').innerHTML='<div class="empty">'+selectedYear+'年の日記はまだありません。<br>右下の鉛筆から書けます。</div>'; return; }
   let html=''; let curMonth='';
@@ -1174,7 +1177,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.14', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1232,7 +1235,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.14 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v'+APP_VERSION+' ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
@@ -1552,7 +1555,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.16';
+const APP_VERSION='1.17';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
@@ -1583,7 +1586,7 @@ document.addEventListener('visibilitychange', ()=>{
 (function init(){
   const sp=$('splash');
   if(sp){
-    const hideSplash=()=>{ if(!sp.classList.contains('hide')){ sp.classList.add('hide'); setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 480); } };
+    const hideSplash=()=>{ if(!sp.classList.contains('hide')){ sp.classList.add('hide'); setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 260); } };
     sp.addEventListener('click', hideSplash);
     setTimeout(hideSplash, 850);
     setTimeout(hideSplash, 2800); /* 保険：何があっても必ず消す */
