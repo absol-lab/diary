@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.36">
+<meta name="app-version" content="1.37">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -282,6 +282,7 @@
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
   .tdpagenew { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 3; }
   #todowrap { position: relative; }
+  #view-todo { padding-bottom: 76px; }
   /* drawer */
   #tddrawer { position: fixed; inset: 0; z-index: 60; display: none; }
   #tddrawer.open { display: block; }
@@ -1746,7 +1747,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.36';
+const APP_VERSION='1.37';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
