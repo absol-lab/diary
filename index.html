@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.33">
+<meta name="app-version" content="1.34">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -131,12 +131,12 @@
     content: ""; position: absolute; top: -19px; right: -19px; width: 36px; height: 36px;
     border: 1.5px solid var(--accent); border-radius: 50%; opacity: .55; pointer-events: none;
   }
-  .card .when { flex: none; width: 54px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; }
-  .card .when .dow { font-size: calc(var(--fs) * .75); }
+  .card .when { flex: none; width: 54px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; font-family: var(--uifont); }
+  .card .when .dow { font-size: calc(var(--fs) * .75); font-family: var(--uifont); }
   .card .when .dow.sat { color: var(--sat); } .card .when .dow.sun { color: var(--sun); }
-  .card .when .day { font-size: calc(var(--fs) * 1.9); line-height: 1.3; font-weight: 600; color: #d9d9de; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif; }
+  .card .when .day { font-size: calc(var(--fs) * 1.9); line-height: 1.3; font-weight: 600; color: #d9d9de; font-family: var(--uifont); }
   body[data-theme="kinari"] .card .when .day { color: var(--text); }
-  .card .when .time { font-size: calc(var(--fs) * .78); margin-top: auto; }
+  .card .when .time { font-size: calc(var(--fs) * .78); margin-top: auto; font-family: var(--uifont); }
   .card .body { flex: 1; min-width: 0; }
   .card .title { font-size: calc(var(--fs) * 1.25); line-height: 1.5; font-weight: 600; word-break: break-word; }
   .card .preview { margin-top: 4px; font-size: calc(var(--fs) * .85); color: var(--muted); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
@@ -1745,7 +1745,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.33';
+const APP_VERSION='1.34';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
