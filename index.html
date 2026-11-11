@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.20">
+<meta name="app-version" content="1.21">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -203,10 +203,10 @@
   .tdlistrow .nm { flex: 1; }
   .tdlistrow .tdcnt { color: var(--muted); font-size: 15px; margin-right: 10px; }
   .tdlistrow .chev { color: var(--muted); font-size: 18px; }
-  .tdrow { display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .tdrow { display: flex; align-items: center; gap: 12px; padding: 11px 4px 0; background: var(--bg); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
-  .tdmain { flex: 1; min-width: 0; }
+  .tdmain { flex: 1; min-width: 0; padding-bottom: 11px; border-bottom: 1px solid var(--line); }
   .tdtitle { font-size: 15.5px; }
   .tdtitle.done { color: var(--muted); text-decoration: line-through; }
   .tddue { display: inline-block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-family: var(--uifont); }
@@ -1649,7 +1649,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.20';
+const APP_VERSION='1.21';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
