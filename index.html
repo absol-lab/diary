@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.55">
+<meta name="app-version" content="1.56">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1759,7 +1759,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.55';
+const APP_VERSION='1.56';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1857,7 +1857,7 @@ function priceHTML(t) {
   let f = null;
   if (t.folderId) f = folderById(t.folderId);
   else if (t.listId) { const l = listById(t.listId); if (l) f = folderById(l.folderId); }
-  if (!f || (f.id !== 1 && f.name !== '欲しいもの')) return '';
+  if (!isPriceFolder(f)) return '';
   return '<span class="tdprice">¥' + Number(t.price).toLocaleString('ja-JP') + '</span>';
 }
 function todoRowHTML(t) {
@@ -1957,7 +1957,12 @@ function folderChipsHTML(f) {
     return '<button class="tdfpill' + (x.id === f.id ? ' on' : '') + '" onclick="pickTodoFolder(' + x.id + ')">' + esc(x.name) + '<span class="tdcnt">' + folderAllTodos(x.id).length + '</span></button>';
   }).join('') + '<button class="tdfpill add" onclick="openFolderForm()">＋</button></div>';
 }
-function isPriceFolder(f) { return !!(f && (f.id === 1 || f.name === '欲しいもの')); }
+function isPriceFolder(f) {
+  if (!f) return false;
+  if (f.id === 1) return true;
+  const n = String(f.name || '').replace(/\s+/g, '');
+  return n.indexOf('欲しいもの') === 0 || n.indexOf('ほしいもの') === 0;
+}
 function priceCheckBtnHTML() {
   if (priceCheckBusy) return '<button disabled>依頼中…</button>';
   if (priceCheckSentAt && Date.now() - priceCheckSentAt < 10000) return '<button onclick="requestPriceCheck()">依頼済み ✓</button>';
@@ -1997,7 +2002,7 @@ function centerChip(smooth) {
   try { bar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' }); } catch (e) { bar.scrollLeft = target; }
 }
 function pickFolderState(id) { todoFolderId = id; todoListId = null; todoSpecial = null; todoEdit = false; todoSel.clear(); }
-let tdPagerTimer = null, tdChipShownId = null, tdTrackQueued = false;
+let tdPagerTimer = null, tdChipShownId = null, tdTrackQueued = false, tdChipLockId = null;
 function chipCenterTarget(bar, pill) { return Math.max(0, pill.offsetLeft - (bar.clientWidth - pill.offsetWidth) / 2); }
 function tdPagerTrack(pg) {
   if (!pg || !TodoDB) return;
@@ -2007,7 +2012,7 @@ function tdPagerTrack(pg) {
   const pills = bar ? bar.querySelectorAll('.tdfpill') : [];
   const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pos)));
   const f = TodoDB.folders[i];
-  if (f && f.id !== tdChipShownId) {
+  if (f && f.id !== tdChipShownId && tdChipLockId === null) {
     tdChipShownId = f.id;
     TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === f.id); });
   }
@@ -2027,6 +2032,7 @@ function syncPagerSettle(pg) {
   tdPagerTrack(pg);
   const W = pg.clientWidth; if (!W) return;
   const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pg.scrollLeft / W)));
+  if (tdChipLockId !== null) { const li = TodoDB.folders.findIndex(function (x) { return x.id === tdChipLockId; }); if (li === i) tdChipLockId = null; }
   const f = TodoDB.folders[i]; if (!f || f.id === todoFolderId) return;
   pickFolderState(f.id);
 }
@@ -2079,6 +2085,8 @@ function pickTodoFolder(id) {
     const pills = document.querySelectorAll('#todowrap .tdfpill');
     TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === id); });
     tdChipShownId = id;
+    tdChipLockId = id;
+    setTimeout(function () { if (tdChipLockId === id) tdChipLockId = null; }, 700);
     pg.scrollTo({ left: ni * pg.clientWidth, behavior: tdReducedMotion() ? 'auto' : 'smooth' });
     return;
   }
@@ -2251,7 +2259,7 @@ function saveListForm() {
 }
 /* ---- folder form ---- */
 let ff = null;
-function openFolderForm() { ff = { name: '', pos: 'first' }; renderFolderForm(); }
+function openFolderForm() { ff = { name: '', pos: 'last' }; renderFolderForm(); }
 function renderFolderForm() {
   TDOK = saveFolderForm;
   tdOpen(tdHead('フォルダの追加', true) + '<div class="tdfbody">'
@@ -2798,6 +2806,8 @@ document.addEventListener('touchend', function (e) {
     if (!g.live) {
       if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { g = null; return; }
       if (dx < 10 || Math.abs(dy) > Math.abs(dx)) return;
+      const pg0 = sec.querySelector('.tdpager');
+      if (pg0 && pg0.scrollLeft > 4) { g = null; return; }
       g.live = true;
       if (!TodoDB) { try { loadTodo(); } catch (err) {} }
       renderDrawer();
