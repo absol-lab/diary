@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.17">
+<meta name="app-version" content="1.18">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -151,7 +151,7 @@
 
   /* ---------- FAB / pill nav ---------- */
   #fab {
-    position: fixed; right: 18px; bottom: 78px; z-index: 40;
+    position: fixed; right: 18px; bottom: 85px; z-index: 40;
     width: 60px; height: 60px; border-radius: 50%;
     background: var(--fab); color: var(--fabink);
     display: flex; align-items: center; justify-content: center;
@@ -161,7 +161,7 @@
   #fab:active { transform: scale(.96); }
   #pillnav {
     position: fixed; left: 50%; transform: translateX(-50%); z-index: 40;
-    bottom: 8px;
+    bottom: 15px;
     width: calc(100vw - 92px); max-width: 430px; height: 56px;
     display: flex; gap: 0; padding: 5px; box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
@@ -188,6 +188,25 @@
   #pillnav button.on { color: var(--text); }
   /* press feedback: subtle brighten while pressed, so taps are visible */
   button:active, .calcell:active { filter: brightness(1.32); }
+
+  /* ---------- todo ---------- */
+  .tdfolders { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; scrollbar-width: none; }
+  .tdfolders::-webkit-scrollbar { display: none; }
+  .tdfpill { flex: 0 0 auto; padding: 8px 16px; border-radius: 999px; background: var(--card); color: var(--muted); font-size: 14px; font-weight: 600; font-family: var(--uifont); }
+  .tdfpill.on { background: var(--text); color: var(--bg); }
+  .tdcard { background: var(--card); border-radius: 18px; padding: 4px 14px 8px; margin-bottom: 14px; }
+  .tdlisthead { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 2px; font-weight: 700; font-size: 15px; font-family: var(--uifont); }
+  .tdlisthead .cnt { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 8px; }
+  .tdadd { color: var(--muted); font-size: 19px; line-height: 1; padding: 4px 8px; }
+  .tdrow { display: flex; align-items: center; gap: 11px; padding: 9px 0; border-top: 1px solid var(--line); }
+  .tdcheck { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
+  .tdcheck.done { background: var(--text); border-color: var(--text); }
+  .tdtitle { flex: 1; font-size: 15px; }
+  .tdtitle.done { color: var(--muted); text-decoration: line-through; }
+  .tddel { color: var(--muted); font-size: 14px; padding: 4px 6px; }
+  .tdempty { color: var(--muted); font-size: 13px; padding: 8px 0 6px; }
+  .tdactions { display: flex; gap: 8px; margin: 2px 0 12px; }
+  .tdactions button { flex: 1; padding: 11px 0; border-radius: 12px; background: var(--card); color: var(--text); font-size: 13px; font-weight: 600; font-family: var(--uifont); }
 
   /* ---------- calendar ---------- */
   .calhead2 { display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 12px) 2px 14px; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
@@ -417,6 +436,16 @@
     </main>
   </section>
 
+  <!-- ======= TODO ======= -->
+  <section id="view-todo" class="view">
+    <div class="topbar">
+      <div class="spacer44"></div>
+      <div class="ttl">Todo</div>
+      <div class="spacer44"></div>
+    </div>
+    <main><div id="todowrap"></div></main>
+  </section>
+
   <!-- ======= SETTINGS ======= -->
   <section id="view-settings" class="view">
     <div class="topbar">
@@ -436,6 +465,7 @@
     <span id="navind"></span>
     <button id="nav-list" class="on" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15.5" x2="12.5" y2="15.5"/></svg><span>リスト</span></button>
     <button id="nav-calendar" onclick="showView('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/><circle cx="8" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="8" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.15" fill="currentColor" stroke="none"/></svg><span>カレンダー</span></button>
+    <button id="nav-todo" onclick="showView('todo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 12.3l2.3 2.3 4.5-5"/></svg><span>Todo</span></button>
     <button id="nav-settings" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>設定</span></button>
   </nav>
 
@@ -668,12 +698,12 @@ function moveNavInd(animate){
 }
 function pinNav(){
   /* iOS standalone shrinks the fixed-position frame when the page is not
-     scrollable, floating bottom:8px up by ~59px. Measure the real gap to
-     the screen bottom and compensate so the bar always sits 8px above it. */
+     scrollable, floating the bar up by ~59px. Measure the real gap to
+     the screen bottom and compensate so the bar always sits 15px above it. */
   const nav=$('pillnav'); if(!nav || nav.style.display==='none') return;
-  nav.style.bottom='8px';
+  nav.style.bottom='15px';
   const gap=window.innerHeight - nav.getBoundingClientRect().bottom;
-  if(Math.abs(gap-8)>2) nav.style.bottom=(16-gap)+'px';
+  if(Math.abs(gap-15)>2) nav.style.bottom=(30-gap)+'px';
 }
 window.addEventListener('resize', ()=>{ moveNavInd(false); pinNav(); });
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active on iOS */
@@ -682,14 +712,15 @@ function showView(v){
   if(v!=='settings' && typeof settingsPanel!=='undefined') settingsPanel=null;
   if(v!=='entry') prevView = (v==='search') ? prevView : v;
   currentView=v;
-  ['list','calendar','search','entry','settings'].forEach(x=>{ $('view-'+x).classList.toggle('active', x===v); });
-  ['list','calendar','settings'].forEach(x=>{ const b=$('nav-'+x); if(b) b.classList.toggle('on', x===v); });
+  ['list','calendar','todo','search','entry','settings'].forEach(x=>{ $('view-'+x).classList.toggle('active', x===v); });
+  ['list','calendar','todo','settings'].forEach(x=>{ const b=$('nav-'+x); if(b) b.classList.toggle('on', x===v); });
   $('pillnav').style.display = (v==='entry') ? 'none' : 'flex';
   if(v!=='entry') moveNavInd(true);
   $('fab').style.display = (v==='list'||v==='calendar') ? 'flex' : 'none';
   if(v==='list') renderList();
   if(v==='calendar') renderCalendar();
   if(v==='settings') renderSettings();
+  if(v==='todo') renderTodo();
   if(v==='search'){ renderSearch(); setTimeout(()=>{ try{$('searchinput').focus();}catch(e){} }, 60); }
   window.scrollTo(0,0);
   pinNav(); setTimeout(pinNav, 350);
@@ -1541,6 +1572,7 @@ async function syncNow(reason){
       DB=merged; saveDB(); applyAppearance();
       await uploadDiaryUpdate(file.id, DB);
     }
+    await syncTodo();
     lastSyncAt=Date.now();
     setSyncStatus('synced');
     if(currentView==='list') renderList();
@@ -1555,7 +1587,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.17';
+const APP_VERSION='1.18';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
@@ -1581,6 +1613,157 @@ document.addEventListener('visibilitychange', ()=>{
   /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
   if(hiddenAt && Date.now()-hiddenAt>=60000 && !editing) checkForUpdate();
 });
+
+/* ================= todo ================= */
+const LS_TODO='diaryStandalone.todo.v1';
+const TODO_SEED={ updatedAt:1762782241412,
+  folders:[{id:1,name:'欲しいもの'},{id:2,name:'やること'},{id:3,name:'今日行く場所'},{id:4,name:'今日買うもの'}],
+  lists:[{id:1,folderId:1,name:'持ってくるもの'},{id:2,folderId:1,name:'欲しい作品集'},{id:3,folderId:1,name:'画材'},{id:4,folderId:1,name:'今日買うもの'},{id:5,folderId:1,name:'ほしいもの'},{id:6,folderId:1,name:'ほしいもの②'}],
+  todos:[
+    {id:1,listId:3,folderId:null,title:'グラファイト棒',done:false},
+    {id:2,listId:3,folderId:null,title:'左官道具',done:false},
+    {id:3,listId:3,folderId:null,title:'gac100 golden',done:false},
+    {id:4,listId:3,folderId:null,title:'ガラス板',done:false},
+    {id:5,listId:3,folderId:null,title:'Grand brush',done:false},
+    {id:6,listId:3,folderId:null,title:'オイルスティック',done:false},
+    {id:7,listId:3,folderId:null,title:'長めの細筆',done:false},
+    {id:8,listId:3,folderId:null,title:'ホルベイン　アンティークブルー',done:false},
+    {id:9,listId:3,folderId:null,title:'鉄スキージー',done:false},
+    {id:10,listId:3,folderId:null,title:'オリエンタルブルー',done:false},
+    {id:11,listId:3,folderId:null,title:'ダーマトグラフ　三菱　7600',done:false},
+    {id:12,listId:3,folderId:null,title:'吸取り紙',done:false},
+    {id:13,listId:1,folderId:null,title:'透明標本',done:false},
+    {id:14,listId:1,folderId:null,title:'ハンドミキサー　いるか？',done:false},
+    {id:15,listId:1,folderId:null,title:'化粧品',done:false},
+    {id:16,listId:1,folderId:null,title:'電球とスイッチ',done:false},
+    {id:17,listId:1,folderId:null,title:'艶出しスプレー',done:false},
+    {id:18,listId:1,folderId:null,title:'強力懐中電灯',done:false},
+    {id:19,listId:1,folderId:null,title:'ぶっ壊れデニム',done:false},
+    {id:20,listId:1,folderId:null,title:'ポスカ',done:false},
+    {id:21,listId:1,folderId:null,title:'スクレーパーペン',done:false},
+    {id:22,listId:1,folderId:null,title:'アクリル絵の具',done:false},
+    {id:23,listId:1,folderId:null,title:'アイロン',done:false},
+    {id:24,listId:1,folderId:null,title:'冬服',done:false},
+    {id:25,listId:1,folderId:null,title:'ペン類',done:false},
+    {id:26,listId:null,folderId:2,title:'ボンド塗る',done:false},
+    {id:27,listId:null,folderId:2,title:'奨学金返済',done:false},
+    {id:28,listId:null,folderId:2,title:'年金のやつ',done:false}
+  ]};
+function normalizeTodo(d){
+  return { updatedAt: d.updatedAt||0,
+    folders: (d.folders||[]).map(f=>({ id:f.id, name:String(f.name||'') })),
+    lists: (d.lists||[]).map(l=>({ id:l.id, folderId:l.folderId, name:String(l.name||'') })),
+    todos: (d.todos||[]).map(t=>({ id:t.id, listId:(t.listId==null?null:t.listId), folderId:(t.folderId==null?null:t.folderId), title:String(t.title||''), done:!!t.done })) };
+}
+function loadTodo(){
+  try{ const raw=storeGet(LS_TODO); if(raw){ const d=JSON.parse(raw); if(d && Array.isArray(d.folders)) return normalizeTodo(d); } }catch(e){}
+  return JSON.parse(JSON.stringify(TODO_SEED));
+}
+let TodoDB=loadTodo();
+let todoFolderId=(TodoDB.folders[0]||{}).id;
+let todoSyncRunning=false, todoSyncTimer=null;
+function saveTodoLocal(){ storeSet(LS_TODO, JSON.stringify(TodoDB)); }
+function touchTodo(){ TodoDB.updatedAt=Date.now(); saveTodoLocal(); scheduleTodoSync(); }
+function scheduleTodoSync(){ if(todoSyncTimer) clearTimeout(todoSyncTimer); todoSyncTimer=setTimeout(()=>{ syncTodo(); }, 1600); }
+function todoById(id){ return TodoDB.todos.find(t=>t.id===id) || null; }
+function todoRowHTML(t){
+  return '<div class="tdrow"><button class="tdcheck'+(t.done?' done':'')+'" onclick="toggleTodo('+t.id+')" aria-label="完了切替">'+(t.done?'✓':'')+'</button>'
+    +'<div class="tdtitle'+(t.done?' done':'')+'">'+esc(t.title)+'</div>'
+    +'<button class="tddel" onclick="confirmDeleteTodo('+t.id+')" aria-label="削除">✕</button></div>';
+}
+function renderTodo(){
+  const wrap=$('todowrap'); if(!wrap) return;
+  if(!TodoDB.folders.some(f=>f.id===todoFolderId)) todoFolderId=(TodoDB.folders[0]||{}).id;
+  let html='<div class="tdfolders">'+TodoDB.folders.map(f=>'<button class="tdfpill'+(f.id===todoFolderId?' on':'')+'" onclick="pickTodoFolder('+f.id+')">'+esc(f.name)+'</button>').join('')+'</div>';
+  const direct=TodoDB.todos.filter(t=>t.folderId===todoFolderId && t.listId==null);
+  if(direct.length) html+='<div class="tdcard">'+direct.map(todoRowHTML).join('')+'</div>';
+  const lists=TodoDB.lists.filter(l=>l.folderId===todoFolderId);
+  for(const l of lists){
+    const ts=TodoDB.todos.filter(t=>t.listId===l.id);
+    const doneN=ts.filter(t=>t.done).length;
+    html+='<div class="tdcard"><div class="tdlisthead"><span>'+esc(l.name)+'<span class="cnt">'+doneN+'/'+ts.length+'</span></span><button class="tdadd" onclick="openAddTodo(\'list\','+l.id+')" aria-label="ToDoを追加">＋</button></div>'
+      +(ts.length ? ts.map(todoRowHTML).join('') : '<div class="tdempty">まだありません</div>')+'</div>';
+  }
+  if(!direct.length && !lists.length) html+='<div class="empty">このフォルダは空です。</div>';
+  html+='<div class="tdactions"><button onclick="openAddTodo(\'folder\','+todoFolderId+')">＋ ToDo</button><button onclick="openAddList()">＋ リスト</button><button onclick="openAddFolder()">＋ フォルダ</button></div>';
+  wrap.innerHTML=html;
+}
+function pickTodoFolder(id){ todoFolderId=id; renderTodo(); }
+function toggleTodo(id){ const t=todoById(id); if(!t) return; t.done=!t.done; touchTodo(); renderTodo(); }
+function confirmDeleteTodo(id){
+  const t=todoById(id); if(!t) return;
+  openSheet('<h3>このToDoを削除しますか？</h3><div style="margin:4px 0 14px; color:var(--muted)">'+esc(t.title)+'</div>'
+    +'<button class="sheetbtn danger" onclick="deleteTodo('+id+')">削除する</button>'
+    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+}
+function deleteTodo(id){ TodoDB.todos=TodoDB.todos.filter(t=>t.id!==id); touchTodo(); closeSheet(); renderTodo(); }
+function openAddTodo(kind, id){
+  openSheet('<h3>ToDoを追加</h3><input class="textin" id="tdnewtext" type="text" placeholder="やること" autocomplete="off">'
+    +'<button class="sheetbtn primary" onclick="saveNewTodo(\''+kind+'\','+id+')">追加する</button>'
+    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+  setTimeout(()=>{ try{ $('tdnewtext').focus(); }catch(e){} }, 80);
+}
+function saveNewTodo(kind, id){
+  const v=($('tdnewtext').value||'').trim(); if(!v) return;
+  const nid=Date.now();
+  if(kind==='list') TodoDB.todos.push({ id:nid, listId:id, folderId:null, title:v, done:false });
+  else TodoDB.todos.push({ id:nid, listId:null, folderId:id, title:v, done:false });
+  touchTodo(); closeSheet(); renderTodo();
+}
+function openAddList(){
+  openSheet('<h3>リストを追加</h3><input class="textin" id="tdnewlist" type="text" placeholder="リスト名" autocomplete="off">'
+    +'<button class="sheetbtn primary" onclick="saveNewList()">追加する</button>'
+    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+  setTimeout(()=>{ try{ $('tdnewlist').focus(); }catch(e){} }, 80);
+}
+function saveNewList(){
+  const v=($('tdnewlist').value||'').trim(); if(!v) return;
+  TodoDB.lists.push({ id:Date.now(), folderId:todoFolderId, name:v });
+  touchTodo(); closeSheet(); renderTodo();
+}
+function openAddFolder(){
+  openSheet('<h3>フォルダを追加</h3><input class="textin" id="tdnewfolder" type="text" placeholder="フォルダ名" autocomplete="off">'
+    +'<button class="sheetbtn primary" onclick="saveNewFolder()">追加する</button>'
+    +'<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+  setTimeout(()=>{ try{ $('tdnewfolder').focus(); }catch(e){} }, 80);
+}
+function saveNewFolder(){
+  const v=($('tdnewfolder').value||'').trim(); if(!v) return;
+  const nid=Date.now();
+  TodoDB.folders.push({ id:nid, name:v });
+  todoFolderId=nid;
+  touchTodo(); closeSheet(); renderTodo();
+}
+async function syncTodo(){
+  if(todoSyncRunning) return;
+  const tok=getValidToken(); if(!tok) return;
+  todoSyncRunning=true;
+  try{
+    const q=encodeURIComponent("name='todo.json' and trashed=false");
+    const res=await driveFetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
+    if(!res.ok) return;
+    const j=await res.json();
+    const f=(j.files||[]).filter(x=>x.name==='todo.json')[0];
+    if(!f){
+      const meta={ name:'todo.json', mimeType:'application/json' };
+      const form=new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
+      form.append('file', new Blob([JSON.stringify(TodoDB)], { type:'application/json' }), 'todo.json');
+      await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+    } else {
+      const dl=await driveFetch('/files/'+encodeURIComponent(f.id)+'?alt=media');
+      if(!dl.ok) return;
+      const remote=JSON.parse(await dl.text());
+      if(remote && (remote.updatedAt||0)>(TodoDB.updatedAt||0)){
+        TodoDB=normalizeTodo(remote); saveTodoLocal();
+        if(currentView==='todo') renderTodo();
+      } else if((TodoDB.updatedAt||0)>((remote&&remote.updatedAt)||0)){
+        await uploadDiaryUpdate(f.id, TodoDB);
+      }
+    }
+  }catch(e){ /* todo sync is best-effort; it must never disturb diary sync */ }
+  finally{ todoSyncRunning=false; }
+}
 
 /* ================= init ================= */
 (function init(){
