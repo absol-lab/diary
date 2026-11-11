@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.28">
+<meta name="app-version" content="1.29">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -104,7 +104,7 @@
   @keyframes viewin { from { opacity: 0; } }
 
   /* ---------- splash (opening) ---------- */
-  #splash { position: fixed; inset: 0; z-index: 200; background: #000; transition: opacity .45s ease; }
+  #splash { position: fixed; inset: 0; z-index: 200; background: var(--bg); transition: opacity .45s ease; }
   #splash.hide { opacity: 0; pointer-events: none; }
   }
 
@@ -1747,7 +1747,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.28';
+const APP_VERSION='1.29';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
