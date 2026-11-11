@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.47">
+<meta name="app-version" content="1.48">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1758,7 +1758,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.47';
+const APP_VERSION='1.48';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -2725,7 +2725,7 @@ document.addEventListener('touchend', function (e) {
 /* ---- edge swipe: pull the drawer open from the Todo top view ---- */
 (function () {
   const sec = $('view-todo'); if (!sec) return;
-  const EDGE = 28;
+  const EDGE = 48;
   let g = null;
   function els() { const d = $('tddrawer'); return { d: d, panel: d.querySelector('.panel'), scrim: d.querySelector('.scrim') }; }
   sec.addEventListener('touchstart', function (e) {
