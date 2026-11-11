@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.45">
+<meta name="app-version" content="1.46">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1758,7 +1758,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.45';
+const APP_VERSION='1.46';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -2722,6 +2722,61 @@ document.addEventListener('touchend', function (e) {
   if ($('tdoverlay').classList.contains('open') || $('tddrawer').classList.contains('open') || $('tdmodal').classList.contains('open')) return;
   if (todoSpecial) closeSpecial(); else if (todoListId) closeTodoList();
 }, { passive: true });
+/* ---- edge swipe: pull the drawer open from the Todo top view ---- */
+(function () {
+  const sec = $('view-todo'); if (!sec) return;
+  const EDGE = 28;
+  let g = null;
+  function els() { const d = $('tddrawer'); return { d: d, panel: d.querySelector('.panel'), scrim: d.querySelector('.scrim') }; }
+  sec.addEventListener('touchstart', function (e) {
+    g = null;
+    if (todoListId || todoSpecial || todoEdit) return;
+    if ($('tddrawer').classList.contains('open') || $('tdmodal').classList.contains('open') || $('tdoverlay').classList.contains('open') || $('tdpop').classList.contains('open')) return;
+    const t = e.changedTouches[0];
+    if (t.clientX > EDGE) return;
+    g = { x0: t.clientX, y0: t.clientY, live: false, dx: 0, pg: null, w: 300 };
+  }, { passive: true });
+  sec.addEventListener('touchmove', function (e) {
+    if (!g) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - g.x0, dy = t.clientY - g.y0;
+    if (!g.live) {
+      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { g = null; return; }
+      if (dx < 10 || Math.abs(dy) > Math.abs(dx)) return;
+      g.live = true;
+      if (!TodoDB) { try { loadTodo(); } catch (err) {} }
+      renderDrawer();
+      const E = els();
+      E.d.classList.add('open');
+      E.panel.style.transition = 'none';
+      E.scrim.style.transition = 'none';
+      g.pg = sec.querySelector('.tdpager');
+      if (g.pg) g.pg.style.overflowX = 'hidden';
+      g.w = E.panel.offsetWidth || 300;
+    }
+    if (e.cancelable) e.preventDefault();
+    g.dx = Math.max(0, Math.min(dx, g.w));
+    const E = els();
+    E.panel.style.transform = 'translateX(' + (g.dx - g.w) + 'px)';
+    E.scrim.style.opacity = String(g.dx / g.w);
+  }, { passive: false });
+  function endGesture() {
+    if (!g) return;
+    const wasLive = g.live, dx = g.dx;
+    if (g.pg) g.pg.style.overflowX = '';
+    g = null;
+    if (!wasLive) return;
+    const E = els();
+    E.panel.style.transition = '';
+    E.scrim.style.transition = '';
+    E.panel.style.transform = '';
+    E.scrim.style.opacity = '';
+    if (dx > 70) E.d.classList.add('show');
+    else setTimeout(function () { E.d.classList.remove('open'); }, 320);
+  }
+  sec.addEventListener('touchend', endGesture);
+  sec.addEventListener('touchcancel', endGesture);
+})();
 /* ---- drag reorder (pointer events, delegated) ---- */
 let dragCtx = null;
 document.addEventListener('pointerdown', function (e) {
