@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.22">
+<meta name="app-version" content="1.23">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -234,6 +234,8 @@
   /* todo full-screen form overlay */
   #tdoverlay { position: fixed; inset: 0; z-index: 90; background: var(--bg2); display: none; flex-direction: column; }
   #tdoverlay.open { display: flex; }
+  #tdsheet { transform: translateY(103%); transition: transform .37s cubic-bezier(.32,.72,.28,1); }
+  #tdoverlay.show #tdsheet { transform: translateY(0); }
   .tdfhead { display: flex; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px 10px; }
   .tdfx { width: 40px; height: 40px; border-radius: 50%; background: var(--card2); color: var(--text); font-size: 17px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
   .tdfttl { flex: 1; text-align: center; font-size: 16px; font-weight: 700; font-family: var(--uifont); }
@@ -484,7 +486,14 @@
     position: fixed; inset: 0; z-index: 60; background: var(--sheet);
     display: none; align-items: flex-end; justify-content: center;
   }
-  .overlay.open { display: flex; }
+  .overlay.open { display: flex; animation: ovfade .25s ease-out; }
+  .overlay.open .sheet { animation: sheetup .36s cubic-bezier(.32,.72,.28,1); }
+  .overlay.closing { animation: ovfadeout .24s ease-in forwards; }
+  .overlay.closing .sheet { animation: sheetdown .26s cubic-bezier(.5,0,.75,0) forwards; }
+  @keyframes ovfade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ovfadeout { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes sheetup { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes sheetdown { from { transform: translateY(0); } to { transform: translateY(100%); } }
   .sheet {
     width: 100%; max-width: 720px; max-height: 82vh; overflow-y: auto;
     background: var(--bg2); border-top: 1px solid var(--line);
@@ -806,8 +815,18 @@ function mergeData(local, remote){
 }
 
 /* ================= sheet / modal ================= */
-function openSheet(html){ $('sheet').innerHTML=html; $('overlay').classList.add('open'); }
-function closeSheet(){ $('overlay').classList.remove('open'); $('sheet').innerHTML=''; }
+let sheetCloseTimer = null;
+function openSheet(html){
+  if (sheetCloseTimer) { clearTimeout(sheetCloseTimer); sheetCloseTimer = null; }
+  const ov = $('overlay'); ov.classList.remove('closing');
+  $('sheet').innerHTML = html; ov.classList.add('open');
+}
+function closeSheet(){
+  const ov = $('overlay'); if (!ov.classList.contains('open')) return;
+  ov.classList.add('closing');
+  if (sheetCloseTimer) clearTimeout(sheetCloseTimer);
+  sheetCloseTimer = setTimeout(function () { ov.classList.remove('open'); ov.classList.remove('closing'); $('sheet').innerHTML = ''; sheetCloseTimer = null; }, 250);
+}
 function sheetConfirm(title, msg, okLabel, danger){
   return new Promise((resolve)=>{
     openSheet('<h3>'+esc(title)+'</h3><div class="msg">'+esc(msg)+'</div>'+
@@ -1730,7 +1749,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.22';
+const APP_VERSION='1.23';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
@@ -1953,8 +1972,24 @@ async function syncTodo() {
 }
 /* ---- todo form overlay ---- */
 let TDOK = null;
-function tdOpen(html) { $('tdsheet').innerHTML = html; $('tdoverlay').classList.add('open'); }
-function tdClose() { $('tdoverlay').classList.remove('open'); $('tdsheet').innerHTML = ''; TDOK = null; }
+let tdGen = 0;
+function tdOpen(html) {
+  tdGen++;
+  const ov = $('tdoverlay');
+  const already = ov.classList.contains('open') && ov.classList.contains('show');
+  $('tdsheet').innerHTML = html;
+  if (already) return;
+  ov.classList.add('open');
+  requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('show'); }); });
+}
+function tdClose() {
+  tdGen++;
+  TDOK = null;
+  const ov = $('tdoverlay'); if (!ov) return;
+  const gen = tdGen;
+  ov.classList.remove('show');
+  setTimeout(function () { if (gen === tdGen) { ov.classList.remove('open'); $('tdsheet').innerHTML = ''; } }, 345);
+}
 function tdOkClick() { if (TDOK) TDOK(); }
 function tdHead(title, withOk, backFn) {
   return '<div class="tdfhead">' + (backFn ? '<button class="tdfx" onclick="' + backFn + '">‹</button>' : '<button class="tdfx" onclick="tdClose()">✕</button>')
