@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.13">
+<meta name="app-version" content="1.14">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -150,7 +150,7 @@
 
   /* ---------- FAB / pill nav ---------- */
   #fab {
-    position: fixed; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); z-index: 40;
+    position: fixed; right: 18px; bottom: 78px; z-index: 40;
     width: 60px; height: 60px; border-radius: 50%;
     background: var(--fab); color: var(--fabink);
     display: flex; align-items: center; justify-content: center;
@@ -160,7 +160,7 @@
   #fab:active { transform: scale(.96); }
   #pillnav {
     position: fixed; left: 50%; transform: translateX(-50%); z-index: 40;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    bottom: 8px;
     width: calc(100vw - 92px); max-width: 430px; height: 56px;
     display: flex; gap: 0; padding: 5px; box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif;
@@ -658,13 +658,10 @@ function moveNavInd(animate){
   ind.style.transform='translateX('+to+'px)';
   lastNavX=to;
   if(animate && from!==null && from!==to && ind.animate){
-    const mid=(from+to)/2;
     ind.animate([
-      { transform:'translateX('+from+'px) scale(1,1)' },
-      { transform:'translateX('+mid+'px) scale(1.14,.80)', offset:.34 },
-      { transform:'translateX('+to+'px) scale(.96,1.06)', offset:.68 },
-      { transform:'translateX('+to+'px) scale(1,1)' }
-    ], { duration:480, easing:'ease-out' });
+      { transform:'translateX('+from+'px)' },
+      { transform:'translateX('+to+'px)' }
+    ], { duration:430, easing:'cubic-bezier(.30,1.25,.35,1)' });
   }
 }
 window.addEventListener('resize', ()=>moveNavInd(false));
@@ -1163,7 +1160,7 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v1.13', "openSettingsPanel('about')")+
+      srow(SICON.info, 'このアプリについて', 'v1.14', "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1221,7 +1218,7 @@ function renderSettingsPanel(){
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
   }
   else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.13 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
+    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v1.14 ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
@@ -1541,7 +1538,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.13';
+const APP_VERSION='1.14';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
@@ -1593,6 +1590,7 @@ document.addEventListener('visibilitychange', ()=>{
     setTimeout(trySilentRefresh, 800);
   }
   checkForUpdate();
+  requestAnimationFrame(()=>moveNavInd(false));
 })();
 </script>
 </body>
