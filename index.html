@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.57">
+<meta name="app-version" content="1.58">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -96,6 +96,7 @@
   .spacer44 { width: 44px; flex: none; }
 
   #syncbar { text-align: center; font-size: calc(var(--fs) * .72); color: var(--muted); padding: 0 16px 6px; min-height: 1.2em; }
+  #tdsyncnote { text-align: center; font-size: calc(var(--fs) * .72); color: #d9a13b; padding: 0 16px 4px; }
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
@@ -597,6 +598,7 @@
       <div class="ttl">Todo</div>
       <button class="tdiconbtn" onclick="openTodoSearch()" aria-label="検索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></button>
     </div>
+    <div id="tdsyncnote" style="display:none"></div>
     <main><div id="todowrap"></div></main>
   </section>
 
@@ -1514,6 +1516,7 @@ const UPLOAD_API='https://www.googleapis.com/upload/drive/v3';
 let syncStatus='disconnected'; /* disconnected | syncing | synced | error */
 let syncMsg='';
 let lastSyncAt=0;
+let todoDirty=false, todoEditSeq=0, lastRefreshTry=0;
 let syncTimer=null;
 let syncRunning=false;
 
@@ -1526,6 +1529,7 @@ function getValidToken(){
   return null;
 }
 function isDriveConnected(){ return !!getValidToken(); }
+function canSync(){ return !!getValidToken(); }
 function storeToken(tok, expiresInSec){
   storeSet(SS_TOKEN, tok);
   storeSet(LS_TOKEN_EXP, String(Date.now() + (expiresInSec||3600)*1000));
@@ -1546,6 +1550,7 @@ function renderSyncStatus(){
   else if(syncStatus==='syncing') label='同期中…';
   else if(syncStatus==='error'){ label='同期エラー'+(syncMsg ? '：'+syncMsg : ''); cls='err'; }
   else label='Drive未接続（端末内に保存中）';
+  if (todoDirty) label += '・未同期の変更あり';
   const bar=$('syncbar'); if(bar) bar.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   const st=$('syncstat'); if(st) st.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
 }
@@ -1759,7 +1764,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.57';
+const APP_VERSION='1.58';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1783,16 +1788,17 @@ function checkForUpdate(){
 }
 let hiddenAt=0;
 document.addEventListener('visibilitychange', ()=>{
-  if(document.hidden){ hiddenAt=Date.now(); return; }
+  if(document.hidden){ hiddenAt=Date.now(); if(todoDirty) attemptTodoRescue(); return; }
   /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
   if(hiddenAt && Date.now()-hiddenAt>=60000 && !editing) checkForUpdate();
   /* 復帰時に取りに行く：裏で入った価格などを早く映す */
-  if(!editing && tokenClient && accessToken && Date.now()-lastSyncAt>=30000) syncNow('foreground');
+  if(!editing && canSync() && Date.now()-lastSyncAt>=30000) syncNow('foreground');
 });
 /* 開いている間の定期同期：外部の書き込み（価格など）を約1分で映す */
 setInterval(function(){
   if(document.hidden || editing) return;
-  if(!(tokenClient && accessToken)) return;
+  if(todoDirty) { attemptTodoRescue(); return; }
+  if(!canSync()) return;
   if(Date.now()-lastSyncAt < 45000) return;
   if(typeof todoEdit !== 'undefined' && todoEdit) return;
   if(document.querySelector('.tdmodal.open')) return;
@@ -1824,8 +1830,8 @@ function loadTodo() {
   saveTodoLocal();
 }
 function saveTodoLocal() { try { localStorage.setItem(LS_TODO, JSON.stringify(TodoDB)); } catch (e) {} }
-function touchTodo() { TodoDB.updatedAt = Date.now(); saveTodoLocal(); scheduleTodoSync(); }
-function scheduleTodoSync() { if (todoSyncTimer) clearTimeout(todoSyncTimer); todoSyncTimer = setTimeout(function () { if (tokenClient && accessToken) syncNow(true); }, 1600); }
+function touchTodo() { TodoDB.updatedAt = Date.now(); todoDirty = true; todoEditSeq++; saveTodoLocal(); renderSyncStatus(); renderTodoDirty(); scheduleTodoSync(); }
+function scheduleTodoSync() { if (todoSyncTimer) clearTimeout(todoSyncTimer); todoSyncTimer = setTimeout(function () { if (canSync()) syncNow(true); else attemptTodoRescue(); }, 1600); }
 let todoFolderId = null, todoListId = null, todoEdit = false, todoSel = new Set();
 function folderById(id) { return TodoDB.folders.find(function (f) { return f.id === id; }); }
 function listById(id) { return TodoDB.lists.find(function (l) { return l.id === id; }); }
@@ -1904,6 +1910,7 @@ function buildTodoHTML() {
 }
 function renderTodo() {
   const wrap = $('todowrap'); if (!wrap) return;
+  renderTodoDirty();
   if (!TodoDB) { try { loadTodo(); } catch (e) {} if (!TodoDB) return; }
   wrap.innerHTML = buildTodoHTML();
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
@@ -2159,28 +2166,64 @@ function mergeTodoDb(local, remote) {
     trash: unionLocalFirst(local.trash, remote.trash)
   };
 }
+let pricePollTimers = [];
+function startPricePolls() {
+  pricePollTimers.forEach(function (t) { clearTimeout(t); });
+  pricePollTimers = [];
+  [20000, 45000, 75000, 110000, 150000, 200000, 260000].forEach(function (ms) {
+    pricePollTimers.push(setTimeout(function () { if (canSync() && !editing) syncNow('pricepoll'); }, ms));
+  });
+}
+function hasUnpricedWishlist(db) {
+  if (!db) return false;
+  return (db.todos || []).some(function (t) {
+    if (t.done || t.price != null) return false;
+    let f = null;
+    if (t.folderId) f = folderById(t.folderId);
+    else if (t.listId) { const l = listById(t.listId); if (l) f = folderById(l.folderId); }
+    return isPriceFolder(f);
+  });
+}
+function attemptTodoRescue() {
+  if (syncRunning) return;
+  if (getValidToken()) { syncNow('retry'); return; }
+  if (!getClientId()) return;
+  const now = Date.now();
+  if (now - lastRefreshTry < 120000) return;
+  lastRefreshTry = now;
+  trySilentRefresh();
+}
+function renderTodoDirty() {
+  const el = $('tdsyncnote'); if (!el) return;
+  el.style.display = todoDirty ? '' : 'none';
+  if (todoDirty) el.textContent = '未同期の変更があります（自動で送信を試みています）';
+}
 async function syncTodo() {
+  const seq0 = todoEditSeq;
   try {
-    if (!TodoDB) return;
+    if (!TodoDB) return true;
     const q = encodeURIComponent("name='todo.json' and trashed=false");
     const res = await driveFetch('/files?q=' + q + '&fields=' + encodeURIComponent('files(id,name,createdTime)') + '&orderBy=createdTime');
-    if (!res.ok) return;
+    if (!res.ok) return false;
     const j = await res.json();
     const files = (j.files || []).filter(function (f) { return f.name === 'todo.json'; });
-    const tok = getValidToken(); if (!tok) return;
+    const tok = getValidToken(); if (!tok) return false;
     if (!files.length) {
       const meta = { name: 'todo.json', mimeType: 'application/json' };
       const form = new FormData();
       form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
       form.append('file', new Blob([JSON.stringify(TodoDB)], { type: 'application/json' }), 'todo.json');
-      await fetch(UPLOAD_API + '/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: form });
-      return;
+      const up = await fetch(UPLOAD_API + '/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: form });
+      if (!up.ok) return false;
+      if (hasUnpricedWishlist(TodoDB)) startPricePolls();
+      if (todoEditSeq === seq0 && todoDirty) { todoDirty = false; renderSyncStatus(); renderTodoDirty(); }
+      return true;
     }
     const file = files[0];
     const dl = await driveFetch('/files/' + encodeURIComponent(file.id) + '?alt=media');
-    if (!dl.ok) return;
+    if (!dl.ok) return false;
     const remote = normalizeTodo(JSON.parse(await dl.text()));
-    if (!remote) return;
+    if (!remote) return false;
     const snap = function (d) { return JSON.stringify({ f: d.folders, l: d.lists, t: d.todos, r: d.trash }); };
     const remoteSnap = snap(remote);
     const merged = mergeTodoDb(TodoDB, remote);
@@ -2188,9 +2231,13 @@ async function syncTodo() {
     if (currentView === 'todo') renderTodo();
     if (snap(merged) !== remoteSnap) {
       TodoDB.updatedAt = Date.now(); saveTodoLocal();
-      await fetch(UPLOAD_API + '/files/' + encodeURIComponent(file.id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(TodoDB) });
+      const up = await fetch(UPLOAD_API + '/files/' + encodeURIComponent(file.id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(TodoDB) });
+      if (!up.ok) return false;
+      if (hasUnpricedWishlist(TodoDB)) startPricePolls();
     }
-  } catch (e) { /* todo同期の失敗は日記同期を止めない */ }
+    if (todoEditSeq === seq0 && todoDirty) { todoDirty = false; renderSyncStatus(); renderTodoDirty(); }
+    return true;
+  } catch (e) { /* todo同期の失敗は日記同期を止めない */ return false; }
 }
 async function requestPriceCheck() {
   if (priceCheckBusy) return;
@@ -2217,9 +2264,7 @@ async function requestPriceCheck() {
     }
     priceCheckBusy = false; priceCheckSentAt = Date.now();
     /* 価格が書かれたらすぐ映るよう、数分間だけ頻繁に取りに行く */
-    [20000, 45000, 75000, 110000, 150000, 200000, 260000].forEach(function (ms) {
-      setTimeout(function () { if (tokenClient && accessToken && !editing) syncNow('pricepoll'); }, ms);
-    });
+    startPricePolls();
     if (currentView === 'todo') renderTodo();
     setTimeout(function () { if (currentView === 'todo') renderTodo(); }, 10000);
   } catch (e) {
