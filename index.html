@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.14">
+<meta name="app-version" content="1.15">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -98,7 +98,7 @@
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
-  .view { display: none; }
+  .view { display: none; min-height: calc(100dvh + 2px); }
   .view.active { display: block; }
 
   /* ---------- splash (opening) ---------- */
@@ -664,7 +664,16 @@ function moveNavInd(animate){
     ], { duration:430, easing:'cubic-bezier(.30,1.25,.35,1)' });
   }
 }
-window.addEventListener('resize', ()=>moveNavInd(false));
+function pinNav(){
+  /* iOS standalone shrinks the fixed-position frame when the page is not
+     scrollable, floating bottom:8px up by ~59px. Measure the real gap to
+     the screen bottom and compensate so the bar always sits 8px above it. */
+  const nav=$('pillnav'); if(!nav || nav.style.display==='none') return;
+  nav.style.bottom='8px';
+  const gap=window.innerHeight - nav.getBoundingClientRect().bottom;
+  if(Math.abs(gap-8)>2) nav.style.bottom=(16-gap)+'px';
+}
+window.addEventListener('resize', ()=>{ moveNavInd(false); pinNav(); });
 function showView(v){
   if(currentView==='entry' && v!=='entry' && editing){ saveEdit(); }
   if(v!=='settings' && typeof settingsPanel!=='undefined') settingsPanel=null;
@@ -680,6 +689,7 @@ function showView(v){
   if(v==='settings') renderSettings();
   if(v==='search'){ renderSearch(); setTimeout(()=>{ try{$('searchinput').focus();}catch(e){} }, 60); }
   window.scrollTo(0,0);
+  pinNav(); setTimeout(pinNav, 350);
 }
 
 /* ================= list ================= */
@@ -761,6 +771,7 @@ function renderCalendar(){
   const es=visibleEntries().filter(e=>e.date===selectedDate).sort(cmpDesc);
   $('caldaylist').innerHTML = '<div class="caldayhead">'+fmtDateLabel(selectedDate)+'</div>'+
     (es.length ? es.map(entryCardHTML).join('') : '<div class="empty">この日の日記はありません。</div>');
+  pinNav();
 }
 let calAnim=null; /* 進行中の月スライド {delta} */
 let calSuppressClickUntil=0;
@@ -1538,7 +1549,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.14';
+const APP_VERSION='1.15';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
