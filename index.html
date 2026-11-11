@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.60">
+<meta name="app-version" content="1.61">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -96,7 +96,7 @@
   .spacer44 { width: 44px; flex: none; }
 
   #syncbar { text-align: center; font-size: calc(var(--fs) * .72); color: var(--muted); padding: 0 16px 6px; min-height: 1.2em; }
-  #tdsyncnote { text-align: center; font-size: calc(var(--fs) * .72); color: #d9a13b; padding: 0 16px 4px; }
+  #tdsyncnote { text-align: center; font-size: calc(var(--fs) * .72); color: var(--muted); padding: 0 16px 4px; cursor: pointer; }
   #drivebanner { position: fixed; top: 0; left: 0; right: 0; z-index: 50; width: 100%; border: 0; background: #b3261e; color: #fff; font-family: var(--uifont); font-size: 14px; font-weight: 600; text-align: center; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; cursor: pointer; }
   #syncbar .err { color: var(--danger); }
 
@@ -600,7 +600,7 @@
       <div class="ttl">Todo</div>
       <button class="tdiconbtn" onclick="openTodoSearch()" aria-label="検索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></button>
     </div>
-    <div id="tdsyncnote" style="display:none"></div>
+    <div id="tdsyncnote" style="display:none" onclick="todoSyncNoteTap()"></div>
     <main><div id="todowrap"></div></main>
   </section>
 
@@ -1574,6 +1574,7 @@ function renderSyncStatus(){
   const bar=$('syncbar'); if(bar) bar.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   const st=$('syncstat'); if(st) st.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   renderDriveBanner();
+  if (typeof renderTodoSyncNote === 'function') renderTodoSyncNote();
 }
 function scheduleSync(){
   if(!isDriveConnected()) return;
@@ -1785,7 +1786,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.60';
+const APP_VERSION='1.61';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1821,6 +1822,7 @@ setInterval(function(){
   if(document.hidden) return;
   if(!editing && (!getValidToken() || tokenExpiringSoon())) attemptTokenRefresh();
   renderDriveBanner();
+  renderTodoSyncNote();
   if(editing) return;
   if(todoDirty) { attemptTodoRescue(); return; }
   if(!canSync()) return;
@@ -2214,11 +2216,25 @@ function attemptTodoRescue() {
   if (getValidToken()) { syncNow('retry'); return; }
   attemptTokenRefresh();
 }
-function renderTodoDirty() {
+function renderTodoSyncNote() {
   const el = $('tdsyncnote'); if (!el) return;
-  el.style.display = todoDirty ? '' : 'none';
-  if (todoDirty) el.textContent = '未同期の変更があります（自動で送信を試みています）';
+  el.style.display = '';
+  if (todoDirty) {
+    el.style.color = '#d9a13b';
+    el.textContent = '未同期の変更があります（自動で送信中…／タップで今すぐ同期）';
+  } else if (!getValidToken()) {
+    el.style.color = '#e5484d';
+    el.textContent = 'Drive未接続 — タップで再接続';
+  } else {
+    el.style.color = '';
+    el.textContent = '同期済み' + (lastSyncAt ? '（' + pad2(new Date(lastSyncAt).getHours()) + ':' + pad2(new Date(lastSyncAt).getMinutes()) + '）' : '') + '（タップで今すぐ同期）';
+  }
 }
+function todoSyncNoteTap() {
+  if (!getValidToken()) { connectDrive(); return; }
+  syncNow('manual');
+}
+function renderTodoDirty() { renderTodoSyncNote(); }
 async function syncTodo() {
   const seq0 = todoEditSeq;
   try {
