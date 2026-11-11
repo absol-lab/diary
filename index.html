@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.23">
+<meta name="app-version" content="1.24">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -232,18 +232,20 @@
   .tdeditbar button svg { width: 20px; height: 20px; }
   .tdeditbar .tddelbtn { color: #e5484d; }
   /* todo full-screen form overlay */
-  #tdoverlay { position: fixed; inset: 0; z-index: 90; background: var(--bg2); display: none; flex-direction: column; }
+  #tdoverlay { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.45); display: none; flex-direction: column; }
+  #tdsheet { background: var(--bg2); border-radius: 24px 24px 0 0; margin-top: calc(env(safe-area-inset-top, 0px) + 4px); overflow: hidden; }
   #tdoverlay.open { display: flex; }
   #tdsheet { transform: translateY(103%); transition: transform .37s cubic-bezier(.32,.72,.28,1); }
   #tdoverlay.show #tdsheet { transform: translateY(0); }
-  .tdfhead { display: flex; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px 10px; }
+  .tdfhead { display: flex; align-items: center; padding: 26px 14px 10px; }
   .tdfx { width: 40px; height: 40px; border-radius: 50%; background: var(--card2); color: var(--text); font-size: 17px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
   .tdfttl { flex: 1; text-align: center; font-size: 16px; font-weight: 700; font-family: var(--uifont); }
   .tdfok { width: 40px; height: 40px; border-radius: 50%; background: var(--text); color: var(--bg); font-size: 17px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-  .tdfbody { flex: 1; overflow-y: auto; padding: 8px 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
-  .tdfinput { width: 100%; box-sizing: border-box; background: var(--card); border: none; border-radius: 14px; color: var(--text); font-size: 16px; padding: 14px 16px; font-family: var(--bodyfont); }
+  .tdfbody { flex: 1; overflow-y: auto; padding: 26px 16px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  .tdfinput { width: 100%; box-sizing: border-box; background: var(--card); border: none; border-radius: 999px; color: var(--text); font-size: 16px; padding: 14px 16px; font-family: var(--bodyfont); }
   .tdfinput::placeholder { color: var(--muted); }
-  textarea.tdfinput { min-height: 180px; resize: vertical; line-height: 1.7; }
+  textarea.tdfinput { min-height: 180px; resize: vertical; line-height: 1.7; border-radius: 18px; }
+  .tdfinput:focus { outline: none; }
   .tdfcard { background: var(--card); border-radius: 16px; margin-top: 16px; overflow: hidden; }
   .tdfopt { display: flex; align-items: center; width: 100%; padding: 15px 16px; font-size: 15px; color: var(--text); text-align: left; border-bottom: 1px solid var(--line); font-family: var(--uifont); }
   .tdfopt:last-child { border-bottom: none; }
@@ -616,7 +618,7 @@
   </div>
 
   <div id="tdoverlay">
-    <div id="tdsheet" style="display:flex;flex-direction:column;height:100%"></div>
+    <div id="tdsheet" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
   </div>
 
   <div id="tddrawer"><div class="scrim" onclick="closeDrawer()"></div><div class="panel" id="tdpanel"></div></div>
@@ -1749,7 +1751,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.23';
+const APP_VERSION='1.24';
 function checkForUpdate(){
   if(location.hash && location.hash.indexOf('access_token')>=0) return; /* 認証戻りの時は触らない */
   try{
