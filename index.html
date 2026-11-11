@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.44">
+<meta name="app-version" content="1.45">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -200,33 +200,40 @@
   .tdrow { display: flex; align-items: center; gap: 12px; padding: 11px 4px 0; background: var(--bg); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
+  [data-dragkind] .tdcheck.done { background: #5eb1ef; border-color: #5eb1ef; color: #fff; }
+  .tdrow.sel { background: var(--card2); margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; }
   .tdmain { flex: 1; min-width: 0; padding-bottom: 11px; border-bottom: 1px solid var(--line); }
   .tdtitle { font-size: 15.5px; }
   .tdtitle.done { color: var(--muted); text-decoration: line-through; }
   .tddue { display: inline-block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-family: var(--uifont); }
   .tddue.over { color: #e5484d; }
-  .tdhandle { flex: 0 0 auto; color: var(--muted); font-size: 17px; padding: 6px 8px; cursor: grab; touch-action: none; }
+  .tdhandle { flex: 0 0 auto; color: var(--muted); font-size: 23px; line-height: 1; padding: 10px 12px; cursor: grab; touch-action: none; }
   .tdrow.dragging { position: relative; z-index: 5; background: var(--card2); border-radius: 10px; }
+  .tmrow.dragging { position: relative; z-index: 5; background: var(--card2); border-radius: 10px; }
+  [data-dragkind].tddraglive [data-dragid] { transition: transform .2s cubic-bezier(.32,.72,.28,1); }
+  [data-dragkind].tddraglive [data-dragid].dragging { transition: none; opacity: .55; }
   .tdnone { color: var(--muted); text-align: center; padding: 52px 0; font-size: 14px; }
   .tdbackbar { display: flex; align-items: center; gap: 6px; padding: 2px 0 6px; }
   .tdback { font-size: 24px; color: var(--text); padding: 2px 10px 2px 2px; line-height: 1; }
   .tdltitle { flex: 1; font-size: 16px; font-weight: 700; font-family: var(--uifont); text-align: center; }
   .tdiconbtn { color: var(--text); padding: 6px; display: flex; }
   .tdiconbtn svg { width: 21px; height: 21px; }
-  .tdedithead { display: flex; align-items: center; gap: 10px; padding: 0 0 4px; }
-  .tdedithead .x { font-size: 17px; color: var(--text); padding: 6px 10px 6px 2px; }
-  .tdedithead .t { font-size: 16px; font-weight: 700; font-family: var(--uifont); }
+  .tdedithead { display: flex; align-items: center; justify-content: center; position: relative; min-height: 46px; padding: 0 0 4px; }
+  .tdedithead .x { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 46px; height: 46px; border-radius: 50%; background: var(--card2); color: var(--text); font-size: 18px; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .tdedithead .t { font-size: 16.5px; font-weight: 700; font-family: var(--uifont); }
   .tdfab { position: fixed; bottom: 96px; z-index: 35; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
   .tdfab.plus { right: 18px; background: var(--text); color: var(--bg); font-size: 26px; font-weight: 300; }
   .tdfab.trash { left: 18px; background: var(--card2); color: var(--muted); }
   .tdfab svg { width: 22px; height: 22px; }
   .tdfab.undo { left: 82px; background: var(--card2); color: var(--text); }
   .tddonehead { font-family: var(--uifont); font-size: 13px; color: var(--muted); margin: 22px 4px 0; letter-spacing: .05em; }
-  .tdeditbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 4px; background: var(--card2); border-radius: 999px; padding: 7px 10px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
-  .tdeditbar button { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text); }
+  .tdeditbar { position: fixed; left: 14px; bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 22px; background: var(--card2); border-radius: 999px; padding: 7px 22px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+  .tdeditbar button { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text); }
   .tdeditbar button.off { opacity: .35; }
-  .tdeditbar button svg { width: 20px; height: 20px; }
-  .tdeditbar .tddelbtn { color: #e5484d; }
+  .tdeditbar button svg { width: 23px; height: 23px; }
+  .tddelFab { position: fixed; right: 14px; bottom: 100px; z-index: 35; width: 48px; height: 48px; border-radius: 50%; background: var(--card2); color: #ff5546; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
+  .tddelFab svg { width: 20px; height: 20px; }
+  .tddelFab.off { opacity: .35; }
   /* todo full-screen form overlay */
   #tdoverlay { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.45); display: none; flex-direction: column; }
   #tdsheet { background: var(--bg2); border-radius: 24px 24px 0 0; margin-top: calc(env(safe-area-inset-top, 0px) + 4px); overflow: hidden; }
@@ -1751,7 +1758,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.44';
+const APP_VERSION='1.45';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1837,7 +1844,7 @@ function dueLabel(due) {
   if (due === today) lb = '今日 ' + lb; else if (due === tdYmd(new Date(Date.now() + 86400000))) lb = '明日 ' + lb;
   return '<span class="tddue' + (due < today ? ' over' : '') + '">' + lb + '</span>';
 }
-const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0l-.8 12.2a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8L6 7"/></svg>';
+const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7V4.8A1.8 1.8 0 0 1 10.8 3h2.4A1.8 1.8 0 0 1 15 4.8V7"/><path d="M3.5 7h17"/><path d="M5.3 7l.85 12.05A2 2 0 0 0 8.15 21h7.7a2 2 0 0 0 2-1.95L18.7 7"/><path d="M9.2 10.6v6.6M12 10.6v6.6M14.8 10.6v6.6"/></svg>';
 const SVG_UNDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>';
 const SVG_MORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><circle cx="8.2" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.8" cy="12" r="1.25" fill="currentColor" stroke="none"/></svg>';
@@ -1856,8 +1863,8 @@ function todoRowsHTML(items) {
 }
 function todoEditRowHTML(t) {
   const on = todoSel.has(t.id);
-  const st = t.color ? ' style="border-color:' + t.color + '"' : '';
-  return '<div class="tdrow" data-dragid="' + t.id + '"><button class="tdcheck' + (on ? ' done' : '') + '"' + st + ' onclick="toggleSel(' + t.id + ')">' + (on ? '✓' : '') + '</button>'
+  const st = (t.color && !on) ? ' style="border-color:' + t.color + '"' : '';
+  return '<div class="tdrow' + (on ? ' sel' : '') + '" data-dragid="' + t.id + '"><button class="tdcheck' + (on ? ' done' : '') + '"' + st + ' onclick="toggleSel(' + t.id + ')">' + (on ? '✓' : '') + '</button>'
     + '<div class="tdmain"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div><span class="tdhandle">☰</span></div>';
 }
 let todoSpecial = null;
@@ -1888,7 +1895,7 @@ function sanitizeLayer(layer, folderIdForPager, S) {
     if (f) stat.innerHTML = folderBodyHTML(f);
     pg.replaceWith(stat);
   }
-  const fixed = Array.prototype.slice.call(layer.querySelectorAll('.tdfab, .tdeditbar'));
+  const fixed = Array.prototype.slice.call(layer.querySelectorAll('.tdfab, .tdeditbar, .tddelFab'));
   fixed.forEach(function (el) { el.remove(); });
   const clip = document.createElement('div');
   clip.className = 'tdclip';
@@ -2030,7 +2037,7 @@ function listHTML(l) {
 function editHTML(c) {
   const items = sortTodos(c.items, c.obj.sort);
   let h = '<div class="tdedithead"><button class="x" onclick="exitEdit()">✕</button><span class="t">編集</span></div>';
-  h += '<div class="tdsub"><button onclick="toggleSelectAll()">✓ 全て選択</button><button onclick="openSortPop(this)">↓↑ 並び替え</button></div>';
+  h += '<div class="tdsub"><button onclick="toggleSelectAll()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>全て選択</button><button onclick="openSortPop(this)">↑↓ 並び替え</button></div>';
   h += '<div data-dragkind="todos">' + (items.length ? items.map(todoEditRowHTML).join('') : '<div class="tdnone">ToDoはありません</div>') + '</div>';
   const off = todoSel.size ? '' : ' off';
   h += '<div class="tdeditbar">'
@@ -2038,7 +2045,8 @@ function editHTML(c) {
     + '<button class="' + off.trim() + '" onclick="bulkColor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="8.5" cy="10" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="7.6" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="10" r="1.2" fill="currentColor" stroke="none"/><path d="M12 21c1-3 3-3.4 4.5-3.4"/></svg></button>'
     + '<button class="' + off.trim() + '" onclick="bulkMove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>'
     + '<button class="' + off.trim() + '" onclick="bulkDup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>'
-    + '<button class="tddelbtn ' + off.trim() + '" onclick="bulkDelete()">' + SVG_TRASH + '</button></div>';
+    + '</div>'
+    + '<button class="tddelFab' + off + '" onclick="bulkDelete()">' + SVG_TRASH + '</button>';
   return h;
 }
 function pickTodoFolder(id) {
@@ -2722,6 +2730,7 @@ document.addEventListener('pointerdown', function (e) {
   const rows = Array.prototype.slice.call(row.parentElement.querySelectorAll('[data-dragid]'));
   dragCtx = { row: row, rows: rows, idx: rows.indexOf(row), newIdx: rows.indexOf(row), y0: e.clientY, hh: Math.max(30, row.offsetHeight), kind: row.parentElement.getAttribute('data-dragkind') };
   row.classList.add('dragging');
+  row.parentElement.classList.add('tddraglive');
   try { row.setPointerCapture(e.pointerId); } catch (_) {}
   e.preventDefault();
 });
@@ -2743,6 +2752,8 @@ document.addEventListener('pointerup', function () {
   if (!dragCtx) return;
   const ctx = dragCtx; dragCtx = null;
   ctx.rows.forEach(function (r) { r.style.transform = ''; r.classList.remove('dragging'); });
+  const liveBox = ctx.row.parentElement;
+  if (liveBox) setTimeout(function () { if (!dragCtx) liveBox.classList.remove('tddraglive'); }, 240);
   if (ctx.newIdx === ctx.idx) return;
   const ids = ctx.rows.map(function (r) { return +r.getAttribute('data-dragid'); });
   const moved = ids.splice(ctx.idx, 1)[0]; ids.splice(ctx.newIdx, 0, moved);
