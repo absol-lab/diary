@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.56">
+<meta name="app-version" content="1.57">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1759,7 +1759,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.56';
+const APP_VERSION='1.57';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1786,7 +1786,18 @@ document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ hiddenAt=Date.now(); return; }
   /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
   if(hiddenAt && Date.now()-hiddenAt>=60000 && !editing) checkForUpdate();
+  /* 復帰時に取りに行く：裏で入った価格などを早く映す */
+  if(!editing && tokenClient && accessToken && Date.now()-lastSyncAt>=30000) syncNow('foreground');
 });
+/* 開いている間の定期同期：外部の書き込み（価格など）を約1分で映す */
+setInterval(function(){
+  if(document.hidden || editing) return;
+  if(!(tokenClient && accessToken)) return;
+  if(Date.now()-lastSyncAt < 45000) return;
+  if(typeof todoEdit !== 'undefined' && todoEdit) return;
+  if(document.querySelector('.tdmodal.open')) return;
+  syncNow('interval');
+}, 30000);
 
 /* ================= todo ================= */
 const LS_TODO = 'diaryStandalone.todo.v1';
@@ -2116,6 +2127,38 @@ function enterEdit() { todoEdit = true; todoSel.clear(); renderTodo(); }
 function exitEdit() { todoEdit = false; todoSel.clear(); renderTodo(); }
 function toggleSel(id) { if (todoSel.has(id)) todoSel.delete(id); else todoSel.add(id); renderTodo(); }
 function toggleSelectAll() { const c = curContainer(); if (!c) return; if (todoSel.size >= c.items.length && c.items.length) todoSel.clear(); else c.items.forEach(function (t) { todoSel.add(t.id); }); renderTodo(); }
+function mergeTodoDb(local, remote) {
+  const lTrash = {}, rTrash = {};
+  (local.trash || []).forEach(function (t) { lTrash[t.id] = true; });
+  (remote.trash || []).forEach(function (t) { rTrash[t.id] = true; });
+  function unionLocalFirst(lArr, rArr) {
+    const seen = {}, out = [];
+    (lArr || []).forEach(function (x) { if (!seen[x.id]) { seen[x.id] = true; out.push(x); } });
+    (rArr || []).forEach(function (x) { if (!seen[x.id]) { seen[x.id] = true; out.push(x); } });
+    return out;
+  }
+  const rTodo = {};
+  (remote.todos || []).forEach(function (t) { rTodo[t.id] = t; });
+  const todos = [], done = {};
+  (local.todos || []).forEach(function (t) {
+    if (rTrash[t.id]) return;
+    const r = rTodo[t.id];
+    if (r && r.price != null && t.price !== r.price) { const m = Object.assign({}, t); m.price = r.price; todos.push(m); }
+    else todos.push(t);
+    done[t.id] = true;
+  });
+  (remote.todos || []).forEach(function (t) {
+    if (done[t.id] || lTrash[t.id]) return;
+    todos.push(t); done[t.id] = true;
+  });
+  return {
+    updatedAt: Math.max(local.updatedAt || 0, remote.updatedAt || 0),
+    folders: unionLocalFirst(local.folders, remote.folders),
+    lists: unionLocalFirst(local.lists, remote.lists),
+    todos: todos,
+    trash: unionLocalFirst(local.trash, remote.trash)
+  };
+}
 async function syncTodo() {
   try {
     if (!TodoDB) return;
@@ -2137,10 +2180,14 @@ async function syncTodo() {
     const dl = await driveFetch('/files/' + encodeURIComponent(file.id) + '?alt=media');
     if (!dl.ok) return;
     const remote = normalizeTodo(JSON.parse(await dl.text()));
-    if (remote && (remote.updatedAt || 0) > (TodoDB.updatedAt || 0)) {
-      TodoDB = remote; saveTodoLocal();
-      if (currentView === 'todo') renderTodo();
-    } else if ((TodoDB.updatedAt || 0) > (remote ? (remote.updatedAt || 0) : 0)) {
+    if (!remote) return;
+    const snap = function (d) { return JSON.stringify({ f: d.folders, l: d.lists, t: d.todos, r: d.trash }); };
+    const remoteSnap = snap(remote);
+    const merged = mergeTodoDb(TodoDB, remote);
+    TodoDB = merged; saveTodoLocal();
+    if (currentView === 'todo') renderTodo();
+    if (snap(merged) !== remoteSnap) {
+      TodoDB.updatedAt = Date.now(); saveTodoLocal();
       await fetch(UPLOAD_API + '/files/' + encodeURIComponent(file.id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(TodoDB) });
     }
   } catch (e) { /* todo同期の失敗は日記同期を止めない */ }
@@ -2169,6 +2216,10 @@ async function requestPriceCheck() {
       if (!up.ok) throw new Error('create HTTP ' + up.status);
     }
     priceCheckBusy = false; priceCheckSentAt = Date.now();
+    /* 価格が書かれたらすぐ映るよう、数分間だけ頻繁に取りに行く */
+    [20000, 45000, 75000, 110000, 150000, 200000, 260000].forEach(function (ms) {
+      setTimeout(function () { if (tokenClient && accessToken && !editing) syncNow('pricepoll'); }, ms);
+    });
     if (currentView === 'todo') renderTodo();
     setTimeout(function () { if (currentView === 'todo') renderTodo(); }, 10000);
   } catch (e) {
