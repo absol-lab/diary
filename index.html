@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.49">
+<meta name="app-version" content="1.50">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1758,7 +1758,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.49';
+const APP_VERSION='1.50';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1804,8 +1804,9 @@ function normalizeTodo(d) {
   };
 }
 let TodoDB = null, todoSyncTimer = null;
+function isSeedFossil(d) { return d && d.updatedAt === 1762782241412 && d.folders.length === 4 && d.lists.length === 6 && d.todos.length === 34; }
 function loadTodo() {
-  try { const raw = localStorage.getItem(LS_TODO); if (raw) { TodoDB = normalizeTodo(JSON.parse(raw)); if (TodoDB) return; } } catch (e) {}
+  try { const raw = localStorage.getItem(LS_TODO); if (raw) { const d = normalizeTodo(JSON.parse(raw)); if (d && !isSeedFossil(d)) { TodoDB = d; return; } } } catch (e) {}
   TodoDB = normalizeTodo(JSON.parse(JSON.stringify(TODO_SEED)));
   saveTodoLocal();
 }
