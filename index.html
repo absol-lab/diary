@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.50">
+<meta name="app-version" content="1.51">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -200,6 +200,7 @@
   .tdrow { display: flex; align-items: center; gap: 12px; padding: 11px 4px 0; background: var(--bg); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
+  .tdprice { flex: 0 0 auto; font-size: 14px; font-weight: 600; color: var(--muted); }
   [data-dragkind] .tdcheck.done { background: #5eb1ef; border-color: #5eb1ef; color: #fff; }
   .tdrow.sel { background: var(--card2); margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; }
   .tdmain { flex: 1; min-width: 0; padding-bottom: 11px; border-bottom: 1px solid var(--line); }
@@ -1758,7 +1759,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.50';
+const APP_VERSION='1.51';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1792,7 +1793,7 @@ const LS_TODO = 'diaryStandalone.todo.v1';
 const TODO_COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#3e9bff', '#8e4ec6', '#9c9ca4'];
 const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別' };
 const TODO_SEED = {"updatedAt":0,"folders":[],"lists":[],"todos":[],"trash":[]};
-function todoNorm(t) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: t.title, done: !!t.done, due: t.due || null, color: t.color || null }; }
+function todoNorm(t) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: t.title, done: !!t.done, due: t.due || null, color: t.color || null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : null }; }
 function normalizeTodo(d) {
   if (!d || typeof d !== 'object') return null;
   return {
@@ -1850,9 +1851,17 @@ const SVG_UNDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>';
 const SVG_MORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><circle cx="8.2" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.8" cy="12" r="1.25" fill="currentColor" stroke="none"/></svg>';
 const SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>';
+function priceHTML(t) {
+  if (t.price == null) return '';
+  let inOne = t.folderId === 1;
+  if (!inOne && t.listId) { const l = listById(t.listId); inOne = !!(l && l.folderId === 1); }
+  if (!inOne) return '';
+  return '<span class="tdprice">¥' + Number(t.price).toLocaleString('ja-JP') + '</span>';
+}
 function todoRowHTML(t) {
   const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
   return '<div class="tdrow" data-tid="' + t.id + '"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
+    + priceHTML(t)
     + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div></div>';
 }
 function todoRowsHTML(items) {
@@ -1866,6 +1875,7 @@ function todoEditRowHTML(t) {
   const on = todoSel.has(t.id);
   const st = (t.color && !on) ? ' style="border-color:' + t.color + '"' : '';
   return '<div class="tdrow' + (on ? ' sel' : '') + '" data-dragid="' + t.id + '"><button class="tdcheck' + (on ? ' done' : '') + '"' + st + ' onclick="toggleSel(' + t.id + ')">' + (on ? '✓' : '') + '</button>'
+    + priceHTML(t)
     + '<div class="tdmain"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div><span class="tdhandle">☰</span></div>';
 }
 let todoSpecial = null;
@@ -2255,7 +2265,7 @@ function saveTodoForm() {
     const t = TodoDB.todos.find(function (x) { return x.id === tf.todoId; });
     if (t) { t.title = nm; t.due = tf.due || null; t.color = tf.color || null; }
   } else {
-    TodoDB.todos.push({ id: Date.now(), listId: tf.listId, folderId: tf.folderId, title: nm, done: false, due: tf.due || null, color: tf.color || null });
+    TodoDB.todos.push({ id: Date.now(), listId: tf.listId, folderId: tf.folderId, title: nm, done: false, due: tf.due || null, color: tf.color || null, price: null });
   }
   touchTodo(); tdClose(); renderTodo();
 }
@@ -2377,7 +2387,7 @@ function copyList() {
   const nl = { id: Date.now(), folderId: l.folderId, name: l.name + 'のコピー', sort: l.sort };
   TodoDB.lists.push(nl);
   const base = Date.now();
-  todosInList(l.id).forEach(function (t, i) { TodoDB.todos.push({ id: base + i + 1, listId: nl.id, folderId: null, title: t.title, done: false, due: t.due, color: t.color }); });
+  todosInList(l.id).forEach(function (t, i) { TodoDB.todos.push({ id: base + i + 1, listId: nl.id, folderId: null, title: t.title, done: false, due: t.due, color: t.color, price: t.price != null ? t.price : null }); });
   touchTodo(); renderTodo();
 }
 function shareList() {
@@ -2493,7 +2503,7 @@ function bulkDup() {
   const c = curContainer(); if (!c) return;
   const base = Date.now();
   sortTodos(c.items, c.obj.sort).filter(function (t) { return todoSel.has(t.id); })
-    .forEach(function (t, i) { TodoDB.todos.push({ id: base + i, listId: t.listId, folderId: t.folderId, title: t.title, done: false, due: t.due, color: t.color }); });
+    .forEach(function (t, i) { TodoDB.todos.push({ id: base + i, listId: t.listId, folderId: t.folderId, title: t.title, done: false, due: t.due, color: t.color, price: t.price != null ? t.price : null }); });
   todoSel.clear(); touchTodo(); renderTodo();
 }
 function bulkDelete() {
