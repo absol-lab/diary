@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.41">
+<meta name="app-version" content="1.42">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -283,9 +283,9 @@
   .tdpagenew { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 3; }
   #todowrap { position: relative; }
   #view-todo { padding-bottom: 76px; }
-  .tdbodyhost { position: relative; touch-action: pan-y; }
-  .tdbodyhost.paging { overflow: hidden; }
-  .tdbodyhost .tdpage { position: absolute; left: 0; right: 0; top: 0; min-height: 100%; background: var(--bg); will-change: transform; }
+  .tdpager { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tdpager::-webkit-scrollbar { display: none; }
+  .tdpage2 { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
   /* drawer */
   #tddrawer { position: fixed; inset: 0; z-index: 60; display: none; }
   #tddrawer.open { display: block; }
@@ -1750,7 +1750,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.41';
+const APP_VERSION='1.42';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1875,6 +1875,8 @@ function renderTodo() {
   if (!TodoDB) { try { loadTodo(); } catch (e) {} if (!TodoDB) return; }
   wrap.innerHTML = buildTodoHTML();
   const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
+  const pg = wrap.querySelector('.tdpager');
+  if (pg) { const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; }); if (i > 0) pg.scrollLeft = i * pg.clientWidth; attachPagerSync(pg); }
 }
 function slideTo(dir, applyFn) {
   tdUndo = null;
@@ -1889,6 +1891,7 @@ function slideTo(dir, applyFn) {
   wrap.innerHTML = '<div class="tdghost">' + oldHTML + '</div><div class="tdpagenew">' + newHTML + '</div>';
   wrap.style.height = h + 'px'; wrap.style.overflow = 'hidden';
   const ghost = wrap.querySelector('.tdghost'), page = wrap.querySelector('.tdpagenew');
+  fixPagerScroll(ghost); fixPagerScroll(page);
   const ease = 'cubic-bezier(.32,.72,.28,1)';
   if (dir === 'push') {
     ghost.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-28%)' }], { duration: 300, easing: ease });
@@ -1923,7 +1926,9 @@ function folderFabsHTML() {
     + '<button class="tdfab plus" onclick="folderFab()">＋</button>';
 }
 function folderHTML(f) {
-  return folderChipsHTML(f) + '<div class="tdbodyhost">' + folderBodyHTML(f) + '</div>' + folderFabsHTML();
+  return folderChipsHTML(f) + '<div class="tdpager" id="tdpager">'
+    + TodoDB.folders.map(function (x) { return '<div class="tdpage2" data-fid="' + x.id + '">' + folderBodyHTML(x) + '</div>'; }).join('')
+    + '</div>' + folderFabsHTML();
 }
 /* ---- folder pager: full-width side-by-side slide, like the original app ---- */
 const TD_EASE = 'cubic-bezier(.32,.72,.28,1)';
@@ -1935,37 +1940,30 @@ function centerChip(smooth) {
   try { bar.scrollTo({ left: target, behavior: smooth ? 'smooth' : 'auto' }); } catch (e) { bar.scrollLeft = target; }
 }
 function pickFolderState(id) { todoFolderId = id; todoListId = null; todoSpecial = null; todoEdit = false; todoSel.clear(); }
-function pagerSetup(host, newBodyHTML) {
-  const oldBody = host.innerHTML;
-  const oldH = host.offsetHeight;
-  host.innerHTML = '<div class="tdpage cur">' + oldBody + '</div><div class="tdpage nxt">' + newBodyHTML + '</div>';
-  const cur = host.children[0], nxt = host.children[1];
-  const H = Math.max(oldH, nxt.offsetHeight);
-  host.style.height = H + 'px';
-  host.classList.add('paging');
-  return { cur: cur, nxt: nxt };
+function fixPagerScroll(root) {
+  if (!root || !root.querySelector) return;
+  const pg = root.querySelector('.tdpager'); if (!pg) return;
+  const i = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; });
+  if (i > 0) pg.scrollLeft = i * pg.clientWidth;
 }
-function slideFolder(dir, newFolderId) {
-  const nf = folderById(newFolderId); if (!nf) return;
-  tdUndo = null;
-  if (tdReducedMotion()) { pickFolderState(newFolderId); renderTodo(); centerChip(false); return; }
-  const wrap = $('todowrap'); const host = wrap ? wrap.querySelector('.tdbodyhost') : null;
-  if (!host || host.classList.contains('paging')) { pickFolderState(newFolderId); renderTodo(); centerChip(true); return; }
-  const W = host.clientWidth || 320;
-  const parts = pagerSetup(host, folderBodyHTML(nf));
-  const from = dir > 0 ? W : -W;
-  parts.nxt.style.transform = 'translateX(' + from + 'px)';
-  const pills = wrap.querySelectorAll('.tdfpill');
-  TodoDB.folders.forEach(function (x, i) { if (pills[i]) pills[i].classList.toggle('on', x.id === newFolderId); });
+let tdPagerTimer = null;
+function syncPagerSettle(pg) {
+  if (!pg || !document.contains(pg) || !TodoDB) return;
+  const W = pg.clientWidth; if (!W) return;
+  const i = Math.max(0, Math.min(TodoDB.folders.length - 1, Math.round(pg.scrollLeft / W)));
+  const f = TodoDB.folders[i]; if (!f || f.id === todoFolderId) return;
+  pickFolderState(f.id);
+  const pills = document.querySelectorAll('#todowrap .tdfpill');
+  TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === f.id); });
   centerChip(true);
-  const opt = { duration: 380, easing: TD_EASE, fill: 'forwards' };
-  parts.cur.animate([{ transform: 'translateX(0px)' }, { transform: 'translateX(' + (-from) + 'px)' }], opt);
-  const a = parts.nxt.animate([{ transform: 'translateX(' + from + 'px)' }, { transform: 'translateX(0px)' }], opt);
-  pickFolderState(newFolderId);
-  let done = false;
-  const finish = function () { if (done) return; done = true; if (document.contains(host)) renderTodo(); };
-  if (a.finished) a.finished.then(finish, finish); else a.onfinish = finish;
-  setTimeout(function () { if (document.contains(host) && host.classList.contains('paging')) finish(); }, 470);
+}
+function attachPagerSync(pg) {
+  if (!pg) return;
+  pg.addEventListener('scroll', function () {
+    if (tdPagerTimer) clearTimeout(tdPagerTimer);
+    tdPagerTimer = setTimeout(function () { syncPagerSettle(pg); }, 110);
+  }, { passive: true });
+  pg.addEventListener('scrollend', function () { syncPagerSettle(pg); });
 }
 function listHTML(l) {
   let items = sortTodos(todosInList(l.id), l.sort);
@@ -1996,9 +1994,16 @@ function editHTML(c) {
 function pickTodoFolder(id) {
   if (!todoListId && !todoSpecial && !todoEdit && todoFolderId === id) return;
   const plain = !todoListId && !todoSpecial && !todoEdit && todoFolderId != null;
-  const oi = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; });
   const ni = TodoDB.folders.findIndex(function (x) { return x.id === id; });
-  if (plain && oi >= 0 && ni >= 0 && oi !== ni) { slideFolder(ni > oi ? 1 : -1, id); return; }
+  const pg = document.querySelector('#todowrap .tdpager');
+  if (plain && pg && ni >= 0) {
+    pickFolderState(id);
+    const pills = document.querySelectorAll('#todowrap .tdfpill');
+    TodoDB.folders.forEach(function (x, k) { if (pills[k]) pills[k].classList.toggle('on', x.id === id); });
+    pg.scrollTo({ left: ni * pg.clientWidth, behavior: tdReducedMotion() ? 'auto' : 'smooth' });
+    centerChip(true);
+    return;
+  }
   pickFolderState(id); renderTodo();
 }
 function openTodoList(id) { const l = listById(id); if (!l) return; slideTo('push', function () { todoListId = id; todoFolderId = l.folderId; todoSpecial = null; todoEdit = false; todoSel.clear(); }); }
@@ -2659,73 +2664,6 @@ document.addEventListener('touchend', function (e) {
   if ($('tdoverlay').classList.contains('open') || $('tddrawer').classList.contains('open') || $('tdmodal').classList.contains('open')) return;
   if (todoSpecial) closeSpecial(); else if (todoListId) closeTodoList();
 }, { passive: true });
-/* ---- folder pager: finger-follow swipe between folders ---- */
-let tdDrag = null, tdSuppressClick = false;
-function tdPagerReady() {
-  if (!TodoDB || todoListId || todoSpecial || todoEdit || TodoDB.folders.length < 2) return false;
-  const ov = $('tdoverlay'), dr = $('tddrawer'), md = $('tdmodal');
-  if ((ov && ov.classList.contains('open')) || (dr && dr.classList.contains('open')) || (md && md.classList.contains('open'))) return false;
-  return true;
-}
-(function () {
-  const wrap = $('todowrap'); if (!wrap) return;
-  wrap.addEventListener('click', function (e) { if (tdSuppressClick) { tdSuppressClick = false; e.stopPropagation(); e.preventDefault(); } }, true);
-  wrap.addEventListener('touchstart', function (e) {
-    tdDrag = null;
-    if (tdReducedMotion()) return;
-    if (e.touches.length !== 1 || !tdPagerReady()) return;
-    if (e.target.closest && e.target.closest('.tdfolders')) return;
-    const t = e.touches[0];
-    tdDrag = { sx: t.clientX, sy: t.clientY, dx: 0, locked: false, lx: t.clientX, lt: performance.now(), v: 0 };
-  }, { passive: true });
-  wrap.addEventListener('touchmove', function (e) {
-    if (!tdDrag || e.touches.length !== 1) return;
-    const t = e.touches[0];
-    const dx = t.clientX - tdDrag.sx, dy = t.clientY - tdDrag.sy;
-    if (!tdDrag.locked) {
-      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { tdDrag = null; return; }
-      if (Math.abs(dx) < 14 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
-      const idx = TodoDB.folders.findIndex(function (x) { return x.id === todoFolderId; });
-      const nIdx = idx + (dx < 0 ? 1 : -1);
-      if (idx < 0 || nIdx < 0 || nIdx >= TodoDB.folders.length) { tdDrag = null; return; }
-      const host = wrap.querySelector('.tdbodyhost');
-      if (!host || host.classList.contains('paging')) { tdDrag = null; return; }
-      const parts = pagerSetup(host, folderBodyHTML(TodoDB.folders[nIdx]));
-      tdDrag.locked = true; tdDrag.host = host; tdDrag.cur = parts.cur; tdDrag.nxt = parts.nxt;
-      tdDrag.W = host.clientWidth || 320; tdDrag.nf = TodoDB.folders[nIdx];
-      tdUndo = null;
-    }
-    e.preventDefault();
-    tdDrag.dx = dx;
-    const now = performance.now(), dt = now - tdDrag.lt;
-    if (dt > 0) { tdDrag.v = tdDrag.v * 0.65 + ((t.clientX - tdDrag.lx) / dt) * 0.35; tdDrag.lx = t.clientX; tdDrag.lt = now; }
-    const W = tdDrag.W, off = dx < 0 ? W : -W;
-    tdDrag.cur.style.transform = 'translateX(' + dx + 'px)';
-    tdDrag.nxt.style.transform = 'translateX(' + (dx + off) + 'px)';
-  }, { passive: false });
-  function dragDone(commitAllowed) {
-    if (!tdDrag) return;
-    const d = tdDrag; tdDrag = null;
-    if (!d.locked) return;
-    tdSuppressClick = true; setTimeout(function () { tdSuppressClick = false; }, 400);
-    const fwd = d.dx < 0, W = d.W;
-    const commit = commitAllowed && (Math.abs(d.dx) > W * 0.24 || (Math.abs(d.dx) > 24 && Math.abs(d.v) > 0.35 && (d.v < 0) === fwd));
-    const tCur = commit ? (fwd ? -W : W) : 0;
-    const tNxt = commit ? 0 : (fwd ? W : -W);
-    const remain = Math.abs(tCur - d.dx);
-    const dur = Math.max(110, Math.min(380, Math.round(380 * remain / W)));
-    const opt = { duration: dur, easing: TD_EASE, fill: 'forwards' };
-    d.cur.animate([{ transform: 'translateX(' + d.dx + 'px)' }, { transform: 'translateX(' + tCur + 'px)' }], opt);
-    const a = d.nxt.animate([{ transform: 'translateX(' + (d.dx + (fwd ? W : -W)) + 'px)' }, { transform: 'translateX(' + tNxt + 'px)' }], opt);
-    if (commit) pickFolderState(d.nf.id);
-    let done = false;
-    const finish = function () { if (done) return; done = true; renderTodo(); if (commit) centerChip(true); };
-    if (a.finished) a.finished.then(finish, finish); else a.onfinish = finish;
-    setTimeout(function () { if (document.contains(d.host) && d.host.classList.contains('paging')) finish(); }, dur + 120);
-  }
-  wrap.addEventListener('touchend', function () { dragDone(true); }, { passive: true });
-  wrap.addEventListener('touchcancel', function () { dragDone(false); }, { passive: true });
-})();
 /* ---- drag reorder (pointer events, delegated) ---- */
 let dragCtx = null;
 document.addEventListener('pointerdown', function (e) {
