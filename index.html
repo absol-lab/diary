@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.70">
+<meta name="app-version" content="1.71">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -898,7 +898,6 @@ function healNav(){
 let navHealTimer=null;
 window.addEventListener('scroll', ()=>{ if(navHealTimer) clearTimeout(navHealTimer); navHealTimer=setTimeout(healNav, 160); }, { passive:true });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(healNav, 60); });
-const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION;
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active on iOS */
 function showView(v){
   if(currentView==='entry' && v!=='entry' && editing){ saveEdit(); }
@@ -1801,7 +1800,8 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.70';
+const APP_VERSION='1.71';
+{ const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
