@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.66">
+<meta name="app-version" content="1.67">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -101,8 +101,7 @@
   #tdsyncbox .btn { margin: 0; padding: 5px 11px; font-size: calc(var(--fs) * .72); }
   #tdsyncbox .btn:active { transform: scale(.96); }
   #tdsyncbox .btn[disabled] { opacity: .55; }
-  #drivebanner { display: block; width: 100%; border: 0; background: #b3261e; color: #fff; font-family: var(--uifont); font-size: 14px; font-weight: 600; text-align: center; padding: calc(env(safe-area-inset-top) + 10px) 16px 10px; cursor: pointer; }
-  body.banner-on .topbar { padding-top: 10px; }
+  #tdsyncdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 7px; background: #e5484d; vertical-align: 2px; }
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
@@ -534,7 +533,6 @@
 
   <!-- ======= SPLASH ======= -->
   <div id="splash" class="wait"></div>
-  <button id="drivebanner" style="display:none" onclick="connectDrive()">Drive未接続 — タップで再接続</button>
 
   <!-- ======= LIST ======= -->
   <section id="view-list" class="view active">
@@ -602,7 +600,7 @@
   <section id="view-todo" class="view">
     <div class="topbar">
       <button class="tdiconbtn" onclick="openDrawer()" aria-label="メニュー"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-      <div class="ttl">Todo</div>
+      <div class="ttl">Todo<span id="tdsyncdot"></span></div>
       <button class="tdiconbtn" onclick="openTodoSearch()" aria-label="検索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></button>
     </div>
     <div id="tdsyncbox"><span id="tdsyncstat"></span><button id="tdsyncbtn" class="btn" onclick="todoSyncBtnTap()">今すぐ同期</button></div>
@@ -1550,11 +1548,10 @@ function attemptTokenRefresh(){
   lastRefreshTry=now;
   trySilentRefresh();
 }
-function renderDriveBanner(){
-  const el=$('drivebanner'); if(!el) return;
-  const show = !!getClientId() && !getValidToken() && (Date.now()-bootAt>3000 || lastRefreshTry>0);
-  el.style.display = show ? '' : 'none';
-  if (document.body) document.body.classList.toggle('banner-on', show);
+function renderSyncDot(){
+  const el=$('tdsyncdot'); if(!el) return;
+  const ok = !!getValidToken() && !todoDirty && syncStatus!=='error';
+  el.style.background = ok ? '#46a758' : '#e5484d';
 }
 function storeToken(tok, expiresInSec){
   storeSet(SS_TOKEN, tok);
@@ -1579,7 +1576,7 @@ function renderSyncStatus(){
   if (todoDirty) label += '・未同期の変更あり';
   const bar=$('syncbar'); if(bar) bar.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   const st=$('syncstat'); if(st) st.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
-  renderDriveBanner();
+  renderSyncDot();
   if (typeof renderTodoSyncNote === 'function') renderTodoSyncNote();
 }
 function scheduleSync(){
@@ -1792,7 +1789,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.66';
+const APP_VERSION='1.67';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -1827,7 +1824,7 @@ document.addEventListener('visibilitychange', ()=>{
 setInterval(function(){
   if(document.hidden) return;
   if(!editing && (!getValidToken() || tokenExpiringSoon())) attemptTokenRefresh();
-  renderDriveBanner();
+  renderSyncDot();
   renderTodoSyncNote();
   if(editing) return;
   if(todoDirty) { attemptTodoRescue(); return; }
