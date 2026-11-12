@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.68">
+<meta name="app-version" content="1.69">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -103,6 +103,7 @@
   #tdsyncbtn { margin: 0 0 0 8px; padding: 3px 10px; font-size: calc(var(--fs) * .68); vertical-align: 2px; }
   #tdsyncbtn:active { transform: scale(.96); }
   #tdsyncbtn[disabled] { opacity: .55; }
+  #tdsynctime { font-size: calc(var(--fs) * .6); color: var(--mut); margin-left: 7px; font-weight: 400; vertical-align: 2px; }
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
@@ -601,7 +602,7 @@
   <section id="view-todo" class="view">
     <div class="topbar">
       <button class="tdiconbtn" onclick="openDrawer()" aria-label="メニュー"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-      <div class="ttl">Todo<span id="tdsyncdot"></span><button id="tdsyncbtn" class="btn" onclick="todoSyncBtnTap()">今すぐ同期</button></div>
+      <div class="ttl">Todo<span id="tdsyncdot"></span><button id="tdsyncbtn" class="btn" onclick="todoSyncBtnTap()">Driveに保存</button><span id="tdsynctime"></span></div>
       <button class="tdiconbtn" onclick="openTodoSearch()" aria-label="検索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></button>
     </div>
     <div id="tdsyncbox" style="display:none"><span id="tdsyncstat"></span></div>
@@ -1521,7 +1522,7 @@ const DRIVE_API='https://www.googleapis.com/drive/v3';
 const UPLOAD_API='https://www.googleapis.com/upload/drive/v3';
 let syncStatus='disconnected'; /* disconnected | syncing | synced | error */
 let syncMsg='';
-let lastSyncAt=0;
+let lastSyncAt=+(localStorage.getItem('diaryStandalone.lastSyncAt')||0);
 let todoDirty=false, todoEditSeq=0, lastRefreshTry=0;
 const bootAt=Date.now();
 let syncTimer=null;
@@ -1574,7 +1575,7 @@ function renderSyncStatus(){
   else if(syncStatus==='syncing') label='同期中…';
   else if(syncStatus==='error'){ label='同期エラー'+(syncMsg ? '：'+syncMsg : ''); cls='err'; }
   else label='Drive未接続（端末内に保存中）';
-  if (todoDirty) label += '・未同期の変更あり';
+  if (todoDirty) label += '・未保存の変更あり';
   const bar=$('syncbar'); if(bar) bar.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   const st=$('syncstat'); if(st) st.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   renderSyncDot();
@@ -1776,7 +1777,7 @@ async function syncNow(reason){
       await uploadDiaryUpdate(file.id, DB);
     }
     await syncTodo();
-    lastSyncAt=Date.now();
+    lastSyncAt=Date.now(); try{ localStorage.setItem('diaryStandalone.lastSyncAt', String(lastSyncAt)); }catch(e){}
     setSyncStatus('synced');
     if(currentView==='list') renderList();
     if(currentView==='calendar') renderCalendar();
@@ -1790,7 +1791,7 @@ async function syncNow(reason){
 }
 
 /* ================= self update ================= */
-const APP_VERSION='1.68';
+const APP_VERSION='1.69';
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
 function checkForUpdate(){
@@ -2306,14 +2307,25 @@ function renderTodoSyncBox() {
   if (!st || !btn) return;
   let label = '', color = '';
   if (syncStatus === 'syncing') label = '';
-  else if (todoDirty) { label = '未同期の変更あり（自動で送信中）'; color = '#d9a13b'; }
+  else if (todoDirty) { label = '未保存の変更あり（自動で保存中）'; color = '#d9a13b'; }
   else if (!getValidToken()) { label = 'Drive未接続'; color = '#e5484d'; }
   else if (syncStatus === 'error') { label = '同期エラー'; color = '#e5484d'; }
   if (box) box.style.display = label ? '' : 'none';
   if (label) { st.textContent = label; st.style.color = color; }
-  if (syncStatus === 'syncing') { btn.disabled = true; btn.textContent = '同期中…'; btn.className = 'btn'; }
+  if (syncStatus === 'syncing') { btn.disabled = true; btn.textContent = '保存中…'; btn.className = 'btn'; }
   else if (!getValidToken()) { btn.disabled = false; btn.textContent = '再接続'; btn.className = 'btn primary'; }
-  else { btn.disabled = false; btn.textContent = '今すぐ同期'; btn.className = 'btn'; }
+  else { btn.disabled = false; btn.textContent = 'Driveに保存'; btn.className = 'btn'; }
+  renderSyncTime();
+}
+function fmtSyncTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts), now = new Date();
+  const hm = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  return d.toDateString() === now.toDateString() ? hm : (d.getMonth()+1) + '/' + d.getDate() + ' ' + hm;
+}
+function renderSyncTime(){
+  const el = $('tdsynctime'); if(!el) return;
+  el.textContent = fmtSyncTime(lastSyncAt);
 }
 function todoSyncBtnTap() {
   if (syncStatus === 'syncing') return;
