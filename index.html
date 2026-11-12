@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.2">
+<meta name="app-version" content="2.3">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -247,13 +247,14 @@
   .tdlistrow .nm { flex: 1; }
   .tdlistrow .tdcnt { color: var(--muted); font-size: 15px; margin-right: 10px; }
   .tdlistrow .chev { color: var(--muted); font-size: 18px; }
-  .tdrow { display: flex; align-items: center; gap: 12px; padding: 8px 4px 0; background: var(--bg); }
+  .tdrow { display: flex; align-items: center; gap: 12px; padding: 8px 4px; background: var(--bg); border-bottom: 1px solid var(--line); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
-  .tdprice { flex: 0 0 auto; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tdprice { flex: 0 0 122px; width: 122px; text-align: right; font-size: 14px; font-weight: 600; color: var(--muted); }
+  .tdsortcur { color: var(--text); font-weight: 600; }
   [data-dragkind] .tdcheck.done { background: #5eb1ef; border-color: #5eb1ef; color: #fff; }
   .tdrow.sel { background: var(--card2); margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; }
-  .tdmain { flex: 1; min-width: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .tdmain { flex: 1; min-width: 0; }
   .tdtitle { font-size: 15.5px; }
   .tdtitle.done { color: var(--muted); text-decoration: line-through; }
   .tddue { display: inline-block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-family: var(--uifont); }
@@ -333,8 +334,8 @@
   .tdlistrow { font-size: 17px; padding: 14px 4px; }
   .tdlistrow .tdcnt { font-size: 16px; }
   .tdtitle { font-size: 16.5px; }
-  .tdrow { padding-top: 9px; }
-  .tdmain { padding-bottom: 9px; }
+  .tdrow { padding-top: 9px; padding-bottom: 9px; }
+  
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
@@ -2211,7 +2212,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.2';
+const APP_VERSION='2.3';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2261,7 +2262,7 @@ setInterval(function(){
 /* ================= todo ================= */
 const LS_TODO = 'diaryStandalone.todo.v1';
 const TODO_COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#3e9bff', '#8e4ec6', '#9c9ca4'];
-const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別', priceDesc: '価格が高い順', priceAsc: '価格が低い順', priceKnown: '価格あり→なし' };
+const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別', priceDesc: '価格が高い順', priceAsc: '価格が低い順', priceKnown: '価格あり→なし', createdDesc: '記入日（新しい順）', createdAsc: '記入日（古い順）' };
 const TODO_SEED = {"updatedAt":0,"folders":[],"lists":[],"todos":[],"trash":[],"goneFolders":[],"goneLists":[]};
 function stripTitlePrice(s) {
   if (typeof s !== 'string') return s;
@@ -2365,6 +2366,10 @@ function fixTabAfterDelete() {
 }
 function folderAllTodos(folderId) { return TodoDB.todos.filter(function (t) { return t.folderId === folderId || (t.listId && (function (l) { return l && l.folderId === folderId; })(listById(t.listId))); }); }
 function cmpDue(a, b, dir) { const x = a.due || '9999-99-99', y = b.due || '9999-99-99'; return (x < y ? -1 : x > y ? 1 : 0) * dir; }
+function sortBtnHTML(l) {
+  const cur = l && l.sort && l.sort !== 'custom' ? ' <span class="tdsortcur">' + SORT_LABEL[l.sort] + '</span>' : '';
+  return '<button onclick="openSortPop(this)">並び替え' + cur + '</button>';
+}
 function priceValueOf(t) {
   if (typeof t.price === 'number' && isFinite(t.price)) return t.price;
   if (typeof t.price === 'string') { const m = t.price.match(/^(\d+)-(\d+)$/); if (m) return (Number(m[1]) + Number(m[2])) / 2; }
@@ -2380,6 +2385,8 @@ function sortTodos(arr, mode) {
     a.sort(function (x, y) { const vx = priceValueOf(x), vy = priceValueOf(y); if (vx == null && vy == null) return 0; if (vx == null) return 1; if (vy == null) return -1; return (vx - vy) * dir; });
   }
   else if (mode === 'priceKnown') a.sort(function (x, y) { const kx = priceValueOf(x) == null ? 1 : 0, ky = priceValueOf(y) == null ? 1 : 0; return kx - ky; });
+  else if (mode === 'createdDesc') a.sort(function (x, y) { return y.id - x.id; });
+  else if (mode === 'createdAsc') a.sort(function (x, y) { return x.id - y.id; });
   return a;
 }
 function curContainer() {
@@ -2406,12 +2413,12 @@ const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_MORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><circle cx="8.2" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.8" cy="12" r="1.25" fill="currentColor" stroke="none"/></svg>';
 const SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>';
 function priceHTML(t) {
-  if (t.price == null) return '';
   if (!todoInPriceScope(t)) return '';
+  if (t.price == null) return '<span class="tdprice"></span>';
   if (typeof t.price === 'string') {
     const m = t.price.match(/^(\d+)-(\d+)$/);
-    if (!m) return '';
-    return '<span class="tdprice">¥' + Number(m[1]).toLocaleString('ja-JP') + '〜' + Number(m[2]).toLocaleString('ja-JP') + '</span>';
+    if (!m) return '<span class="tdprice"></span>';
+    return '<span class="tdprice">¥' + Number(m[1]).toLocaleString('ja-JP') + '〜<wbr>' + Number(m[2]).toLocaleString('ja-JP') + '</span>';
   }
   return '<span class="tdprice">¥' + Number(t.price).toLocaleString('ja-JP') + '</span>';
 }
@@ -2548,7 +2555,7 @@ function folderBodyHTML(f) {
 }
 function topListBodyHTML(l) {
   const items = sortTodos(todosInList(l.id), l.sort);
-  let h = '<div class="tdsub"><span><button onclick="openSortPop(this)">並び替え</button></span><span class="tdsubR">'
+  let h = '<div class="tdsub"><span>' + sortBtnHTML(l) + '</span><span class="tdsubR">'
     + (isPriceList(l) ? priceCheckBtnHTML() : '')
     + '<button onclick="enterEdit()">' + SVG_EDIT + '編集</button>'
     + '<button onclick="openTopListPop(this)">' + SVG_MORE + 'その他</button></span></div>';
@@ -2630,7 +2637,7 @@ function listHTML(l) {
   const of = folderById(l.folderId);
   if (of && of.showDone === false) items = items.filter(function (t) { return !t.done; });
   let h = '<div class="tdbackbar"><button class="tdback" onclick="closeTodoList()">‹</button><div class="tdltitle">' + esc(l.name) + '</div><button class="tdiconbtn" onclick="openTodoSearch()">' + SVG_SEARCH + '</button></div>';
-  h += '<div class="tdsub"><span><button onclick="openSortPop(this)">並び替え</button></span><span class="tdsubR"><button onclick="enterEdit()">' + SVG_EDIT + '編集</button><button onclick="openListPop(this)">' + SVG_MORE + 'その他</button></span></div>';
+  h += '<div class="tdsub"><span>' + sortBtnHTML(l) + '</span><span class="tdsubR"><button onclick="enterEdit()">' + SVG_EDIT + '編集</button><button onclick="openListPop(this)">' + SVG_MORE + 'その他</button></span></div>';
   h += items.length ? todoRowsHTML(items) : '<div class="tdnone">ToDoはありません</div>';
   h += '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
     + (tdUndo ? '<button class="tdfab undo" onclick="undoToggle()">' + SVG_UNDO + '</button>' : '')
@@ -2941,7 +2948,7 @@ function lfSortScreen() {
   TDOK = null;
   const opt = function (key, sub) { return '<button class="tdfopt" onclick="lfPickSort(\'' + key + '\')"><span class="lb">' + SORT_LABEL[key] + (sub ? '<span class="tdfsub">' + sub + '</span>' : '') + '</span>' + (lf.sort === key ? '<span class="chk">✓</span>' : '') + '</button>'; };
   tdOpen(tdHead('並び順の選択', false, 'renderListForm()') + '<div class="tdfbody"><div class="tdfcard">'
-    + opt('custom', '手動で並び替え') + opt('dueDesc', '') + opt('dueAsc', '') + opt('color', '')
+    + opt('custom', '手動で並び替え') + opt('dueDesc', '') + opt('dueAsc', '') + opt('color', '') + opt('priceDesc', '') + opt('priceAsc', '') + opt('priceKnown', '') + opt('createdDesc', '') + opt('createdAsc', '')
     + '</div><p class="tdfnote">この設定は、その他の並び替えからいつでも変更できます</p></div>');
 }
 function lfPickSort(key) { lf.sort = key; renderListForm(); }
@@ -3077,12 +3084,23 @@ function tdPopAct(i) {
   if (it.keepOpen) { if (it.fn) it.fn(); return; }
   tdPopClose(); if (it.fn) setTimeout(it.fn, 20);
 }
+let todoSortUndo = null;
+try { todoSortUndo = JSON.parse(localStorage.getItem('diaryStandalone.sortUndo.v1') || 'null'); } catch (e) {}
+function undoOnceSort() {
+  if (!todoSortUndo) return;
+  const c = curContainer(); if (!c || c.obj.id !== todoSortUndo.listId) return;
+  const pos = {}; todoSortUndo.ids.forEach(function (id, i) { pos[id] = i; });
+  const restored = c.items.slice().sort(function (x, y) { const px = pos[x.id] != null ? pos[x.id] : 1e9, py = pos[y.id] != null ? pos[y.id] : 1e9; return px - py; });
+  reorderGlobal(restored);
+  todoSortUndo = null; try { localStorage.removeItem('diaryStandalone.sortUndo.v1'); } catch (e) {}
+  touchTodo(); renderTodo();
+}
 function sortPageItems() {
   const c = curContainer(); if (!c) return [];
   const fix = function (mode) { return function () { c.obj.sort = mode; touchTodo(); renderTodo(); }; };
-  const once = function (mode) { return function () { reorderGlobal(sortTodos(c.items, mode)); touchTodo(); renderTodo(); }; };
+  const once = function (mode) { return function () { todoSortUndo = { listId: c.obj.id, ids: c.items.map(function (t) { return t.id; }) }; try { localStorage.setItem('diaryStandalone.sortUndo.v1', JSON.stringify(todoSortUndo)); } catch (e) {} reorderGlobal(sortTodos(c.items, mode)); touchTodo(); renderTodo(); }; };
   const cur = c.obj.sort;
-  return [
+  const items = [
     { title: '並び順を固定' },
     { label: SORT_LABEL.dueDesc, check: cur === 'dueDesc', fn: fix('dueDesc') },
     { label: SORT_LABEL.dueAsc, check: cur === 'dueAsc', fn: fix('dueAsc') },
@@ -3090,6 +3108,8 @@ function sortPageItems() {
     { label: SORT_LABEL.priceDesc, check: cur === 'priceDesc', fn: fix('priceDesc') },
     { label: SORT_LABEL.priceAsc, check: cur === 'priceAsc', fn: fix('priceAsc') },
     { label: SORT_LABEL.priceKnown, check: cur === 'priceKnown', fn: fix('priceKnown') },
+    { label: SORT_LABEL.createdDesc, check: cur === 'createdDesc', fn: fix('createdDesc') },
+    { label: SORT_LABEL.createdAsc, check: cur === 'createdAsc', fn: fix('createdAsc') },
     { label: 'カスタム', check: cur === 'custom', fn: fix('custom') },
     { title: '一度だけ並び替え' },
     { label: SORT_LABEL.dueDesc, fn: once('dueDesc') },
@@ -3097,8 +3117,12 @@ function sortPageItems() {
     { label: '色別', fn: once('color') },
     { label: SORT_LABEL.priceDesc, fn: once('priceDesc') },
     { label: SORT_LABEL.priceAsc, fn: once('priceAsc') },
-    { label: SORT_LABEL.priceKnown, fn: once('priceKnown') }
+    { label: SORT_LABEL.priceKnown, fn: once('priceKnown') },
+    { label: SORT_LABEL.createdDesc, fn: once('createdDesc') },
+    { label: SORT_LABEL.createdAsc, fn: once('createdAsc') }
   ];
+  if (todoSortUndo && todoSortUndo.listId === c.obj.id) items.unshift({ label: '並び替えを元に戻す', fn: undoOnceSort });
+  return items;
 }
 function openSortPop(anchor) { tdPopShow(anchor, sortPageItems()); }
 function listPopItems(l) {
