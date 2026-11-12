@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.26">
+<meta name="app-version" content="2.27">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -397,11 +397,11 @@
   #tdpop .popscrim { position: fixed; inset: 0; }
   #tdpop .popcard { position: fixed; width: 250px; max-height: calc(100dvh - 110px); overflow-y: auto; background: rgba(44,44,48,.96); border-radius: 16px; padding: 6px 0; box-shadow: 0 14px 40px rgba(0,0,0,.5); animation: popin .15s ease-out; }
   @keyframes popin { from { opacity: 0; } to { opacity: 1; } }
-  .popitem { display: block; width: 100%; text-align: left; padding: 13px 18px; font-size: 15.5px; color: #f2f2f4; font-family: var(--uifont); }
+  .popitem { display: block; width: 100%; text-align: left; padding: 7px 16px; font-size: 15px; line-height: 1.3; color: #f2f2f4; font-family: var(--uifont); }
   .popitem.danger { color: #ff6b6b; }
   .popitem .chev { float: right; color: #9c9ca4; }
   .popitem .chk { float: right; color: #f2f2f4; font-weight: 700; }
-  .poptitle { padding: 10px 18px 4px; font-size: 12.5px; color: #9c9ca4; font-family: var(--uifont); }
+  .poptitle { padding: 7px 16px 2px; font-size: 12.5px; color: #9c9ca4; font-family: var(--uifont); }
   /* admin modal card */
   #tdmodal { position: fixed; inset: 0; z-index: 80; display: none; align-items: flex-start; justify-content: center; }
   #tdmodal.open { display: flex; }
@@ -2306,7 +2306,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.26';
+const APP_VERSION='2.27';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
