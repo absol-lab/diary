@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.22">
+<meta name="app-version" content="2.23">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1403,7 +1403,7 @@ function renderEntryPhotos(){
   }
   html+='<button class="addphoto" onclick="document.getElementById(\'photofile\').click()">＋ 写真を追加</button>';
   if(!isDriveConnected()){
-    html+='<div class="note">写真はこの端末内に保存されます（容量に注意）。Google Driveと接続すると、写真は Drive に保存されます。</div>';
+    html+='<div class="note">写真はこの端末内に保存されます（容量に注意）。設定の「写真用の Google 接続」をすると、写真は Drive に保存されます。</div>';
   }
   $('entryphotos').innerHTML=html;
   driveIds.forEach((fid)=>{ loadDrivePhoto(fid); });
@@ -1412,7 +1412,7 @@ async function loadDrivePhoto(fid){
   const box=$('ph-'+CSS.escape(fid)); if(!box) return;
   if(drivePhotoCache[fid]){ box.innerHTML='<img src="'+drivePhotoCache[fid]+'" alt="写真">'+(editing?'<button class="del" onclick="removeDrivePhoto(\''+escA(fid)+'\')">×</button>':''); return; }
   const tok=getValidToken();
-  if(!tok){ box.innerHTML='<div class="loading">Drive未接続のため表示できません</div>'; return; }
+  if(!tok){ box.innerHTML='<div class="loading">写真用の Google 接続がないため表示できません</div>'; return; }
   try{
     const res=await fetch('https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(fid)+'?alt=media', { headers:{ Authorization:'Bearer '+tok } });
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -1550,11 +1550,11 @@ function renderSettingsPanel(){
     $('lhseg').innerHTML = LINEHEIGHTS.map(l=>'<button class="seg'+(DB.settings.lineHeight===l.id?' on':'')+'" onclick="setLineHeight(\''+l.id+'\')">'+l.name+'</button>').join('');
   }
   else if(settingsPanel==='drive'){
-    p.innerHTML = panelShell('Google Drive 同期',
+    p.innerHTML = panelShell('同期と写真',
       '<div class="setbox">'+
-      '<div class="setrow"><button class="btn primary" onclick="connectDrive()">Google Driveと接続</button><button class="btn" onclick="syncNow(\'manual\')">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">切断</button></div>'+
+      '<div class="setrow"><button class="btn primary" onclick="syncNow(\'manual\')">今すぐ同期</button></div>'+
       '<div class="syncstat" id="syncstat"></div>'+
-      '<div class="note">同期先は Drive 上の「diary.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>'+
+      '<div class="note">同期はすべて下の中継（Apps Script）経由で、Drive 上の diary.json / todo.json / memo.json を読み書きします。Google ログインは同期には使いません。未設定でも端末内で全機能が使えます。</div>'+
       '</div>'+
       '<div class="setbox" style="margin-top:12px">'+
       '<div class="setlabel">中継（Apps Script）</div>'+
@@ -1562,7 +1562,12 @@ function renderSettingsPanel(){
       '<input class="textin" id="relaysecret" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="シークレット" value="'+(relayCfg() ? escA(relayCfg().secret) : '')+'" style="margin-top:8px">'+
       '<div class="setrow"><button class="btn primary" onclick="relaySaveAndTest()">保存して接続テスト</button>'+(relayCfg() ? '<button class="btn" onclick="relayClear()">中継を解除</button>' : '')+'</div>'+
       '<div class="syncstat" id="relaystat">'+(relayCfg() ? '設定済みです。接続テストで中継の応答を確認できます。' : '未設定です。')+'</div>'+
-      '<div class="note">あなたの Google アカウントの中で動く中継経由で同期します。設定すると Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末内にだけ保存されます。（写真のアップロードだけは従来の Drive 接続を使います）</div>'+
+      '<div class="note">あなたの Google アカウントの中で動く中継経由で同期します。設定すると Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末内にだけ保存されます。</div>'+
+      '</div>'+
+      '<div class="setbox" style="margin-top:12px">'+
+      '<div class="setlabel">写真用の Google 接続</div>'+
+      '<div class="setrow"><button class="btn" onclick="connectDrive()">写真用に接続</button><button class="btn" onclick="disconnectDrive()">写真用を切断</button></div>'+
+      '<div class="note">写真の表示とアップロードだけは、中継が写真に未対応のため、いまのところ Google ログインを使います（同期には一切使いません）。写真を使わない場合は接続不要です。</div>'+
       '</div>');
     renderSyncStatus();
   }
@@ -1669,23 +1674,10 @@ function getValidToken(){
   return null;
 }
 function isDriveConnected(){ return !!getValidToken(); }
-function canSync(){ return !!getValidToken() || relayReady(); }
-function tokenExpiringSoon(){
-  const exp=+(storeGet(LS_TOKEN_EXP)||0);
-  return !!exp && exp-Date.now() < 5*60*1000;
-}
-function attemptTokenRefresh(){
-  if(relayReady()) return; /* 中継モードではトークン自体が不要 */
-  if(!getClientId()) return;
-  if(syncRunning) return;
-  const now=Date.now();
-  if(now-lastRefreshTry < 120000) return;
-  lastRefreshTry=now;
-  trySilentRefresh();
-}
+function canSync(){ return relayReady(); }
 function renderSyncDot(){
   const el=$('tdsyncdot'); if(!el) return;
-  const ok = (!!getValidToken() || relayReady()) && !todoDirty && syncStatus!=='error';
+  const ok = relayReady() && !todoDirty && syncStatus!=='error';
   el.style.background = ok ? '#46a758' : '#e5484d';
 }
 function storeToken(tok, expiresInSec){
@@ -1708,7 +1700,7 @@ function renderSyncStatus(){
   else if(syncStatus==='syncing') label='同期中…';
   else if(syncStatus==='error'){ label='同期エラー'+(syncMsg ? '：'+syncMsg : ''); cls='err'; }
   else if(relayReady()) label='中継で接続済み（未同期）';
-  else label='Drive未接続（端末内に保存中）';
+  else label='中継未設定（端末内に保存中）';
   if (todoDirty) label += '・未保存の変更あり';
   const bar=$('syncbar'); if(bar) bar.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   const st=$('syncstat'); if(st) st.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
@@ -1717,7 +1709,7 @@ function renderSyncStatus(){
   if (typeof renderMemoSyncNote === 'function') renderMemoSyncNote();
 }
 function scheduleSync(){
-  if(!isDriveConnected() && !relayReady()) return;
+  if(!relayReady()) return;
   if(syncTimer) clearTimeout(syncTimer);
   syncTimer=setTimeout(()=>{ syncNow('auto'); }, 1500);
 }
@@ -1739,8 +1731,9 @@ function connectDrive(){
         if(resp && resp.access_token){
           storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10));
           storeDel(LS_PENDING);
-          setSyncStatus('syncing');
-          syncNow('connect');
+          uploadPendingPhotos();
+          if(currentEntryId) renderEntryPhotos();
+          sheetInfo('写真用 Google 接続', '写真の表示・アップロードができるようになりました。（同期は中継が担当します）');
         } else {
           setSyncStatus('error', 'トークンを取得できませんでした');
         }
@@ -1748,7 +1741,7 @@ function connectDrive(){
       error_callback: function(err){
         const t='認証エラー：'+((err && (err.type || err.message)) || 'unknown');
         storeSet(LS_AUTH_ERR, t);
-        setSyncStatus('error', t);
+        sheetInfo('写真用 Google 接続', t);
         storeDel(LS_PENDING);
       }
     });
@@ -1763,7 +1756,8 @@ function disconnectDrive(){
   if(tok && window.google && google.accounts && google.accounts.oauth2){
     try{ google.accounts.oauth2.revoke(tok, function(){}); }catch(e){}
   }
-  clearToken(); setSyncStatus('disconnected');
+  clearToken(); renderSyncStatus();
+  if(currentEntryId) renderEntryPhotos();
 }
 function checkAuthRedirect(){
   let handled=null;
@@ -1808,12 +1802,12 @@ function trySilentRefresh(){
       scope: DRIVE_SCOPE,
       ux_mode: 'popup',
       callback: function(resp){
-        if(resp && resp.access_token){ storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10)); setSyncStatus('synced'); syncNow('startup'); }
+        if(resp && resp.access_token){ storeToken(resp.access_token, parseInt(resp.expires_in||'3600',10)); uploadPendingPhotos(); if(currentEntryId) renderEntryPhotos(); }
       },
-      error_callback: function(){ if(syncStatus!=='error') setSyncStatus('disconnected'); }
+      error_callback: function(){ /* 写真用トークンを取れなかっただけ：同期状態には触らない */ }
     });
     tc.requestAccessToken({ prompt: '' });
-  }catch(e){ setSyncStatus('disconnected'); }
+  }catch(e){}
 }
 
 /* ---------- 中継（Apps Script）: v2.21 ----------
@@ -1821,8 +1815,9 @@ function trySilentRefresh(){
    writes this app's JSON files (server-side name allowlist +
    shared secret). When configured, sync needs no Google token at
    all, so the connection can never lapse. URL + secret live only in
-   this device's localStorage. GIS remains the fallback (and still
-   carries photo uploads). In relay mode a file's "id" is its name.
+   this device's localStorage. As of v2.23 sync never falls back to
+   GIS: GIS remains only for entry photos. In relay mode a file's
+   "id" is its name.
    driveFetch is the single chokepoint for list + download calls in
    every flow (diary / todo / memo / price-check), so branching here
    covers them all; uploads route through driveUploadPatch /
@@ -1868,15 +1863,11 @@ async function relayDriveFetch(path){
 }
 async function driveUploadPatch(fileId, bodyStr, tok){
   if(relayReady()){ await relayCall('put', fileId, bodyStr); return { ok:true, status:200 }; }
-  return fetch(UPLOAD_API+'/files/'+encodeURIComponent(fileId)+'?uploadType=media', { method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: bodyStr });
+  throw new Error('中継が未設定です');
 }
 async function driveUploadCreate(name, bodyStr, tok){
   if(relayReady()){ await relayCall('put', name, bodyStr); return { ok:true, status:200, json: async()=>({ id:name }) }; }
-  const meta={ name:name, mimeType:'application/json' };
-  const form=new FormData();
-  form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
-  form.append('file', new Blob([bodyStr], { type:'application/json' }), name);
-  return fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+  throw new Error('中継が未設定です');
 }
 function relaySaveAndTest(){
   const u=$('relayurl'), s=$('relaysecret'), st=$('relaystat');
@@ -1898,10 +1889,10 @@ function relayClear(){
 }
 
 async function driveFetch(path, opts){
+  /* v2.23: sync transport is relay-only. GIS no longer carries sync;
+     it remains solely for entry photos (upload + display). */
   if(relayReady()) return relayDriveFetch(path);
-  const tok=getValidToken(); if(!tok) throw new Error('no token');
-  const res=await fetch(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+tok }, (opts&&opts.headers)||{}) }));
-  return res;
+  throw new Error('中継が未設定です');
 }
 function dataURLtoBlob(dataUrl){
   const m=/^data:([^;,]+)?(;base64)?,(.*)$/.exec(dataUrl||'');
@@ -1953,12 +1944,12 @@ async function getHeadRevision(fileId){
   const j=await res.json(); return j.headRevisionId||null;
 }
 async function uploadDiaryUpdate(fileId, data){
-  const tok=getValidToken(); if(!tok && !relayReady()) throw new Error('no token');
+  const tok=null; if(!relayReady()) throw new Error('中継が未設定です');
   const res=await driveUploadPatch(fileId, JSON.stringify(data), tok);
   if(!res.ok) throw new Error('update HTTP '+res.status);
 }
 async function createDiary(data){
-  const tok=getValidToken(); if(!tok && !relayReady()) throw new Error('no token');
+  const tok=null; if(!relayReady()) throw new Error('中継が未設定です');
   const res=await driveUploadCreate('diary.json', JSON.stringify(data), tok);
   if(!res.ok) throw new Error('create HTTP '+res.status);
   return res.json();
@@ -1966,8 +1957,7 @@ async function createDiary(data){
 
 async function syncNow(reason){
   if(syncRunning) return;
-  const tok=getValidToken();
-  if(!tok && !relayReady()){ setSyncStatus(getClientId() ? 'disconnected' : 'disconnected', ''); return; }
+  if(!relayReady()){ setSyncStatus('disconnected', ''); return; }
   syncRunning=true; setSyncStatus('syncing');
   try{
     await uploadPendingPhotos();
@@ -2104,7 +2094,7 @@ function renderMemoSyncNote(){
   let html;
   if(syncStatus==='syncing') html='同期中…';
   else if(syncStatus==='error') html='<span class="err">同期エラー</span> ・ <span class="sbhint">タップで再試行</span>';
-  else if(!getValidToken()) html='Drive未接続（端末内に保存中） ・ <span class="sbhint">タップで接続</span>';
+  else if(!relayReady()) html='中継未設定（端末内に保存中） ・ <span class="sbhint">設定でシークレットを貼ってください</span>';
   else if(memoDirty) html='未保存の変更があります ・ <span class="sbhint">タップで保存</span>';
   else if(lastSyncAt) html='同期済み（'+pad2(new Date(lastSyncAt).getHours())+':'+pad2(new Date(lastSyncAt).getMinutes())+'）';
   else html='接続済み ・ <span class="sbhint">タップで保存</span>';
@@ -2112,7 +2102,7 @@ function renderMemoSyncNote(){
 }
 function memoSyncBarTap(){
   if(syncStatus==='syncing') return;
-  if(!getValidToken()){ connectDrive(); return; }
+  if(!relayReady()){ sheetInfo('中継未設定', '設定タブの「同期と写真」で、中継のシークレットを貼ってください。'); return; }
   syncNow('manual');
 }
 function fillMemoEditorControls(m){
@@ -2270,7 +2260,7 @@ async function syncMemo(){
     if(!res.ok) return false;
     const j=await res.json();
     const files=(j.files||[]).filter(f=>f.name==='memo.json');
-    const tok=getValidToken(); if(!tok && !relayReady()) return false;
+    const tok=null; if(!relayReady()) return false;
     if(!files.length){
       const up=await driveUploadCreate('memo.json', JSON.stringify(memoFilePayload()), tok);
       if(!up.ok) return false;
@@ -2316,7 +2306,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.22';
+const APP_VERSION='2.23';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2345,13 +2335,11 @@ document.addEventListener('visibilitychange', ()=>{
   /* 長く裏にいた後の復帰でも確認する（編集中は邪魔しない） */
   if(hiddenAt && Date.now()-hiddenAt>=60000 && !editing) checkForUpdate();
   /* 復帰時に取りに行く：裏で入った価格などを早く映す */
-  if(!editing && (!getValidToken() || tokenExpiringSoon())) attemptTokenRefresh();
   if(!editing && canSync() && Date.now()-lastSyncAt>=30000) syncNow('foreground');
 });
 /* 開いている間の定期同期：外部の書き込み（価格など）を約1分で映す */
 setInterval(function(){
   if(document.hidden) return;
-  if(!editing && (!getValidToken() || tokenExpiringSoon())) attemptTokenRefresh();
   renderSyncDot();
   renderTodoSyncNote();
   if(editing) return;
@@ -2891,8 +2879,7 @@ function hasUnpricedWishlist(db) {
 }
 function attemptTodoRescue() {
   if (syncRunning) return;
-  if (getValidToken()) { syncNow('retry'); return; }
-  attemptTokenRefresh();
+  if (relayReady()) { syncNow('retry'); return; }
 }
 function renderTodoSyncBox() {
   const box = $('tdsyncbox'), st = $('tdsyncstat'), btn = $('tdsyncbtn');
@@ -2900,12 +2887,12 @@ function renderTodoSyncBox() {
   let label = '', color = '';
   if (syncStatus === 'syncing') label = '';
   else if (todoDirty) { label = '未保存の変更あり（自動で保存中）'; color = '#d9a13b'; }
-  else if (!getValidToken()) { label = 'Drive未接続'; color = '#e5484d'; }
+  else if (!relayReady()) { label = '中継未設定'; color = '#e5484d'; }
   else if (syncStatus === 'error') { label = '同期エラー'; color = '#e5484d'; }
   if (box) box.style.display = label ? '' : 'none';
   if (label) { st.textContent = label; st.style.color = color; }
   if (syncStatus === 'syncing') { btn.disabled = true; btn.textContent = '保存中…'; btn.className = 'btn'; }
-  else if (!getValidToken()) { btn.disabled = false; btn.textContent = '再接続'; btn.className = 'btn primary'; }
+  else if (!relayReady()) { btn.disabled = false; btn.textContent = '中継を設定'; btn.className = 'btn primary'; }
   else { btn.disabled = false; btn.textContent = 'Driveに保存'; btn.className = 'btn'; }
   renderSyncTime();
 }
@@ -2921,7 +2908,7 @@ function renderSyncTime(){
 }
 function todoSyncBtnTap() {
   if (syncStatus === 'syncing') return;
-  if (!getValidToken()) { connectDrive(); return; }
+  if (!relayReady()) { sheetInfo('中継未設定', '設定タブの「同期と写真」で、中継のシークレットを貼ってください。'); return; }
   syncNow('manual');
 }
 function renderTodoSyncNote() { renderTodoSyncBox(); }
@@ -2935,7 +2922,7 @@ async function syncTodo() {
     if (!res.ok) return false;
     const j = await res.json();
     const files = (j.files || []).filter(function (f) { return f.name === 'todo.json'; });
-    const tok = getValidToken(); if (!tok && !relayReady()) return false;
+    const tok = null; if (!relayReady()) return false;
     if (!files.length) {
       const up = await driveUploadCreate('todo.json', JSON.stringify(TodoDB), tok);
       if (!up.ok) return false;
@@ -2967,8 +2954,8 @@ async function syncTodo() {
 }
 async function requestPriceCheck() {
   if (priceCheckBusy) return;
-  const tok = getValidToken();
-  if (!tok && !relayReady()) { sheetInfo('全件再チェック', 'Google同期が未接続のため、依頼できませんでした。設定タブでDriveに接続してから、もう一度押してください。'); return; }
+  const tok = null;
+  if (!relayReady()) { sheetInfo('全件再チェック', '中継が未設定のため、依頼できませんでした。設定タブの「同期と写真」で中継のシークレットを設定してから、もう一度押してください。'); return; }
   priceCheckBusy = true; if (currentView === 'todo') renderTodo();
   try {
     const payload = JSON.stringify({ requestedAt: Date.now(), handledAt: 0, source: 'diary-app' });
@@ -3860,16 +3847,17 @@ document.addEventListener('pointerup', function () {
   if(relayReady()){
     /* v2.21: a configured relay needs no token — sync on open. */
     setTimeout(()=>syncNow('startup'), 300);
+    /* 写真表示用にトークンを静かに戻す（同期はしない） */
+    setTimeout(trySilentRefresh, 1200);
   } else if(authResult==='token'){
-    setSyncStatus('syncing');
-    setTimeout(()=>syncNow('connect'), 300);
+    /* 写真用トークンが戻っただけ：写真のアップロードだけ処理する */
+    setTimeout(()=>{ uploadPendingPhotos(); }, 300);
   } else if(authResult==='error'){
     /* 認証エラーを表示したままにする（サイレント更新で上書きしない） */
-  } else if(isDriveConnected()){
-    setTimeout(()=>syncNow('startup'), 300);
   } else if(getClientId() && storeGet(LS_AUTH_ERR)){
     setSyncStatus('error', storeGet(LS_AUTH_ERR));
   } else if(getClientId()){
+    /* 写真表示用にトークンを静かに戻す（同期はしない） */
     setTimeout(trySilentRefresh, 800);
   }
   checkForUpdate();
