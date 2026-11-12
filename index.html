@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.20">
+<meta name="app-version" content="2.21">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1555,6 +1555,14 @@ function renderSettingsPanel(){
       '<div class="setrow"><button class="btn primary" onclick="connectDrive()">Google Driveと接続</button><button class="btn" onclick="syncNow(\'manual\')">今すぐ同期</button><button class="btn" onclick="disconnectDrive()">切断</button></div>'+
       '<div class="syncstat" id="syncstat"></div>'+
       '<div class="note">同期先は Drive 上の「diary.json」（このアプリが作成したファイルのみ読み書きします）。未接続でも端末内で全機能が使えます。</div>'+
+      '</div>'+
+      '<div class="setbox" style="margin-top:12px">'+
+      '<div class="setlabel">中継（Apps Script）</div>'+
+      '<input class="textin" id="relayurl" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="中継の URL（https://script.google.com/macros/s/…）" value="'+(relayCfg() ? escA(relayCfg().url) : '')+'">'+
+      '<input class="textin" id="relaysecret" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="シークレット" value="'+(relayCfg() ? escA(relayCfg().secret) : '')+'" style="margin-top:8px">'+
+      '<div class="setrow"><button class="btn primary" onclick="relaySaveAndTest()">保存して接続テスト</button>'+(relayCfg() ? '<button class="btn" onclick="relayClear()">中継を解除</button>' : '')+'</div>'+
+      '<div class="syncstat" id="relaystat">'+(relayCfg() ? '設定済みです。接続テストで中継の応答を確認できます。' : '未設定です。')+'</div>'+
+      '<div class="note">あなたの Google アカウントの中で動く中継経由で同期します。設定すると Google ログインが不要になり、アプリを落としても接続が切れません。URL とシークレットはこの端末内にだけ保存されます。（写真のアップロードだけは従来の Drive 接続を使います）</div>'+
       '</div>');
     renderSyncStatus();
   }
@@ -1661,12 +1669,13 @@ function getValidToken(){
   return null;
 }
 function isDriveConnected(){ return !!getValidToken(); }
-function canSync(){ return !!getValidToken(); }
+function canSync(){ return !!getValidToken() || relayReady(); }
 function tokenExpiringSoon(){
   const exp=+(storeGet(LS_TOKEN_EXP)||0);
   return !!exp && exp-Date.now() < 5*60*1000;
 }
 function attemptTokenRefresh(){
+  if(relayReady()) return; /* 中継モードではトークン自体が不要 */
   if(!getClientId()) return;
   if(syncRunning) return;
   const now=Date.now();
@@ -1676,7 +1685,7 @@ function attemptTokenRefresh(){
 }
 function renderSyncDot(){
   const el=$('tdsyncdot'); if(!el) return;
-  const ok = !!getValidToken() && !todoDirty && syncStatus!=='error';
+  const ok = (!!getValidToken() || relayReady()) && !todoDirty && syncStatus!=='error';
   el.style.background = ok ? '#46a758' : '#e5484d';
 }
 function storeToken(tok, expiresInSec){
@@ -1698,6 +1707,7 @@ function renderSyncStatus(){
   if(syncStatus==='synced') label='同期済み'+(lastSyncAt ? '（'+pad2(new Date(lastSyncAt).getHours())+':'+pad2(new Date(lastSyncAt).getMinutes())+'）' : '');
   else if(syncStatus==='syncing') label='同期中…';
   else if(syncStatus==='error'){ label='同期エラー'+(syncMsg ? '：'+syncMsg : ''); cls='err'; }
+  else if(relayReady()) label='中継で接続済み（未同期）';
   else label='Drive未接続（端末内に保存中）';
   if (todoDirty) label += '・未保存の変更あり';
   const bar=$('syncbar'); if(bar) bar.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
@@ -1707,7 +1717,7 @@ function renderSyncStatus(){
   if (typeof renderMemoSyncNote === 'function') renderMemoSyncNote();
 }
 function scheduleSync(){
-  if(!isDriveConnected()) return;
+  if(!isDriveConnected() && !relayReady()) return;
   if(syncTimer) clearTimeout(syncTimer);
   syncTimer=setTimeout(()=>{ syncNow('auto'); }, 1500);
 }
@@ -1806,7 +1816,83 @@ function trySilentRefresh(){
   }catch(e){ setSyncStatus('disconnected'); }
 }
 
+/* ---------- 中継（Apps Script）: v2.21 ----------
+   A relay deployed under the user's own Google account reads and
+   writes this app's JSON files (server-side name allowlist +
+   shared secret). When configured, sync needs no Google token at
+   all, so the connection can never lapse. URL + secret live only in
+   this device's localStorage. GIS remains the fallback (and still
+   carries photo uploads). In relay mode a file's "id" is its name.
+   driveFetch is the single chokepoint for list + download calls in
+   every flow (diary / todo / memo / price-check), so branching here
+   covers them all; uploads route through driveUploadPatch /
+   driveUploadCreate below. */
+const LS_RELAY='diaryStandalone.relay';
+function relayCfg(){ try{ const r=JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.url && r.secret) ? r : null; }catch(e){ return null; } }
+function relayReady(){ return !!relayCfg(); }
+async function relayCall(op, name, content){
+  const c=relayCfg(); if(!c) throw new Error('中継が未設定です');
+  const res=await fetch(c.url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ secret:c.secret, op:op, name:name, content:content }) });
+  if(!res.ok) throw new Error('中継 HTTP '+res.status);
+  const j=JSON.parse(await res.text());
+  if(!j || !j.ok) throw new Error('中継エラー：'+((j && j.error) || 'unknown'));
+  return j;
+}
+function relayFakeRes(jsonObj, text){
+  return { ok:true, status:200,
+    json: async()=> jsonObj,
+    text: async()=> (text !== undefined ? text : JSON.stringify(jsonObj)) };
+}
+async function relayDriveFetch(path){
+  const listM=/^\/files\?q=/.exec(path);
+  if(listM){
+    const q=decodeURIComponent(path.slice('/files?q='.length).split('&')[0]);
+    const nm=/name='([^']+)'/.exec(q);
+    if(!nm) throw new Error('中継：解釈できない検索です');
+    const st=await relayCall('stat', nm[1]);
+    return relayFakeRes({ files: st.exists ? [{ id:nm[1], name:nm[1] }] : [] });
+  }
+  const dlM=/^\/files\/([^?]+)\?alt=media/.exec(path);
+  if(dlM){
+    const got=await relayCall('get', decodeURIComponent(dlM[1]));
+    return relayFakeRes(null, got.content);
+  }
+  if(/^\/files\/[^?]+\?fields=headRevisionId/.test(path)) return relayFakeRes({ headRevisionId:null });
+  throw new Error('中継：未対応のリクエストです');
+}
+async function driveUploadPatch(fileId, bodyStr, tok){
+  if(relayReady()){ await relayCall('put', fileId, bodyStr); return { ok:true, status:200 }; }
+  return fetch(UPLOAD_API+'/files/'+encodeURIComponent(fileId)+'?uploadType=media', { method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: bodyStr });
+}
+async function driveUploadCreate(name, bodyStr, tok){
+  if(relayReady()){ await relayCall('put', name, bodyStr); return { ok:true, status:200, json: async()=>({ id:name }) }; }
+  const meta={ name:name, mimeType:'application/json' };
+  const form=new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
+  form.append('file', new Blob([bodyStr], { type:'application/json' }), name);
+  return fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+}
+function relaySaveAndTest(){
+  const u=$('relayurl'), s=$('relaysecret'), st=$('relaystat');
+  const url=(u ? u.value : '').trim(), secret=(s ? s.value : '').trim();
+  if(!url || !secret){ if(st) st.textContent='URL とシークレットの両方を入力してください'; return; }
+  storeSet(LS_RELAY, JSON.stringify({ url:url, secret:secret }));
+  if(st) st.textContent='接続テスト中…';
+  relayCall('ping').then(()=>{
+    if(st) st.textContent='接続OK — この端末では Google ログインなしで同期します。';
+    renderSyncStatus();
+    syncNow('relay');
+  }).catch(e=>{ if(st) st.textContent='接続に失敗しました：'+((e && e.message) || e); });
+}
+function relayClear(){
+  storeDel(LS_RELAY);
+  const u=$('relayurl'), s=$('relaysecret'), st=$('relaystat');
+  if(u) u.value=''; if(s) s.value=''; if(st) st.textContent='未設定です。';
+  renderSyncStatus();
+}
+
 async function driveFetch(path, opts){
+  if(relayReady()) return relayDriveFetch(path);
   const tok=getValidToken(); if(!tok) throw new Error('no token');
   const res=await fetch(DRIVE_API+path, Object.assign({}, opts||{}, { headers: Object.assign({ Authorization:'Bearer '+tok }, (opts&&opts.headers)||{}) }));
   return res;
@@ -1861,21 +1947,13 @@ async function getHeadRevision(fileId){
   const j=await res.json(); return j.headRevisionId||null;
 }
 async function uploadDiaryUpdate(fileId, data){
-  const tok=getValidToken(); if(!tok) throw new Error('no token');
-  const res=await fetch(UPLOAD_API+'/files/'+encodeURIComponent(fileId)+'?uploadType=media', {
-    method:'PATCH',
-    headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' },
-    body: JSON.stringify(data)
-  });
+  const tok=getValidToken(); if(!tok && !relayReady()) throw new Error('no token');
+  const res=await driveUploadPatch(fileId, JSON.stringify(data), tok);
   if(!res.ok) throw new Error('update HTTP '+res.status);
 }
 async function createDiary(data){
-  const tok=getValidToken(); if(!tok) throw new Error('no token');
-  const meta={ name:'diary.json', mimeType:'application/json' };
-  const form=new FormData();
-  form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
-  form.append('file', new Blob([JSON.stringify(data)], { type:'application/json' }), 'diary.json');
-  const res=await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+  const tok=getValidToken(); if(!tok && !relayReady()) throw new Error('no token');
+  const res=await driveUploadCreate('diary.json', JSON.stringify(data), tok);
   if(!res.ok) throw new Error('create HTTP '+res.status);
   return res.json();
 }
@@ -1883,7 +1961,7 @@ async function createDiary(data){
 async function syncNow(reason){
   if(syncRunning) return;
   const tok=getValidToken();
-  if(!tok){ setSyncStatus(getClientId() ? 'disconnected' : 'disconnected', ''); return; }
+  if(!tok && !relayReady()){ setSyncStatus(getClientId() ? 'disconnected' : 'disconnected', ''); return; }
   syncRunning=true; setSyncStatus('syncing');
   try{
     await uploadPendingPhotos();
@@ -2186,13 +2264,9 @@ async function syncMemo(){
     if(!res.ok) return false;
     const j=await res.json();
     const files=(j.files||[]).filter(f=>f.name==='memo.json');
-    const tok=getValidToken(); if(!tok) return false;
+    const tok=getValidToken(); if(!tok && !relayReady()) return false;
     if(!files.length){
-      const meta={ name:'memo.json', mimeType:'application/json' };
-      const form=new FormData();
-      form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
-      form.append('file', new Blob([JSON.stringify(memoFilePayload())], { type:'application/json' }), 'memo.json');
-      const up=await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+      const up=await driveUploadCreate('memo.json', JSON.stringify(memoFilePayload()), tok);
       if(!up.ok) return false;
       if(memoEditSeq===seq0 && memoDirty){ memoDirty=false; renderMemoSyncNote(); }
       return true;
@@ -2210,7 +2284,7 @@ async function syncMemo(){
     if(currentView==='memo') renderMemoList();
     if(currentView==='memoedit' && memoEditId){ const m=memoById(memoEditId); if(!m){ memoEditId=null; } }
     if(snap(MemoDB)!==remoteSnap){
-      const up=await fetch(UPLOAD_API+'/files/'+encodeURIComponent(file.id)+'?uploadType=media', { method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(memoFilePayload()) });
+      const up=await driveUploadPatch(file.id, JSON.stringify(memoFilePayload()), tok);
       if(!up.ok) return false;
     }
     if(memoEditSeq===seq0 && memoDirty){ memoDirty=false; renderMemoSyncNote(); }
@@ -2236,7 +2310,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.20';
+const APP_VERSION='2.21';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2855,13 +2929,9 @@ async function syncTodo() {
     if (!res.ok) return false;
     const j = await res.json();
     const files = (j.files || []).filter(function (f) { return f.name === 'todo.json'; });
-    const tok = getValidToken(); if (!tok) return false;
+    const tok = getValidToken(); if (!tok && !relayReady()) return false;
     if (!files.length) {
-      const meta = { name: 'todo.json', mimeType: 'application/json' };
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
-      form.append('file', new Blob([JSON.stringify(TodoDB)], { type: 'application/json' }), 'todo.json');
-      const up = await fetch(UPLOAD_API + '/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: form });
+      const up = await driveUploadCreate('todo.json', JSON.stringify(TodoDB), tok);
       if (!up.ok) return false;
       if (hasUnpricedWishlist(TodoDB)) startPricePolls();
       if (todoEditSeq === seq0 && todoDirty) { todoDirty = false; renderSyncStatus(); renderTodoDirty(); }
@@ -2881,7 +2951,7 @@ async function syncTodo() {
     if (currentView === 'todo') renderTodo();
     if (snap(merged) !== remoteSnap) {
       TodoDB.updatedAt = Date.now(); saveTodoLocal();
-      const up = await fetch(UPLOAD_API + '/files/' + encodeURIComponent(file.id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(TodoDB) });
+      const up = await driveUploadPatch(file.id, JSON.stringify(TodoDB), tok);
       if (!up.ok) return false;
       if (hasUnpricedWishlist(TodoDB)) startPricePolls();
     }
@@ -2892,7 +2962,7 @@ async function syncTodo() {
 async function requestPriceCheck() {
   if (priceCheckBusy) return;
   const tok = getValidToken();
-  if (!tok) { sheetInfo('全件再チェック', 'Google同期が未接続のため、依頼できませんでした。設定タブでDriveに接続してから、もう一度押してください。'); return; }
+  if (!tok && !relayReady()) { sheetInfo('全件再チェック', 'Google同期が未接続のため、依頼できませんでした。設定タブでDriveに接続してから、もう一度押してください。'); return; }
   priceCheckBusy = true; if (currentView === 'todo') renderTodo();
   try {
     const payload = JSON.stringify({ requestedAt: Date.now(), handledAt: 0, source: 'diary-app' });
@@ -2902,14 +2972,10 @@ async function requestPriceCheck() {
     const j = await res.json();
     const files = (j.files || []).filter(function (f) { return f.name === 'price-check-request.json'; });
     if (files.length) {
-      const up = await fetch(UPLOAD_API + '/files/' + encodeURIComponent(files[0].id) + '?uploadType=media', { method: 'PATCH', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: payload });
+      const up = await driveUploadPatch(files[0].id, payload, tok);
       if (!up.ok) throw new Error('update HTTP ' + up.status);
     } else {
-      const meta = { name: 'price-check-request.json', mimeType: 'application/json' };
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
-      form.append('file', new Blob([payload], { type: 'application/json' }), 'price-check-request.json');
-      const up = await fetch(UPLOAD_API + '/files?uploadType=multipart&fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + tok }, body: form });
+      const up = await driveUploadCreate('price-check-request.json', payload, tok);
       if (!up.ok) throw new Error('create HTTP ' + up.status);
     }
     priceCheckBusy = false; priceCheckSentAt = Date.now();
@@ -3785,7 +3851,10 @@ document.addEventListener('pointerup', function () {
   loadTodo(); renderTodo();
   const authResult=checkAuthRedirect();
   renderList(); renderCalendar(); renderSyncStatus();
-  if(authResult==='token'){
+  if(relayReady()){
+    /* v2.21: a configured relay needs no token — sync on open. */
+    setTimeout(()=>syncNow('startup'), 300);
+  } else if(authResult==='token'){
     setSyncStatus('syncing');
     setTimeout(()=>syncNow('connect'), 300);
   } else if(authResult==='error'){
