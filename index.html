@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.76">
+<meta name="app-version" content="1.77">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1850,8 +1850,8 @@ async function syncNow(reason){
 
 /* ================= memo (integrated 2026-11-12; same memo.json + per-memo merge as the standalone memo app) ================= */
 const MEMO_LS='diaryStandalone.memo.v1';
-let MemoDB={ memos:[], deleted:{} };
-try{ const d=JSON.parse(localStorage.getItem(MEMO_LS)||'null'); if(d && Array.isArray(d.memos)) MemoDB={ memos:d.memos, deleted:d.deleted||{} }; }catch(e){}
+let MemoDB={ memos:[], deleted:{}, folders:[] };
+try{ const d=JSON.parse(localStorage.getItem(MEMO_LS)||'null'); if(d && Array.isArray(d.memos)) MemoDB={ memos:d.memos, deleted:d.deleted||{}, folders:Array.isArray(d.folders)?d.folders:[] }; }catch(e){}
 let memoDirty=false, memoEditSeq=0, memoSyncTimer=null;
 let memoEditId=null, memoEditIsNew=false, memoLastDeleted=null, memoToastTimer=null, memoSearchQ='';
 function saveMemoLocal(){ try{ localStorage.setItem(MEMO_LS, JSON.stringify(MemoDB)); }catch(e){} }
@@ -1879,7 +1879,10 @@ function mergeMemoData(local, remote){
   const byId={};
   [local.memos||[], remote.memos||[]].forEach(list=>{ list.forEach(m=>{ const ex=byId[m.id]; if(!ex || (m.updatedAt||'')>(ex.updatedAt||'')) byId[m.id]=m; }); });
   const memos=Object.values(byId).filter(m=> !(deleted[m.id] && deleted[m.id]>=(m.updatedAt||'')));
-  return { memos, deleted };
+  const fById={};
+  [local.folders||[], remote.folders||[]].forEach(list=>{ list.forEach(f=>{ const ex=fById[f.id]; if(!ex || (f.updatedAt||'')>(ex.updatedAt||'')) fById[f.id]=f; }); });
+  const folders=Object.values(fById).filter(f=> !(deleted[f.id] && deleted[f.id]>=(f.updatedAt||'')));
+  return { memos, deleted, folders };
 }
 function touchMemo(){
   memoDirty=true; memoEditSeq++; saveMemoLocal(); renderMemoSyncNote();
@@ -1995,9 +1998,9 @@ async function syncMemo(){
     const dl=await driveFetch('/files/'+encodeURIComponent(file.id)+'?alt=media');
     if(!dl.ok) return false;
     const text=await dl.text();
-    let remote={ memos:[], deleted:{} };
-    if(text && text.trim()){ const p=JSON.parse(text); remote={ memos:Array.isArray(p.memos)?p.memos:[], deleted:p.deleted||{} }; }
-    const snap=(d)=>JSON.stringify({ m:d.memos, d:d.deleted });
+    let remote={ memos:[], deleted:{}, folders:[] };
+    if(text && text.trim()){ const p=JSON.parse(text); remote={ memos:Array.isArray(p.memos)?p.memos:[], deleted:p.deleted||{}, folders:Array.isArray(p.folders)?p.folders:[] }; }
+    const snap=(d)=>JSON.stringify({ m:d.memos, d:d.deleted, f:d.folders||[] });
     const remoteSnap=snap(remote);
     MemoDB=mergeMemoData(MemoDB, remote);
     saveMemoLocal();
@@ -2028,7 +2031,7 @@ $('memoeditor').addEventListener('input', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION='1.76';
+const APP_VERSION='1.77';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2080,15 +2083,32 @@ const LS_TODO = 'diaryStandalone.todo.v1';
 const TODO_COLORS = ['#e5484d', '#f76b15', '#ffc53d', '#46a758', '#3e9bff', '#8e4ec6', '#9c9ca4'];
 const SORT_LABEL = { custom: 'カスタム', dueDesc: '期限日の遅い順', dueAsc: '期限日の早い順', color: '色別' };
 const TODO_SEED = {"updatedAt":0,"folders":[],"lists":[],"todos":[],"trash":[],"goneFolders":[],"goneLists":[]};
-function todoNorm(t) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: t.title, done: !!t.done, due: t.due || null, color: t.color || null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : ((typeof t.price === 'string' && /^\d+-\d+$/.test(t.price)) ? t.price : null) }; }
+function stripTitlePrice(s) {
+  if (typeof s !== 'string') return s;
+  let t = s.replace(/^\s*[¥￥]\s*\d[\d,]*\s*(?:-\s*)?/, '').replace(/^\s*\d[\d,]*\s*円\s*(?:-\s*)?/, '');
+  if (t === s) t = s.replace(/\s+[¥￥]?\d[\d,]*\s*円\s*$/, '');
+  t = t.trim();
+  return t ? t : s;
+}
+function todoNorm(t, strip) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: strip ? stripTitlePrice(t.title) : t.title, done: !!t.done, due: t.due || null, color: t.color || null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : ((typeof t.price === 'string' && /^\d+-\d+$/.test(t.price)) ? t.price : null) }; }
+function inPriceScopeRaw(d, t) {
+  const pf = {};
+  (d.folders || []).forEach(function (f) { const n = String(f.name || '').replace(/\s+/g, ''); if (f.id === 1 || n.indexOf('欲しいもの') === 0 || n.indexOf('ほしいもの') === 0) pf[f.id] = true; });
+  if (t.folderId && pf[t.folderId]) return true;
+  const l = (d.lists || []).find(function (x) { return x.id === t.listId; });
+  if (!l) return false;
+  if (l.folderId) return !!pf[l.folderId];
+  const n = String(l.name || '').replace(/\s+/g, '');
+  return n.indexOf('欲しいもの') === 0 || n.indexOf('ほしいもの') === 0;
+}
 function normalizeTodo(d) {
   if (!d || typeof d !== 'object') return null;
   return {
     updatedAt: d.updatedAt || 0,
     folders: (d.folders || []).map(function (f) { return { id: f.id, name: f.name, sort: f.sort || 'custom', showDone: f.showDone !== false }; }),
     lists: (d.lists || []).map(function (l) { return { id: l.id, folderId: l.folderId || null, name: l.name, sort: l.sort || 'custom' }; }),
-    todos: (d.todos || []).map(todoNorm),
-    trash: (d.trash || []).map(function (t) { const n = todoNorm(t); n.deletedAt = t.deletedAt || 0; return n; }),
+    todos: (d.todos || []).map(function (t) { return todoNorm(t, inPriceScopeRaw(d, t)); }),
+    trash: (d.trash || []).map(function (t) { const n = todoNorm(t, inPriceScopeRaw(d, t)); n.deletedAt = t.deletedAt || 0; return n; }),
     goneFolders: (d.goneFolders || []).filter(function (x) { return typeof x === 'number'; }),
     goneLists: (d.goneLists || []).filter(function (x) { return typeof x === 'number'; })
   };
