@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.13">
+<meta name="app-version" content="2.14">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -346,8 +346,9 @@
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
-  .tdunder { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 1; }
-  .tdfollow { position: relative; z-index: 2; background: var(--bg); }
+  .tdshell { position: fixed; inset: 0; background: var(--bg); overflow: hidden; z-index: 38; }
+  .tdshellin { position: absolute; left: 0; right: 0; top: 0; }
+  #view-todo.td-sub #todowrap { touch-action: pan-y; }
   .tdclip { height: 100vh; height: 100dvh; overflow: hidden; }
   .tdpagenew { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 3; }
   #todowrap { position: relative; }
@@ -2221,7 +2222,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.13';
+const APP_VERSION='2.14';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3542,43 +3543,46 @@ function doDeleteFolderSilent(id) {
   fixTabAfterDelete();
   touchTodo();
 }
-/* ---- swipe back (finger-follow, live DOM) ---- */
+/* ---- swipe back (finger-follow, viewport shell) ---- */
 let tdSwipe = null;
 function tdSwipeBlocked() {
   const ov = $('tdoverlay'), dr = $('tddrawer'), md = $('tdmodal'), pp = $('tdpop');
   return (ov && ov.classList.contains('show')) || (dr && dr.classList.contains('show')) || (md && md.classList.contains('open')) || (pp && pp.classList.contains('open'));
 }
-function tdSwipeDestHTML() {
-  const saved = { list: todoListId, special: todoSpecial, edit: todoEdit, folder: todoFolderId, top: todoTopListId };
-  if (todoSpecial) todoSpecial = null; else todoListId = null;
-  todoEdit = false;
-  const key = currentTabKey();
-  let html = '';
-  try { html = buildTodoHTML(); } catch (e) { html = ''; }
-  todoListId = saved.list; todoSpecial = saved.special; todoEdit = saved.edit; todoFolderId = saved.folder; todoTopListId = saved.top;
-  if (!html) return null;
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  const pg = tmp.querySelector('.tdpager');
-  if (pg) { const stat = document.createElement('div'); stat.innerHTML = tabBodyByKey(key); pg.replaceWith(stat); }
-  Array.prototype.slice.call(tmp.querySelectorAll('.tdfab, .tdfabpill, .tdeditbar, .tddelFab')).forEach(function (el) { el.remove(); });
-  return tmp.innerHTML;
-}
 function tdSwipeBegin(g) {
   const wrap = $('todowrap'); if (!wrap || !TodoDB) return false;
-  const dest = tdSwipeDestHTML();
-  if (dest == null) return false;
+  const oldHTML = wrap.innerHTML;
+  const saved = { list: todoListId, special: todoSpecial, edit: todoEdit, folder: todoFolderId, top: todoTopListId, undo: tdUndo, sel: new Set(todoSel) };
+  if (todoSpecial) todoSpecial = null; else todoListId = null;
+  todoEdit = false;
+  const newHTML = buildTodoHTML();
+  todoListId = saved.list; todoSpecial = saved.special; todoEdit = saved.edit; todoFolderId = saved.folder; todoTopListId = saved.top;
+  if (!oldHTML || oldHTML === newHTML) return false;
   const main = wrap.closest('main');
-  const under = document.createElement('div');
-  under.className = 'tdunder';
-  under.innerHTML = dest;
-  const follow = document.createElement('div');
-  follow.className = 'tdfollow';
-  while (wrap.firstChild) follow.appendChild(wrap.firstChild);
-  wrap.appendChild(under);
-  wrap.appendChild(follow);
-  if (main) { main.style.overflowY = 'hidden'; g.scrollTop = main.scrollTop; }
-  g.layers = { wrap: wrap, follow: follow, under: under, main: main };
+  const rect = wrap.getBoundingClientRect();
+  g.winY = window.scrollY || 0; g.mainY = main ? main.scrollTop : 0;
+  const shell = document.createElement('div');
+  shell.className = 'tdshell';
+  const inner = document.createElement('div');
+  inner.className = 'tdshellin';
+  inner.style.transform = 'translateY(' + Math.round(rect.top) + 'px)';
+  const fabs = [];
+  while (wrap.firstChild) {
+    const n = wrap.firstChild;
+    if (n.nodeType === 1 && n.matches && n.matches('.tdfab, .tdfabpill, .tdeditbar, .tddelFab')) { fabs.push(n); wrap.removeChild(n); }
+    else inner.appendChild(n);
+  }
+  shell.appendChild(inner);
+  fabs.forEach(function (el) { shell.appendChild(el); });
+  document.body.appendChild(shell);
+  tdUndo = null;
+  if (todoSpecial) todoSpecial = null; else todoListId = null;
+  todoEdit = false; todoSel.clear();
+  const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
+  renderTodo();
+  window.scrollTo(0, 0);
+  if (main) main.scrollTop = 0;
+  g.layers = { shell: shell, saved: saved, main: main };
   return true;
 }
 function tdSwipeFinish(g, complete, dx) {
@@ -3589,29 +3593,30 @@ function tdSwipeFinish(g, complete, dx) {
   let done = false;
   const cleanup = function () {
     if (done) return; done = true;
-    if (L.main) L.main.style.overflowY = '';
-    if (complete) {
-      tdUndo = null;
-      if (todoSpecial) todoSpecial = null; else todoListId = null;
-      todoEdit = false; todoSel.clear();
+    if (!complete) {
+      const s = L.saved;
+      todoListId = s.list; todoSpecial = s.special; todoEdit = s.edit; todoFolderId = s.folder; todoTopListId = s.top; tdUndo = s.undo; todoSel = s.sel;
       const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
       renderTodo();
-      if (L.main) L.main.scrollTop = 0;
-    } else {
-      renderTodo();
-      if (L.main) L.main.scrollTop = g.scrollTop || 0;
+      window.scrollTo(0, g.winY || 0);
+      if (L.main) L.main.scrollTop = g.mainY || 0;
     }
+    if (L.shell.parentNode) L.shell.parentNode.removeChild(L.shell);
   };
   try {
-    const a = L.follow.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: complete ? 'translateX(' + W + 'px)' : 'translateX(0px)' }], { duration: dur, easing: ease });
+    const a = L.shell.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: complete ? 'translateX(' + W + 'px)' : 'translateX(0px)' }], { duration: dur, easing: ease });
     if (a && a.finished) a.finished.then(cleanup).catch(cleanup); else setTimeout(cleanup, dur + 40);
   } catch (e) { setTimeout(cleanup, 30); }
   setTimeout(cleanup, dur + 140);
 }
+function tdSwipeApply(g) {
+  g.raf = 0;
+  if (g.layers) g.layers.shell.style.transform = 'translateX(' + Math.max(0, g.lastDx || 0) + 'px)';
+}
 document.addEventListener('touchstart', function (e) {
   if (!todoListId && !todoSpecial) { tdSwipe = null; return; }
   if (tdSwipeBlocked()) { tdSwipe = null; return; }
-  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, scrollTop: 0 };
+  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, raf: 0 };
 }, { passive: true });
 document.addEventListener('touchmove', function (e) {
   if (!tdSwipe) return;
@@ -3626,15 +3631,15 @@ document.addEventListener('touchmove', function (e) {
     } else return;
   }
   if (tdSwipe.mode === 'follow') {
-    if (Math.abs(dy) > 64 && Math.abs(dy) > dx) { const g = tdSwipe; tdSwipe = null; tdSwipeFinish(g, false, Math.max(0, dx)); return; }
-    const cx = Math.max(0, dx);
-    tdSwipe.layers.follow.style.transform = 'translateX(' + cx + 'px)';
-    tdSwipe.lastDx = cx;
+    if (Math.abs(dy) > 64 && Math.abs(dy) > dx) { const g = tdSwipe; tdSwipe = null; if (g.raf) cancelAnimationFrame(g.raf); tdSwipeFinish(g, false, Math.max(0, dx)); return; }
+    tdSwipe.lastDx = Math.max(0, dx);
+    if (!tdSwipe.raf) tdSwipe.raf = requestAnimationFrame(function () { if (tdSwipe) tdSwipeApply(tdSwipe); });
   }
 }, { passive: true });
 function tdSwipeEnd(e, cancelled) {
   if (!tdSwipe) return;
   const g = tdSwipe; tdSwipe = null;
+  if (g.raf) cancelAnimationFrame(g.raf);
   const t = e.changedTouches && e.changedTouches[0];
   const dx = t ? t.clientX - g.x : 0, dy = t ? t.clientY - g.y : 0;
   if (g.mode === 'follow') {
