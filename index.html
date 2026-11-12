@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.14">
+<meta name="app-version" content="2.15">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -346,7 +346,7 @@
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
-  .tdshell { position: fixed; inset: 0; background: var(--bg); overflow: hidden; z-index: 38; }
+  .tdshell { position: fixed; inset: 0; background: var(--bg); overflow: hidden; z-index: 38; will-change: transform; }
   .tdshellin { position: absolute; left: 0; right: 0; top: 0; }
   #view-todo.td-sub #todowrap { touch-action: pan-y; }
   .tdclip { height: 100vh; height: 100dvh; overflow: hidden; }
@@ -2222,7 +2222,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.14';
+const APP_VERSION='2.15';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3551,13 +3551,7 @@ function tdSwipeBlocked() {
 }
 function tdSwipeBegin(g) {
   const wrap = $('todowrap'); if (!wrap || !TodoDB) return false;
-  const oldHTML = wrap.innerHTML;
   const saved = { list: todoListId, special: todoSpecial, edit: todoEdit, folder: todoFolderId, top: todoTopListId, undo: tdUndo, sel: new Set(todoSel) };
-  if (todoSpecial) todoSpecial = null; else todoListId = null;
-  todoEdit = false;
-  const newHTML = buildTodoHTML();
-  todoListId = saved.list; todoSpecial = saved.special; todoEdit = saved.edit; todoFolderId = saved.folder; todoTopListId = saved.top;
-  if (!oldHTML || oldHTML === newHTML) return false;
   const main = wrap.closest('main');
   const rect = wrap.getBoundingClientRect();
   g.winY = window.scrollY || 0; g.mainY = main ? main.scrollTop : 0;
@@ -3589,7 +3583,10 @@ function tdSwipeFinish(g, complete, dx) {
   const L = g.layers; if (!L) return;
   const W = window.innerWidth || 360;
   const ease = 'cubic-bezier(.32,.72,.28,1)';
-  const dur = complete ? Math.max(130, Math.min(280, (W - dx) * 0.75)) : 190;
+  const v = g.vel || 0;
+  const dur = complete
+    ? (v > 0.3 ? Math.max(110, Math.min(320, (W - dx) / v)) : Math.max(130, Math.min(280, (W - dx) * 0.75)))
+    : (v > 0.3 ? Math.max(90, Math.min(240, dx / v)) : 190);
   let done = false;
   const cleanup = function () {
     if (done) return; done = true;
@@ -3604,19 +3601,19 @@ function tdSwipeFinish(g, complete, dx) {
     if (L.shell.parentNode) L.shell.parentNode.removeChild(L.shell);
   };
   try {
-    const a = L.shell.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: complete ? 'translateX(' + W + 'px)' : 'translateX(0px)' }], { duration: dur, easing: ease });
+    const a = L.shell.animate([{ transform: 'translate3d(' + dx + 'px,0,0)' }, { transform: complete ? 'translate3d(' + W + 'px,0,0)' : 'translate3d(0px,0,0)' }], { duration: dur, easing: ease });
     if (a && a.finished) a.finished.then(cleanup).catch(cleanup); else setTimeout(cleanup, dur + 40);
   } catch (e) { setTimeout(cleanup, 30); }
   setTimeout(cleanup, dur + 140);
 }
 function tdSwipeApply(g) {
   g.raf = 0;
-  if (g.layers) g.layers.shell.style.transform = 'translateX(' + Math.max(0, g.lastDx || 0) + 'px)';
+  if (g.layers) g.layers.shell.style.transform = 'translate3d(' + Math.max(0, g.lastDx || 0) + 'px,0,0)';
 }
 document.addEventListener('touchstart', function (e) {
   if (!todoListId && !todoSpecial) { tdSwipe = null; return; }
   if (tdSwipeBlocked()) { tdSwipe = null; return; }
-  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, raf: 0 };
+  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, raf: 0, samples: [], vel: 0 };
 }, { passive: true });
 document.addEventListener('touchmove', function (e) {
   if (!tdSwipe) return;
@@ -3633,6 +3630,13 @@ document.addEventListener('touchmove', function (e) {
   if (tdSwipe.mode === 'follow') {
     if (Math.abs(dy) > 64 && Math.abs(dy) > dx) { const g = tdSwipe; tdSwipe = null; if (g.raf) cancelAnimationFrame(g.raf); tdSwipeFinish(g, false, Math.max(0, dx)); return; }
     tdSwipe.lastDx = Math.max(0, dx);
+    const now = performance.now();
+    tdSwipe.samples.push({ t: now, dx: tdSwipe.lastDx });
+    while (tdSwipe.samples.length > 2 && now - tdSwipe.samples[0].t > 100) tdSwipe.samples.shift();
+    if (tdSwipe.samples.length > 1) {
+      const a = tdSwipe.samples[0], b = tdSwipe.samples[tdSwipe.samples.length - 1];
+      if (b.t > a.t) tdSwipe.vel = (b.dx - a.dx) / (b.t - a.t);
+    }
     if (!tdSwipe.raf) tdSwipe.raf = requestAnimationFrame(function () { if (tdSwipe) tdSwipeApply(tdSwipe); });
   }
 }, { passive: true });
