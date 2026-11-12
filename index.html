@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.4">
+<meta name="app-version" content="2.5">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -250,7 +250,7 @@
   .tdrow { display: flex; align-items: center; gap: 12px; padding: 8px 4px; background: var(--bg); border-bottom: 1px solid var(--line); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
-  .tdprice { flex: 0 0 100px; width: 100px; text-align: left; font-size: 12.5px; font-weight: 600; color: var(--muted); }
+  .tdprice { flex: 0 0 90px; width: 90px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); }
   .tdsortcur { color: var(--text); font-weight: 600; }
   [data-dragkind] .tdcheck.done { background: #5eb1ef; border-color: #5eb1ef; color: #fff; }
   .tdrow.sel { background: var(--card2); margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; }
@@ -2212,7 +2212,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.4';
+const APP_VERSION='2.5';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
