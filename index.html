@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.21">
+<meta name="app-version" content="2.22">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1558,11 +1558,11 @@ function renderSettingsPanel(){
       '</div>'+
       '<div class="setbox" style="margin-top:12px">'+
       '<div class="setlabel">中継（Apps Script）</div>'+
-      '<input class="textin" id="relayurl" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="中継の URL（https://script.google.com/macros/s/…）" value="'+(relayCfg() ? escA(relayCfg().url) : '')+'">'+
+      '<input class="textin" id="relayurl" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="中継の URL（https://script.google.com/macros/s/…）" value="'+escA(relayCfg() ? relayCfg().url : RELAY_URL_DEFAULT)+'">'+
       '<input class="textin" id="relaysecret" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="シークレット" value="'+(relayCfg() ? escA(relayCfg().secret) : '')+'" style="margin-top:8px">'+
       '<div class="setrow"><button class="btn primary" onclick="relaySaveAndTest()">保存して接続テスト</button>'+(relayCfg() ? '<button class="btn" onclick="relayClear()">中継を解除</button>' : '')+'</div>'+
       '<div class="syncstat" id="relaystat">'+(relayCfg() ? '設定済みです。接続テストで中継の応答を確認できます。' : '未設定です。')+'</div>'+
-      '<div class="note">あなたの Google アカウントの中で動く中継経由で同期します。設定すると Google ログインが不要になり、アプリを落としても接続が切れません。URL とシークレットはこの端末内にだけ保存されます。（写真のアップロードだけは従来の Drive 接続を使います）</div>'+
+      '<div class="note">あなたの Google アカウントの中で動く中継経由で同期します。設定すると Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末内にだけ保存されます。（写真のアップロードだけは従来の Drive 接続を使います）</div>'+
       '</div>');
     renderSyncStatus();
   }
@@ -1828,7 +1828,13 @@ function trySilentRefresh(){
    covers them all; uploads route through driveUploadPatch /
    driveUploadCreate below. */
 const LS_RELAY='diaryStandalone.relay';
-function relayCfg(){ try{ const r=JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.url && r.secret) ? r : null; }catch(e){ return null; } }
+/* v2.22: the relay URL is not a secret (without the secret every
+   call is rejected), so it is embedded as the default — the user
+   pastes only the secret, once. The secret itself must never be
+   embedded: this file is public, and whoever holds the secret can
+   read and write the app's Drive files. */
+const RELAY_URL_DEFAULT='https://script.google.com/macros/s/AKfycbziV1Wpv7AWSUJJgaKyRzFeBR81Td4CjryGGuq4avt1xAo-e2mbeyS2vBpCuqx4_KI/exec';
+function relayCfg(){ try{ const r=JSON.parse(storeGet(LS_RELAY)||'null'); return (r && r.secret) ? { url: r.url || RELAY_URL_DEFAULT, secret: r.secret } : null; }catch(e){ return null; } }
 function relayReady(){ return !!relayCfg(); }
 async function relayCall(op, name, content){
   const c=relayCfg(); if(!c) throw new Error('中継が未設定です');
@@ -1874,8 +1880,8 @@ async function driveUploadCreate(name, bodyStr, tok){
 }
 function relaySaveAndTest(){
   const u=$('relayurl'), s=$('relaysecret'), st=$('relaystat');
-  const url=(u ? u.value : '').trim(), secret=(s ? s.value : '').trim();
-  if(!url || !secret){ if(st) st.textContent='URL とシークレットの両方を入力してください'; return; }
+  const url=(u ? u.value : '').trim() || RELAY_URL_DEFAULT, secret=(s ? s.value : '').trim();
+  if(!secret){ if(st) st.textContent='シークレットを入力してください（URLは入力済みです）'; return; }
   storeSet(LS_RELAY, JSON.stringify({ url:url, secret:secret }));
   if(st) st.textContent='接続テスト中…';
   relayCall('ping').then(()=>{
@@ -2310,7 +2316,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.21';
+const APP_VERSION='2.22';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
