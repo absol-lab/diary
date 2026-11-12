@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.8">
+<meta name="app-version" content="2.9">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -278,6 +278,13 @@
   .tdfab.trash { left: 18px; background: var(--card2); color: var(--muted); }
   .tdfab svg { width: 24px; height: 24px; }
   .tdfab.undo { left: 90px; background: var(--card2); color: var(--text); }
+  .tdfabpill { position: fixed; left: 18px; bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 2px; background: var(--card2); border-radius: 999px; padding: 6px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .tdfabpill button { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+  .tdfabpill button:active { background: rgba(128,128,128,.2); }
+  .tdfabpill button svg { width: 24px; height: 24px; }
+  .tdfabpill .pprice { font-size: 18px; font-weight: 700; font-family: var(--uifont); color: var(--text); }
+  .tdfabpill .pprice.off { opacity: .35; text-decoration: line-through; }
+  .tdfabpill .pundo { color: var(--text); }
   .tddonehead { font-family: var(--uifont); font-size: 13px; color: var(--muted); margin: 22px 4px 0; letter-spacing: .05em; }
   .tdeditbar { position: fixed; left: 14px; bottom: 96px; z-index: 35; display: flex; align-items: center; gap: 22px; background: var(--card2); border-radius: 999px; padding: 7px 22px; box-shadow: 0 8px 22px rgba(0,0,0,.4); }
   .tdeditbar button { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--text); }
@@ -2212,7 +2219,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.8';
+const APP_VERSION='2.9';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2412,7 +2419,17 @@ const SVG_UNDO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="5" cy="6.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><path d="M9.5 6.5H20M9.5 12H20M9.5 17.5H20"/></svg>';
 const SVG_MORE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><circle cx="8.2" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.8" cy="12" r="1.25" fill="currentColor" stroke="none"/></svg>';
 const SVG_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg>';
+let tdShowPrice = storeGet('diaryStandalone.showPrice.v1') !== '0';
+function togglePrice() { tdShowPrice = !tdShowPrice; storeSet('diaryStandalone.showPrice.v1', tdShowPrice ? '1' : '0'); renderTodo(); }
+function leftFabsHTML() {
+  return '<div class="tdfabpill">'
+    + '<button onclick="clearCompleted()" aria-label="完了済みをゴミ箱へ">' + SVG_TRASH + '</button>'
+    + '<button class="pprice' + (tdShowPrice ? '' : ' off') + '" onclick="togglePrice()" aria-label="価格表示のオンオフ">¥</button>'
+    + (tdUndo ? '<button class="pundo" onclick="undoToggle()" aria-label="元に戻す">' + SVG_UNDO + '</button>' : '')
+    + '</div>';
+}
 function priceHTML(t) {
+  if (!tdShowPrice) return '';
   if (!todoInPriceScope(t)) return '';
   if (t.price == null) return '<span class="tdprice"></span>';
   if (typeof t.price === 'string') {
@@ -2481,7 +2498,7 @@ function sanitizeLayer(layer, tabKeyForPager, S) {
     stat.innerHTML = tabBodyByKey(tabKeyForPager);
     pg.replaceWith(stat);
   }
-  const fixed = Array.prototype.slice.call(layer.querySelectorAll('.tdfab, .tdeditbar, .tddelFab'));
+  const fixed = Array.prototype.slice.call(layer.querySelectorAll('.tdfab, .tdfabpill, .tdeditbar, .tddelFab'));
   fixed.forEach(function (el) { el.remove(); });
   const clip = document.createElement('div');
   clip.className = 'tdclip';
@@ -2563,8 +2580,7 @@ function topListBodyHTML(l) {
   return h;
 }
 function folderFabsHTML() {
-  return '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
-    + (tdUndo ? '<button class="tdfab undo" onclick="undoToggle()">' + SVG_UNDO + '</button>' : '')
+  return leftFabsHTML()
     + '<button class="tdfab plus" onclick="smartAdd()">＋</button>';
 }
 function tabsHTML() {
@@ -2639,8 +2655,7 @@ function listHTML(l) {
   let h = '<div class="tdbackbar"><button class="tdback" onclick="closeTodoList()">‹</button><div class="tdltitle">' + esc(l.name) + '</div><button class="tdiconbtn" onclick="openTodoSearch()">' + SVG_SEARCH + '</button></div>';
   h += '<div class="tdsub"><span>' + sortBtnHTML(l) + '</span><span class="tdsubR"><button onclick="enterEdit()">' + SVG_EDIT + '編集</button><button onclick="openListPop(this)">' + SVG_MORE + 'その他</button></span></div>';
   h += items.length ? todoRowsHTML(items) : '<div class="tdnone">ToDoはありません</div>';
-  h += '<button class="tdfab trash" onclick="clearCompleted()">' + SVG_TRASH + '</button>'
-    + (tdUndo ? '<button class="tdfab undo" onclick="undoToggle()">' + SVG_UNDO + '</button>' : '')
+  h += leftFabsHTML()
     + '<button class="tdfab plus" onclick="openTodoAddForm()">＋</button>';
   return h;
 }
