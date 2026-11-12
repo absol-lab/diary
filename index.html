@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.71">
+<meta name="app-version" content="1.72">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -105,6 +105,24 @@
   #tdsyncbtn[disabled] { opacity: .55; }
   #tdsynctime { font-size: calc(var(--fs) * .6); color: var(--mut); margin-left: 7px; font-weight: 400; vertical-align: 2px; }
   #verbadge { position: fixed; right: 8px; bottom: calc(env(safe-area-inset-bottom) + 2px); z-index: 39; font-family: var(--uifont); font-size: 9px; letter-spacing: .03em; color: var(--mut); opacity: .8; pointer-events: none; }
+  .memocountwrap { flex: none; width: 44px; text-align: right; font-family: var(--uifont); font-size: 10.5px; color: var(--muted); }
+  #memosyncbar { text-align: center; font-family: var(--uifont); font-size: calc(var(--fs) * .72); color: var(--muted); padding: 0 16px 6px; min-height: 1.2em; cursor: pointer; }
+  #memosyncbar .err { color: var(--danger); }
+  #memosyncbar .sbhint { text-decoration: underline; text-underline-offset: 2px; }
+  .memosearchrow { padding: 2px 14px 4px; }
+  .memosearchrow input { width: 100%; box-sizing: border-box; background: var(--card); border: 1px solid var(--line); border-radius: 999px; color: var(--text); font-family: var(--uifont); font-size: 16px; padding: 9px 16px; outline: none; }
+  #view-memo main { padding-bottom: 120px; }
+  .mrow { display: block; width: calc(100% - 28px); margin: 8px 14px; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; text-align: left; color: var(--text); cursor: pointer; }
+  .mrow .mtitle { font-size: calc(var(--fs) * 1.02); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mrow .msnip { font-size: calc(var(--fs) * .86); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .mrow .mmeta { font-family: var(--uifont); font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .memoempty { text-align: center; color: var(--muted); padding: 52px 20px; line-height: 1.9; }
+  .memoeditmeta { font-family: var(--uifont); font-size: 12px; color: var(--muted); padding: 2px 2px 8px; }
+  #memoeditor { width: 100%; box-sizing: border-box; min-height: 52vh; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 14px; padding: 14px; font-size: calc(var(--fs) * 1.0); line-height: var(--lh, 1.7); resize: vertical; outline: none; }
+  #memodel svg { width: 20px; height: 20px; }
+  #memotoast { position: fixed; left: 0; right: 0; margin-left: auto; margin-right: auto; width: fit-content; max-width: calc(100vw - 40px); bottom: 86px; z-index: 65; display: none; align-items: center; gap: 14px; background: var(--card2); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; font-family: var(--uifont); font-size: 13.5px; box-shadow: 0 10px 28px rgba(0,0,0,.4); }
+  #memotoast.on { display: flex; }
+  #memotoast button { color: var(--accent, #d9a13b); font-weight: 700; font-family: var(--uifont); font-size: 13.5px; }
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
@@ -608,6 +626,32 @@
     <main><div id="todowrap"></div></main>
   </section>
 
+  <!-- ======= MEMO ======= -->
+  <section id="view-memo" class="view">
+    <div class="topbar">
+      <div class="spacer44"></div>
+      <div class="ttl">メモ</div>
+      <div class="memocountwrap"><span id="memocount"></span></div>
+    </div>
+    <div id="memosyncbar" onclick="memoSyncBarTap()"></div>
+    <div class="memosearchrow"><input id="memosearch" type="text" placeholder="メモを検索" autocomplete="off"></div>
+    <main><div id="memolist"></div></main>
+    <button class="tdfab plus" onclick="newMemo()" aria-label="新しいメモ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  </section>
+
+  <!-- ======= MEMO EDIT ======= -->
+  <section id="view-memoedit" class="view">
+    <div class="topbar entrybar">
+      <button class="iconbtn" onclick="closeMemoEditor()" aria-label="戻る">‹</button>
+      <div class="ttl">メモ</div>
+      <button class="iconbtn" id="memodel" onclick="deleteMemoCurrent()" aria-label="削除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V5.2A1.2 1.2 0 0110.7 4h2.6a1.2 1.2 0 011.2 1.2V7M6.5 7l.9 12.2A1.5 1.5 0 008.9 20.5h6.2a1.5 1.5 0 001.5-1.3L17.5 7"/></svg></button>
+    </div>
+    <main>
+      <div class="memoeditmeta" id="memometa"></div>
+      <textarea id="memoeditor" placeholder="ここに書く"></textarea>
+    </main>
+  </section>
+
   <!-- ======= SETTINGS ======= -->
   <section id="view-settings" class="view">
     <div class="topbar">
@@ -628,9 +672,11 @@
     <button id="nav-list" class="on" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15.5" x2="12.5" y2="15.5"/></svg><span>リスト</span></button>
     <button id="nav-calendar" onclick="showView('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/><circle cx="8" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="8" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.15" fill="currentColor" stroke="none"/></svg><span>カレンダー</span></button>
     <button id="nav-todo" onclick="showView('todo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 12.3l2.3 2.3 4.5-5"/></svg><span>Todo</span></button>
+    <button id="nav-memo" onclick="showView('memo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4.5" width="15" height="15" rx="3"/><path d="M8.6 15.4l.9-2.7 5.3-5.3a1.55 1.55 0 012.2 0l.5.5a1.55 1.55 0 010 2.2l-5.3 5.3-2.7.9z"/></svg><span>メモ</span></button>
     <button id="nav-settings" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>設定</span></button>
   </nav>
   <div id="verbadge"></div>
+  <div id="memotoast"><span id="memotoastmsg"></span><button onclick="undoMemoDelete()">元に戻す</button></div>
 
   <div class="overlay" id="overlay" onclick="if(event.target===this) closeSheet()">
     <div class="sheet" id="sheet"></div>
@@ -902,17 +948,18 @@ document.addEventListener('touchstart', function(){}, { passive:true }); /* enab
 function showView(v){
   if(currentView==='entry' && v!=='entry' && editing){ saveEdit(); }
   if(v!=='settings' && typeof settingsPanel!=='undefined') settingsPanel=null;
-  if(v!=='entry') prevView = (v==='search') ? prevView : v;
+  if(v!=='entry' && v!=='memoedit') prevView = (v==='search') ? prevView : v;
   currentView=v;
-  ['list','calendar','todo','search','entry','settings'].forEach(x=>{ $('view-'+x).classList.toggle('active', x===v); });
-  ['list','calendar','todo','settings'].forEach(x=>{ const b=$('nav-'+x); if(b) b.classList.toggle('on', x===v); });
-  $('pillnav').style.display = (v==='entry') ? 'none' : 'flex';
-  if(v!=='entry') moveNavInd(true);
+  ['list','calendar','todo','memo','search','entry','memoedit','settings'].forEach(x=>{ $('view-'+x).classList.toggle('active', x===v); });
+  ['list','calendar','todo','memo','settings'].forEach(x=>{ const b=$('nav-'+x); if(b) b.classList.toggle('on', x===v || (v==='memoedit' && x==='memo')); });
+  $('pillnav').style.display = (v==='entry' || v==='memoedit') ? 'none' : 'flex';
+  if(v!=='entry' && v!=='memoedit') moveNavInd(true);
   $('fab').style.display = (v==='list'||v==='calendar') ? 'flex' : 'none';
   if(v==='list') renderList();
   if(v==='calendar') renderCalendar();
   if(v==='settings') renderSettings();
   if(v==='todo') renderTodo();
+  if(v==='memo') renderMemoList();
   if(v==='search'){ renderSearch(); setTimeout(()=>{ try{$('searchinput').focus();}catch(e){} }, 60); }
   window.scrollTo(0,0);
   pinNav(); setTimeout(pinNav, 350); requestAnimationFrame(healNav); setTimeout(healNav, 380);
@@ -1589,6 +1636,7 @@ function renderSyncStatus(){
   const st=$('syncstat'); if(st) st.innerHTML='<span class="'+cls+'">'+esc(label)+'</span>';
   renderSyncDot();
   if (typeof renderTodoSyncNote === 'function') renderTodoSyncNote();
+  if (typeof renderMemoSyncNote === 'function') renderMemoSyncNote();
 }
 function scheduleSync(){
   if(!isDriveConnected()) return;
@@ -1786,6 +1834,7 @@ async function syncNow(reason){
       await uploadDiaryUpdate(file.id, DB);
     }
     await syncTodo();
+    await syncMemo();
     lastSyncAt=Date.now(); try{ localStorage.setItem('diaryStandalone.lastSyncAt', String(lastSyncAt)); }catch(e){}
     setSyncStatus('synced');
     if(currentView==='list') renderList();
@@ -1799,8 +1848,187 @@ async function syncNow(reason){
   }
 }
 
+/* ================= memo (integrated 2026-11-12; same memo.json + per-memo merge as the standalone memo app) ================= */
+const MEMO_LS='diaryStandalone.memo.v1';
+let MemoDB={ memos:[], deleted:{} };
+try{ const d=JSON.parse(localStorage.getItem(MEMO_LS)||'null'); if(d && Array.isArray(d.memos)) MemoDB={ memos:d.memos, deleted:d.deleted||{} }; }catch(e){}
+let memoDirty=false, memoEditSeq=0, memoSyncTimer=null;
+let memoEditId=null, memoEditIsNew=false, memoLastDeleted=null, memoToastTimer=null, memoSearchQ='';
+function saveMemoLocal(){ try{ localStorage.setItem(MEMO_LS, JSON.stringify(MemoDB)); }catch(e){} }
+function memoById(id){ return MemoDB.memos.find(m=>m.id===id)||null; }
+function memoSorted(){ return MemoDB.memos.slice().sort((a,b)=> (b.updatedAt||'').localeCompare(a.updatedAt||'')); }
+function memoTitleOf(body){ const lines=(body||'').split('\n').map(s=>s.trim()).filter(Boolean); return lines.length?lines[0]:'（無題）'; }
+function memoSnippetOf(body){ const lines=(body||'').split('\n').map(s=>s.trim()).filter(Boolean); return lines.slice(1).join(' '); }
+function memoFmtDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso), t=new Date();
+  const hm=pad2(d.getHours())+':'+pad2(d.getMinutes());
+  if(d.toDateString()===t.toDateString()) return '今日 '+hm;
+  const y=new Date(t); y.setDate(t.getDate()-1);
+  if(d.toDateString()===y.toDateString()) return '昨日 '+hm;
+  return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+hm;
+}
+function memoNowISO(){ return new Date().toISOString(); }
+let memoUidSeq=0;
+function memoNewId(){ return 'm'+Date.now().toString(36)+(memoUidSeq++).toString(36)+Math.floor(Math.random()*1296).toString(36); }
+/* Per-memo merge, identical semantics to the standalone memo app:
+   newer updatedAt wins per id; a tombstone at/after updatedAt deletes. */
+function mergeMemoData(local, remote){
+  const deleted={};
+  [local.deleted||{}, remote.deleted||{}].forEach(src=>{ Object.keys(src).forEach(id=>{ if(!deleted[id] || src[id]>deleted[id]) deleted[id]=src[id]; }); });
+  const byId={};
+  [local.memos||[], remote.memos||[]].forEach(list=>{ list.forEach(m=>{ const ex=byId[m.id]; if(!ex || (m.updatedAt||'')>(ex.updatedAt||'')) byId[m.id]=m; }); });
+  const memos=Object.values(byId).filter(m=> !(deleted[m.id] && deleted[m.id]>=(m.updatedAt||'')));
+  return { memos, deleted };
+}
+function touchMemo(){
+  memoDirty=true; memoEditSeq++; saveMemoLocal(); renderMemoSyncNote();
+  if(memoSyncTimer) clearTimeout(memoSyncTimer);
+  memoSyncTimer=setTimeout(()=>{ syncNow('memo'); }, 2500);
+}
+function renderMemoList(){
+  const q=memoSearchQ.trim().toLowerCase();
+  const items=memoSorted().filter(m=> !q || (m.body||'').toLowerCase().includes(q));
+  const cnt=$('memocount'); if(cnt) cnt.textContent=MemoDB.memos.length ? '全'+MemoDB.memos.length+'件' : '';
+  const el=$('memolist'); if(!el) return;
+  if(!items.length){
+    el.innerHTML='<div class="memoempty">'+(q ? '見つかりませんでした' : 'まだメモがありません。<br>右下の ＋ から書けます。')+'</div>';
+    return;
+  }
+  el.innerHTML=items.map(m=>{
+    const t=memoTitleOf(m.body), s=memoSnippetOf(m.body);
+    return '<button class="mrow" onclick="openMemo(\''+m.id+'\')"><div class="mtitle">'+esc(t)+'</div>'+(s ? '<div class="msnip">'+esc(s)+'</div>' : '')+'<div class="mmeta">'+esc(memoFmtDate(m.updatedAt))+'</div></button>';
+  }).join('');
+}
+function renderMemoSyncNote(){
+  const el=$('memosyncbar'); if(!el) return;
+  let html;
+  if(syncStatus==='syncing') html='同期中…';
+  else if(syncStatus==='error') html='<span class="err">同期エラー</span> ・ <span class="sbhint">タップで再試行</span>';
+  else if(!getValidToken()) html='Drive未接続（端末内に保存中） ・ <span class="sbhint">タップで接続</span>';
+  else if(memoDirty) html='未保存の変更があります ・ <span class="sbhint">タップで保存</span>';
+  else if(lastSyncAt) html='同期済み（'+pad2(new Date(lastSyncAt).getHours())+':'+pad2(new Date(lastSyncAt).getMinutes())+'）';
+  else html='接続済み ・ <span class="sbhint">タップで保存</span>';
+  el.innerHTML=html;
+}
+function memoSyncBarTap(){
+  if(syncStatus==='syncing') return;
+  if(!getValidToken()){ connectDrive(); return; }
+  syncNow('manual');
+}
+function openMemo(id){
+  const m=memoById(id); if(!m) return;
+  memoEditId=id; memoEditIsNew=false;
+  $('memoeditor').value=m.body||'';
+  $('memometa').textContent=memoFmtDate(m.updatedAt)+' ・ '+(m.body||'').length+'文字';
+  $('memodel').style.display='';
+  showView('memoedit');
+}
+function newMemo(){
+  memoEditId=null; memoEditIsNew=true;
+  $('memoeditor').value='';
+  $('memometa').textContent='新しいメモ';
+  $('memodel').style.display='none';
+  showView('memoedit');
+  setTimeout(()=>{ try{ $('memoeditor').focus({ preventScroll:true }); }catch(e){} }, 380);
+}
+function closeMemoEditor(){
+  const body=$('memoeditor').value;
+  if(memoEditId && !body.trim()){ deleteMemoById(memoEditId, !memoEditIsNew); }
+  memoEditId=null; memoEditIsNew=false;
+  renderMemoList();
+  showView('memo');
+}
+function deleteMemoCurrent(){
+  if(memoEditId){ deleteMemoById(memoEditId, true); }
+  memoEditId=null; memoEditIsNew=false;
+  renderMemoList();
+  showView('memo');
+}
+function deleteMemoById(id, notify){
+  const m=memoById(id); if(!m) return;
+  const ts=memoNowISO();
+  MemoDB.memos=MemoDB.memos.filter(x=>x.id!==id);
+  MemoDB.deleted[id]=ts;
+  memoLastDeleted={ memo:m, ts };
+  touchMemo();
+  if(notify) showMemoToast('削除しました');
+}
+function undoMemoDelete(){
+  if(!memoLastDeleted) return;
+  const memo=memoLastDeleted.memo, ts=memoLastDeleted.ts;
+  if(MemoDB.deleted[memo.id]===ts) delete MemoDB.deleted[memo.id];
+  if(!memoById(memo.id)) MemoDB.memos.push(memo);
+  memoLastDeleted=null;
+  touchMemo();
+  renderMemoList();
+  hideMemoToast();
+}
+function showMemoToast(msg){
+  $('memotoastmsg').textContent=msg;
+  $('memotoast').classList.add('on');
+  if(memoToastTimer) clearTimeout(memoToastTimer);
+  memoToastTimer=setTimeout(hideMemoToast, 5000);
+}
+function hideMemoToast(){ $('memotoast').classList.remove('on'); if(memoToastTimer) clearTimeout(memoToastTimer); }
+function memoFilePayload(){ return Object.assign({}, MemoDB, { updatedAt: memoNowISO() }); }
+async function syncMemo(){
+  const seq0=memoEditSeq;
+  try{
+    const q=encodeURIComponent("name='memo.json' and trashed=false");
+    const res=await driveFetch('/files?q='+q+'&fields='+encodeURIComponent('files(id,name,createdTime)')+'&orderBy=createdTime');
+    if(!res.ok) return false;
+    const j=await res.json();
+    const files=(j.files||[]).filter(f=>f.name==='memo.json');
+    const tok=getValidToken(); if(!tok) return false;
+    if(!files.length){
+      const meta={ name:'memo.json', mimeType:'application/json' };
+      const form=new FormData();
+      form.append('metadata', new Blob([JSON.stringify(meta)], { type:'application/json' }));
+      form.append('file', new Blob([JSON.stringify(memoFilePayload())], { type:'application/json' }), 'memo.json');
+      const up=await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
+      if(!up.ok) return false;
+      if(memoEditSeq===seq0 && memoDirty){ memoDirty=false; renderMemoSyncNote(); }
+      return true;
+    }
+    const file=files[0];
+    const dl=await driveFetch('/files/'+encodeURIComponent(file.id)+'?alt=media');
+    if(!dl.ok) return false;
+    const text=await dl.text();
+    let remote={ memos:[], deleted:{} };
+    if(text && text.trim()){ const p=JSON.parse(text); remote={ memos:Array.isArray(p.memos)?p.memos:[], deleted:p.deleted||{} }; }
+    const snap=(d)=>JSON.stringify({ m:d.memos, d:d.deleted });
+    const remoteSnap=snap(remote);
+    MemoDB=mergeMemoData(MemoDB, remote);
+    saveMemoLocal();
+    if(currentView==='memo') renderMemoList();
+    if(currentView==='memoedit' && memoEditId){ const m=memoById(memoEditId); if(!m){ memoEditId=null; } }
+    if(snap(MemoDB)!==remoteSnap){
+      const up=await fetch(UPLOAD_API+'/files/'+encodeURIComponent(file.id)+'?uploadType=media', { method:'PATCH', headers:{ Authorization:'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(memoFilePayload()) });
+      if(!up.ok) return false;
+    }
+    if(memoEditSeq===seq0 && memoDirty){ memoDirty=false; renderMemoSyncNote(); }
+    return true;
+  }catch(e){ return false; }
+}
+$('memosearch').addEventListener('input', (e)=>{ memoSearchQ=e.target.value; renderMemoList(); });
+$('memoeditor').addEventListener('input', ()=>{
+  const body=$('memoeditor').value;
+  const ts=memoNowISO();
+  if(memoEditIsNew && memoEditId===null){
+    memoEditId=memoNewId();
+    MemoDB.memos.push({ id:memoEditId, body, createdAt:ts, updatedAt:ts });
+    $('memodel').style.display='none';
+  } else if(memoEditId){
+    const m=memoById(memoEditId);
+    if(m){ m.body=body; m.updatedAt=ts; }
+  }
+  $('memometa').textContent=memoFmtDate(ts)+' ・ '+body.length+'文字';
+  touchMemo();
+});
+
 /* ================= self update ================= */
-const APP_VERSION='1.71';
+const APP_VERSION='1.72';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
