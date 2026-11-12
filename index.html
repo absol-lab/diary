@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.23">
+<meta name="app-version" content="2.24">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -2306,7 +2306,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.23';
+const APP_VERSION='2.24';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2363,7 +2363,8 @@ function stripTitlePrice(s) {
   t = t.trim();
   return t ? t : s;
 }
-function todoNorm(t, strip) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: strip ? stripTitlePrice(t.title) : t.title, done: !!t.done, due: t.due || null, color: t.color || null, img: (typeof t.img === 'string' && /^https?:\/\//.test(t.img)) ? t.img : null, url: (typeof t.url === 'string' && /^https?:\/\//.test(t.url)) ? t.url : null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : ((typeof t.price === 'string' && /^\d+-\d+$/.test(t.price)) ? t.price : null) }; }
+const TODO_TITLE_FIXES = { 1794458579974: 'bloodthirsty butchers『kocorono』', 1794458579957: 'MATECH Pocket Blade', 1794458580000: 'Stephen Shore 写真集' };
+function todoNorm(t, strip) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: TODO_TITLE_FIXES[t.id] || (strip ? stripTitlePrice(t.title) : t.title), done: !!t.done, due: t.due || null, color: t.color || null, img: (typeof t.img === 'string' && /^https?:\/\//.test(t.img)) ? t.img : null, url: (typeof t.url === 'string' && /^https?:\/\//.test(t.url)) ? t.url : null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : ((typeof t.price === 'string' && /^\d+-\d+$/.test(t.price)) ? t.price : null) }; }
 function inPriceScopeRaw(d, t) {
   const pf = {};
   (d.folders || []).forEach(function (f) { const n = String(f.name || '').replace(/\s+/g, ''); if (f.id === 1 || n.indexOf('欲しいもの') === 0 || n.indexOf('ほしいもの') === 0) pf[f.id] = true; });
