@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.15">
+<meta name="app-version" content="2.16">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -332,7 +332,7 @@
   .tdmenuitem.danger { color: #e5484d; }
   .tdmenuitem .chev { float: right; color: var(--muted); }
   /* v1.22: ui copy round 2 */
-  #view-todo, #tdoverlay, #tddrawer, #tdpop, #tdmodal { font-family: var(--uifont); }
+  #view-todo, #tdoverlay, #tddrawer, #tdpop, #tdmodal, .tdshell { font-family: var(--uifont); }
   .tdfinput { font-family: var(--uifont); }
   #view-todo .topbar .tdiconbtn { width: 42px; height: 42px; border-radius: 50%; background: var(--card2); align-items: center; justify-content: center; }
   #view-todo.td-sub .topbar { display: none; }
@@ -2222,7 +2222,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.15';
+const APP_VERSION='2.16';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
