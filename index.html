@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.19">
+<meta name="app-version" content="2.20">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -248,6 +248,21 @@
   .tdlistrow .tdcnt { color: var(--muted); font-size: 15px; margin-right: 10px; }
   .tdlistrow .chev { color: var(--muted); font-size: 18px; }
   .tdrow { display: flex; align-items: flex-start; gap: 12px; padding: 8px 4px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .tdimgbtn { flex: 0 0 auto; width: 38px; height: 38px; margin-top: 1px; padding: 0; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .tdimgbtn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tdimgph { flex: 0 0 38px; width: 38px; }
+  #tdimgview { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center; }
+  #tdimgview.show { display: flex; }
+  #tdimgview .ivscrim { position: absolute; inset: 0; background: rgba(0,0,0,.88); opacity: 0; transition: opacity .18s ease; }
+  #tdimgview.show .ivscrim { opacity: 1; }
+  #tdimgview .ivcard { position: relative; width: min(88vw, 420px); max-height: 86dvh; overflow-y: auto; background: var(--card); border-radius: 16px; }
+  #tdimgview .ivimg { width: 100%; max-height: 52dvh; object-fit: contain; background: #fff; display: block; }
+  #tdimgview .ivmeta { padding: 13px 15px 15px; font-family: var(--uifont); }
+  #tdimgview .ivtitle { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.45; }
+  #tdimgview .ivprice { font-size: 13.5px; font-weight: 600; color: var(--muted); margin-top: 3px; }
+  #tdimgview .ivbtns { display: flex; gap: 9px; margin-top: 13px; }
+  #tdimgview .ivlink { flex: 1; text-align: center; background: var(--accent, #3b82f6); color: #fff; font-size: 14px; font-weight: 700; padding: 11px 8px; border-radius: 10px; text-decoration: none; }
+  #tdimgview .ivclose { flex: 1; background: var(--card2); color: var(--text); font-size: 14px; font-weight: 600; padding: 11px 8px; border-radius: 10px; border: 1px solid var(--line); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
   .tdprice { flex: 0 0 100px; width: 100px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 5px; white-space: nowrap; }
@@ -743,6 +758,7 @@
   <div id="tdpop"><div class="popscrim" onclick="tdPopClose()"></div><div class="popcard" id="tdpopcard"></div></div>
 
   <div id="tdmodal"><div class="mscrim" onclick="tdModalClose()"></div><div class="mcard" id="tdmcard"></div></div>
+  <div id="tdimgview"><div class="ivscrim" onclick="tdImgClose()"></div><div class="ivcard" id="tdimgcard"></div></div>
 
   <input type="file" id="importfile" accept=".json,application/json" style="display:none" onchange="onImportFile(this)">
   <input type="file" id="photofile" accept="image/*" style="display:none" onchange="onPhotoFile(this)">
@@ -2220,7 +2236,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.19';
+const APP_VERSION='2.20';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2279,7 +2295,7 @@ function stripTitlePrice(s) {
   t = t.trim();
   return t ? t : s;
 }
-function todoNorm(t, strip) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: strip ? stripTitlePrice(t.title) : t.title, done: !!t.done, due: t.due || null, color: t.color || null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : ((typeof t.price === 'string' && /^\d+-\d+$/.test(t.price)) ? t.price : null) }; }
+function todoNorm(t, strip) { return { id: t.id, listId: t.listId || null, folderId: t.folderId || null, title: strip ? stripTitlePrice(t.title) : t.title, done: !!t.done, due: t.due || null, color: t.color || null, img: (typeof t.img === 'string' && /^https?:\/\//.test(t.img)) ? t.img : null, url: (typeof t.url === 'string' && /^https?:\/\//.test(t.url)) ? t.url : null, price: (typeof t.price === 'number' && isFinite(t.price)) ? Math.round(t.price) : ((typeof t.price === 'string' && /^\d+-\d+$/.test(t.price)) ? t.price : null) }; }
 function inPriceScopeRaw(d, t) {
   const pf = {};
   (d.folders || []).forEach(function (f) { const n = String(f.name || '').replace(/\s+/g, ''); if (f.id === 1 || n.indexOf('欲しいもの') === 0 || n.indexOf('ほしいもの') === 0) pf[f.id] = true; });
@@ -2440,11 +2456,31 @@ function priceHTML(t) {
   }
   return '<span class="tdprice">¥' + Number(t.price).toLocaleString('ja-JP') + '</span>';
 }
+function imgBtnHTML(t) {
+  if (!todoInPriceScope(t)) return '';
+  if (!t.img) return '<span class="tdimgph"></span>';
+  return '<button class="tdimgbtn" aria-label="写真を見る" onclick="event.stopPropagation();openTodoImg(' + t.id + ')"><img src="' + esc(t.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="tdImgErr(this)"></button>';
+}
+function tdImgErr(img) { const b = img.parentNode; img.remove(); if (b) { b.textContent = '\u{1F5BC}'; b.style.fontSize = '16px'; } }
+function openTodoImg(id) {
+  const t = (TodoDB.todos || []).find(function (x) { return x.id === id; });
+  if (!t || !t.img) return;
+  const card = $('tdimgcard'); if (!card) return;
+  let priceLine = '';
+  if (typeof t.price === 'string') { const m = t.price.match(/^(\d+)-(\d+)$/); if (m) priceLine = '¥' + Number(m[1]).toLocaleString('ja-JP') + '〜' + Number(m[2]).toLocaleString('ja-JP'); }
+  else if (t.price != null) priceLine = '¥' + Number(t.price).toLocaleString('ja-JP');
+  card.innerHTML = '<img class="ivimg" src="' + esc(t.img) + '" referrerpolicy="no-referrer" alt="">'
+    + '<div class="ivmeta"><div class="ivtitle">' + esc(t.title) + '</div>'
+    + (priceLine ? '<div class="ivprice">' + priceLine + '</div>' : '')
+    + '<div class="ivbtns">' + (t.url ? '<a class="ivlink" href="' + esc(t.url) + '" target="_blank" rel="noopener">商品ページを開く</a>' : '') + '<button class="ivclose" onclick="tdImgClose()">閉じる</button></div></div>';
+  const v = $('tdimgview'); if (v) v.classList.add('show');
+}
+function tdImgClose() { const v = $('tdimgview'); if (v) v.classList.remove('show'); }
 function todoRowHTML(t) {
   const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
   return '<div class="tdrow" data-tid="' + t.id + '"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
     + priceHTML(t)
-    + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div></div>';
+    + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div>' + imgBtnHTML(t) + '</div>';
 }
 function todoRowsHTML(items) {
   const act = items.filter(function (t) { return !t.done; });
@@ -2743,7 +2779,7 @@ function mergeTodoDb(local, remote) {
   (local.todos || []).forEach(function (t) {
     if (rTrash[t.id]) return;
     const r = rTodo[t.id];
-    if (r && r.price != null && t.price !== r.price) { const m = Object.assign({}, t); m.price = r.price; todos.push(m); }
+    if (r && ((r.price != null && t.price !== r.price) || r.img !== t.img || r.url !== t.url)) { const m = Object.assign({}, t); if (r.price != null) m.price = r.price; m.img = r.img; m.url = r.url; todos.push(m); }
     else todos.push(t);
     done[t.id] = true;
   });
@@ -3545,7 +3581,8 @@ function doDeleteFolderSilent(id) {
 let tdSwipe = null;
 function tdSwipeBlocked() {
   const ov = $('tdoverlay'), dr = $('tddrawer'), md = $('tdmodal'), pp = $('tdpop');
-  return (ov && ov.classList.contains('show')) || (dr && dr.classList.contains('show')) || (md && md.classList.contains('open')) || (pp && pp.classList.contains('open'));
+  const iv = $('tdimgview');
+  return (ov && ov.classList.contains('show')) || (dr && dr.classList.contains('show')) || (md && md.classList.contains('open')) || (pp && pp.classList.contains('open')) || (iv && iv.classList.contains('show'));
 }
 function tdSwipeFire() {
   if (tdSwipeBlocked()) return;
