@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.12">
+<meta name="app-version" content="2.13">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -346,6 +346,8 @@
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
+  .tdunder { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 1; }
+  .tdfollow { position: relative; z-index: 2; background: var(--bg); }
   .tdclip { height: 100vh; height: 100dvh; overflow: hidden; }
   .tdpagenew { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 3; }
   #todowrap { position: relative; }
@@ -2219,7 +2221,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.12';
+const APP_VERSION='2.13';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3540,67 +3542,76 @@ function doDeleteFolderSilent(id) {
   fixTabAfterDelete();
   touchTodo();
 }
-/* ---- swipe back (finger-follow) ---- */
+/* ---- swipe back (finger-follow, live DOM) ---- */
 let tdSwipe = null;
 function tdSwipeBlocked() {
   const ov = $('tdoverlay'), dr = $('tddrawer'), md = $('tdmodal'), pp = $('tdpop');
   return (ov && ov.classList.contains('show')) || (dr && dr.classList.contains('show')) || (md && md.classList.contains('open')) || (pp && pp.classList.contains('open'));
 }
+function tdSwipeDestHTML() {
+  const saved = { list: todoListId, special: todoSpecial, edit: todoEdit, folder: todoFolderId, top: todoTopListId };
+  if (todoSpecial) todoSpecial = null; else todoListId = null;
+  todoEdit = false;
+  const key = currentTabKey();
+  let html = '';
+  try { html = buildTodoHTML(); } catch (e) { html = ''; }
+  todoListId = saved.list; todoSpecial = saved.special; todoEdit = saved.edit; todoFolderId = saved.folder; todoTopListId = saved.top;
+  if (!html) return null;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const pg = tmp.querySelector('.tdpager');
+  if (pg) { const stat = document.createElement('div'); stat.innerHTML = tabBodyByKey(key); pg.replaceWith(stat); }
+  Array.prototype.slice.call(tmp.querySelectorAll('.tdfab, .tdfabpill, .tdeditbar, .tddelFab')).forEach(function (el) { el.remove(); });
+  return tmp.innerHTML;
+}
 function tdSwipeBegin(g) {
   const wrap = $('todowrap'); if (!wrap || !TodoDB) return false;
-  const oldTabKey = currentTabKey();
-  const oldHTML = wrap.innerHTML;
-  const saved = { list: todoListId, special: todoSpecial, edit: todoEdit, folder: todoFolderId, top: todoTopListId, undo: tdUndo, sel: new Set(todoSel) };
-  tdUndo = null;
-  if (todoSpecial) todoSpecial = null; else todoListId = null;
-  todoEdit = false; todoSel.clear();
-  const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
-  const newHTML = buildTodoHTML();
-  if (!oldHTML || oldHTML === newHTML) {
-    todoListId = saved.list; todoSpecial = saved.special; todoEdit = saved.edit; todoFolderId = saved.folder; todoTopListId = saved.top; tdUndo = saved.undo; todoSel = saved.sel;
-    if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
-    return false;
-  }
-  const h = wrap.offsetHeight;
-  const rect = wrap.getBoundingClientRect();
-  const S = Math.max(0, Math.round(-rect.top));
-  wrap.innerHTML = '<div class="tdghost"></div><div class="tdpagenew"></div>';
-  wrap.style.height = h + 'px'; wrap.style.overflow = 'hidden';
-  const under = wrap.querySelector('.tdghost'), top = wrap.querySelector('.tdpagenew');
-  under.innerHTML = newHTML; top.innerHTML = oldHTML;
-  under.style.zIndex = '2'; top.style.zIndex = '3';
-  sanitizeLayer(top, oldTabKey, S);
-  const newFixed = sanitizeLayer(under, currentTabKey(), S);
-  newFixed.forEach(function (el) { wrap.appendChild(el); });
-  under.style.transform = 'translateX(-28%)';
-  g.layers = { wrap: wrap, top: top, under: under, saved: saved };
+  const dest = tdSwipeDestHTML();
+  if (dest == null) return false;
+  const main = wrap.closest('main');
+  const under = document.createElement('div');
+  under.className = 'tdunder';
+  under.innerHTML = dest;
+  const follow = document.createElement('div');
+  follow.className = 'tdfollow';
+  while (wrap.firstChild) follow.appendChild(wrap.firstChild);
+  wrap.appendChild(under);
+  wrap.appendChild(follow);
+  if (main) { main.style.overflowY = 'hidden'; g.scrollTop = main.scrollTop; }
+  g.layers = { wrap: wrap, follow: follow, under: under, main: main };
   return true;
 }
 function tdSwipeFinish(g, complete, dx) {
   const L = g.layers; if (!L) return;
   const W = window.innerWidth || 360;
   const ease = 'cubic-bezier(.32,.72,.28,1)';
-  const dur = complete ? Math.max(120, Math.min(260, (W - dx) * 0.7)) : 200;
-  const a1 = L.top.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: complete ? 'translateX(' + W + 'px)' : 'translateX(0px)' }], { duration: dur, easing: ease });
-  const a2 = L.under.animate([{ transform: 'translateX(' + (-28 * (1 - Math.min(1, dx / W))) + '%)' }, { transform: complete ? 'translateX(0%)' : 'translateX(-28%)' }], { duration: dur, easing: ease });
+  const dur = complete ? Math.max(130, Math.min(280, (W - dx) * 0.75)) : 190;
   let done = false;
   const cleanup = function () {
     if (done) return; done = true;
-    if (!complete) {
-      const s = L.saved;
-      todoListId = s.list; todoSpecial = s.special; todoEdit = s.edit; todoFolderId = s.folder; todoTopListId = s.top; tdUndo = s.undo; todoSel = s.sel;
+    if (L.main) L.main.style.overflowY = '';
+    if (complete) {
+      tdUndo = null;
+      if (todoSpecial) todoSpecial = null; else todoListId = null;
+      todoEdit = false; todoSel.clear();
       const sec = $('view-todo'); if (sec) sec.classList.toggle('td-sub', !!(todoListId || todoEdit || todoSpecial));
+      renderTodo();
+      if (L.main) L.main.scrollTop = 0;
+    } else {
+      renderTodo();
+      if (L.main) L.main.scrollTop = g.scrollTop || 0;
     }
-    L.wrap.style.height = ''; L.wrap.style.overflow = '';
-    renderTodo();
   };
-  if (a1 && a1.finished) a1.finished.then(cleanup).catch(cleanup); else setTimeout(cleanup, dur + 40);
-  setTimeout(cleanup, dur + 120);
+  try {
+    const a = L.follow.animate([{ transform: 'translateX(' + dx + 'px)' }, { transform: complete ? 'translateX(' + W + 'px)' : 'translateX(0px)' }], { duration: dur, easing: ease });
+    if (a && a.finished) a.finished.then(cleanup).catch(cleanup); else setTimeout(cleanup, dur + 40);
+  } catch (e) { setTimeout(cleanup, 30); }
+  setTimeout(cleanup, dur + 140);
 }
 document.addEventListener('touchstart', function (e) {
   if (!todoListId && !todoSpecial) { tdSwipe = null; return; }
   if (tdSwipeBlocked()) { tdSwipe = null; return; }
-  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null };
+  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, scrollTop: 0 };
 }, { passive: true });
 document.addEventListener('touchmove', function (e) {
   if (!tdSwipe) return;
@@ -3616,10 +3627,8 @@ document.addEventListener('touchmove', function (e) {
   }
   if (tdSwipe.mode === 'follow') {
     if (Math.abs(dy) > 64 && Math.abs(dy) > dx) { const g = tdSwipe; tdSwipe = null; tdSwipeFinish(g, false, Math.max(0, dx)); return; }
-    const W = window.innerWidth || 360;
     const cx = Math.max(0, dx);
-    tdSwipe.layers.top.style.transform = 'translateX(' + cx + 'px)';
-    tdSwipe.layers.under.style.transform = 'translateX(' + (-28 * (1 - Math.min(1, cx / W))) + '%)';
+    tdSwipe.layers.follow.style.transform = 'translateX(' + cx + 'px)';
     tdSwipe.lastDx = cx;
   }
 }, { passive: true });
