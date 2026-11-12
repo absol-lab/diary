@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.16">
+<meta name="app-version" content="2.17">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -2222,7 +2222,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.16';
+const APP_VERSION='2.17';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3551,6 +3551,7 @@ function tdSwipeBlocked() {
 }
 function tdSwipeBegin(g) {
   const wrap = $('todowrap'); if (!wrap || !TodoDB) return false;
+  document.querySelectorAll('.tdshell').forEach(function (el) { el.remove(); });
   const saved = { list: todoListId, special: todoSpecial, edit: todoEdit, folder: todoFolderId, top: todoTopListId, undo: tdUndo, sel: new Set(todoSel) };
   const main = wrap.closest('main');
   const rect = wrap.getBoundingClientRect();
@@ -3559,7 +3560,7 @@ function tdSwipeBegin(g) {
   shell.className = 'tdshell';
   const inner = document.createElement('div');
   inner.className = 'tdshellin';
-  inner.style.transform = 'translateY(' + Math.round(rect.top) + 'px)';
+  inner.style.top = Math.round(rect.top) + 'px';
   const fabs = [];
   while (wrap.firstChild) {
     const n = wrap.firstChild;
@@ -3579,8 +3580,10 @@ function tdSwipeBegin(g) {
   g.layers = { shell: shell, saved: saved, main: main };
   return true;
 }
+let tdSwipeGen = 0;
 function tdSwipeFinish(g, complete, dx) {
   const L = g.layers; if (!L) return;
+  const gen = g.gen;
   const W = window.innerWidth || 360;
   const ease = 'cubic-bezier(.32,.72,.28,1)';
   const v = g.vel || 0;
@@ -3590,6 +3593,7 @@ function tdSwipeFinish(g, complete, dx) {
   let done = false;
   const cleanup = function () {
     if (done) return; done = true;
+    if (gen !== tdSwipeGen) { if (L.shell.parentNode) L.shell.parentNode.removeChild(L.shell); return; }
     if (!complete) {
       const s = L.saved;
       todoListId = s.list; todoSpecial = s.special; todoEdit = s.edit; todoFolderId = s.folder; todoTopListId = s.top; tdUndo = s.undo; todoSel = s.sel;
@@ -3613,7 +3617,7 @@ function tdSwipeApply(g) {
 document.addEventListener('touchstart', function (e) {
   if (!todoListId && !todoSpecial) { tdSwipe = null; return; }
   if (tdSwipeBlocked()) { tdSwipe = null; return; }
-  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, raf: 0, samples: [], vel: 0 };
+  const t = e.changedTouches[0]; tdSwipeGen++; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0, mode: 'idle', layers: null, lastDx: 0, raf: 0, samples: [], vel: 0, gen: tdSwipeGen };
 }, { passive: true });
 document.addEventListener('touchmove', function (e) {
   if (!tdSwipe) return;
