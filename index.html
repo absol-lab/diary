@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="1.74">
+<meta name="app-version" content="1.75">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -218,17 +218,17 @@
   .tdsub { display: flex; align-items: center; justify-content: space-between; min-height: 34px; padding: 0 2px 4px; }
   .tdsub button { color: var(--muted); font-size: 13.5px; font-family: var(--uifont); padding: 6px 8px; }
   .tdsub .tdsubR { display: flex; gap: 2px; }
-  .tdlistrow { display: flex; align-items: center; width: 100%; padding: 17px 4px; border-bottom: 1px solid var(--line); font-size: 16px; color: var(--text); text-align: left; font-family: var(--uifont); }
+  .tdlistrow { display: flex; align-items: center; width: 100%; padding: 13px 4px; border-bottom: 1px solid var(--line); font-size: 16px; color: var(--text); text-align: left; font-family: var(--uifont); }
   .tdlistrow .nm { flex: 1; }
   .tdlistrow .tdcnt { color: var(--muted); font-size: 15px; margin-right: 10px; }
   .tdlistrow .chev { color: var(--muted); font-size: 18px; }
-  .tdrow { display: flex; align-items: center; gap: 12px; padding: 11px 4px 0; background: var(--bg); }
+  .tdrow { display: flex; align-items: center; gap: 12px; padding: 8px 4px 0; background: var(--bg); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
   .tdprice { flex: 0 0 auto; font-size: 14px; font-weight: 600; color: var(--muted); }
   [data-dragkind] .tdcheck.done { background: #5eb1ef; border-color: #5eb1ef; color: #fff; }
   .tdrow.sel { background: var(--card2); margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; }
-  .tdmain { flex: 1; min-width: 0; padding-bottom: 11px; border-bottom: 1px solid var(--line); }
+  .tdmain { flex: 1; min-width: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
   .tdtitle { font-size: 15.5px; }
   .tdtitle.done { color: var(--muted); text-decoration: line-through; }
   .tddue { display: inline-block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-family: var(--uifont); }
@@ -305,11 +305,11 @@
   #view-todo.td-sub .topbar { display: none; }
   #view-todo.td-sub .tdbackbar, #view-todo.td-sub .tdedithead { padding-top: calc(env(safe-area-inset-top, 0px) + 10px); }
   .tdfpill { font-size: 15px; }
-  .tdlistrow { font-size: 17px; padding: 18px 4px; }
+  .tdlistrow { font-size: 17px; padding: 14px 4px; }
   .tdlistrow .tdcnt { font-size: 16px; }
   .tdtitle { font-size: 16.5px; }
-  .tdrow { padding-top: 13px; }
-  .tdmain { padding-bottom: 13px; }
+  .tdrow { padding-top: 9px; }
+  .tdmain { padding-bottom: 9px; }
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
   .tdghost { position: absolute; inset: 0; background: var(--bg); overflow: hidden; z-index: 2; }
@@ -2028,7 +2028,7 @@ $('memoeditor').addEventListener('input', ()=>{
 });
 
 /* ================= self update ================= */
-const APP_VERSION='1.74';
+const APP_VERSION='1.75';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
