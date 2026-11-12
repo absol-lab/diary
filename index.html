@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.9">
+<meta name="app-version" content="2.10">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -2219,7 +2219,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.9';
+const APP_VERSION='2.10';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3544,15 +3544,26 @@ function doDeleteFolderSilent(id) {
 let tdSwipe = null;
 document.addEventListener('touchstart', function (e) {
   if (!todoListId && !todoSpecial) { tdSwipe = null; return; }
-  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY };
+  const t = e.changedTouches[0]; tdSwipe = { x: t.clientX, y: t.clientY, maxDx: 0 };
+}, { passive: true });
+document.addEventListener('touchmove', function (e) {
+  if (!tdSwipe) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - tdSwipe.x;
+  if (dx > tdSwipe.maxDx) tdSwipe.maxDx = dx;
 }, { passive: true });
 document.addEventListener('touchend', function (e) {
   if (!tdSwipe) return;
   const t = e.changedTouches[0];
   const dx = t.clientX - tdSwipe.x, dy = t.clientY - tdSwipe.y;
+  const maxDx = Math.max(tdSwipe.maxDx, dx);
+  const edge = tdSwipe.x <= 28;
   tdSwipe = null;
-  if (dx < 72 || Math.abs(dy) > 42) return;
-  if ($('tdoverlay').classList.contains('open') || $('tddrawer').classList.contains('open') || $('tdmodal').classList.contains('open')) return;
+  const horizontal = Math.abs(dx) >= Math.abs(dy) * 1.1;
+  const enough = edge ? (maxDx >= 36 && dx >= 24) : (maxDx >= 40 && dx >= 30);
+  if (!horizontal || !enough) return;
+  const ov = $('tdoverlay'), dr = $('tddrawer'), md = $('tdmodal');
+  if ((ov && ov.classList.contains('show')) || (dr && dr.classList.contains('show')) || (md && md.classList.contains('open'))) return;
   if (todoSpecial) closeSpecial(); else if (todoListId) closeTodoList();
 }, { passive: true });
 /* ---- edge swipe: pull the drawer open from the Todo top view ---- */
