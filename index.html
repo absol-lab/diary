@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.32">
+<meta name="app-version" content="2.33">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1377,11 +1377,20 @@ function playSound(kind) {
   else if (kind === 'save') { tone(ac, 587, 587, 0, 0.1, 0.09, 'sine'); }
   else if (kind === 'sync') { tone(ac, 523, 523, 0, 0.09, 0.065, 'sine'); tone(ac, 784, 784, 0.08, 0.14, 0.065, 'sine'); }
   else if (kind === 'trash') { tone(ac, 330, 185, 0, 0.17, 0.09, 'triangle'); }
+  else if (kind === 'tap') { tone(ac, 800, 800, 0, 0.03, 0.05, 'triangle'); }
+  else if (kind === 'restore') { tone(ac, 440, 440, 0, 0.07, 0.07, 'sine'); tone(ac, 659, 659, 0.06, 0.12, 0.07, 'sine'); }
 }
 document.addEventListener('pointerdown', function () {
   const ac = audioCtx(); if (!ac || AC._warmed) return;
   AC._warmed = true;
   tone(ac, 440, 440, 0, 0.02, 0.0001, 'sine');
+}, true);
+document.addEventListener('pointerdown', function (e) {
+  if (!soundOn) return;
+  const t = e.target;
+  const b = t && t.closest ? t.closest('button, a, [onclick]') : null;
+  if (!b || b.disabled) return;
+  playSound('tap');
 }, true);
 function setSoundOn(onOff) {
   soundOn = !!onOff;
@@ -2372,7 +2381,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.32';
+const APP_VERSION='2.33';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3509,6 +3518,7 @@ function moveToTrash(items) {
 }
 function restoreTodo(id) {
   const i = TodoDB.trash.findIndex(function (t) { return t.id === id; }); if (i < 0) return;
+  playSound('restore');
   const t = TodoDB.trash[i]; TodoDB.trash.splice(i, 1);
   if (t.listId && !listById(t.listId)) t.listId = null;
   if (t.listId) { t.folderId = listById(t.listId).folderId; }
