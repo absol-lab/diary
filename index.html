@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.33">
+<meta name="app-version" content="2.34">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1346,11 +1346,12 @@ function toggleEdit(force){
   if(editing){ setTimeout(()=>{ try{$('editarea').focus();}catch(e){} }, 60); }
 }
 /* ---------- sound (Web Audio synthesized feedback; small, short, quiet) ---------- */
+const SOUND_MASTER_MUTE = true; /* 2026-11-13: mute all sounds for now (Shoma's all-apps instruction). Settings UI + saved on/off + volume are kept; set this back to false to re-enable. */
 let soundOn = true; try { soundOn = localStorage.getItem('diaryStandalone.sound.v1') !== '0'; } catch (e) {}
 let soundVol = 1; try { const sv = parseFloat(localStorage.getItem('diaryStandalone.soundVol.v1')); if (isFinite(sv) && sv >= 0 && sv <= 1) soundVol = sv; } catch (e) {}
 let AC = null;
 function audioCtx() {
-  if (!soundOn) return null;
+  if (SOUND_MASTER_MUTE || !soundOn) return null;
   if (!AC) {
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
@@ -1371,7 +1372,7 @@ function tone(ac, f0, f1, delay, dur, peak, type) {
   o.start(t); o.stop(t + dur + 0.05);
 }
 function playSound(kind) {
-  if (!soundOn) return;
+  if (SOUND_MASTER_MUTE || !soundOn) return;
   const ac = audioCtx(); if (!ac) return;
   if (kind === 'done') { tone(ac, 784, 784, 0, 0.09, 0.12, 'triangle'); tone(ac, 1047, 1047, 0.07, 0.15, 0.12, 'triangle'); }
   else if (kind === 'save') { tone(ac, 587, 587, 0, 0.1, 0.09, 'sine'); }
@@ -2381,7 +2382,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.33';
+const APP_VERSION='2.34';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
