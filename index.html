@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.29">
+<meta name="app-version" content="2.30">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1345,6 +1345,42 @@ function toggleEdit(force){
   renderEntry();
   if(editing){ setTimeout(()=>{ try{$('editarea').focus();}catch(e){} }, 60); }
 }
+/* ---------- sound (Web Audio synthesized feedback; small, short, quiet) ---------- */
+let soundOn = true; try { soundOn = localStorage.getItem('diaryStandalone.sound.v1') !== '0'; } catch (e) {}
+let AC = null;
+function audioCtx() {
+  if (!soundOn) return null;
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (AC.state === 'suspended') { AC.resume(); }
+  return AC;
+}
+function tone(ac, f0, f1, delay, dur, peak, type) {
+  const t = ac.currentTime + delay;
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine';
+  o.frequency.setValueAtTime(f0, t);
+  if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(ac.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+function playSound(kind) {
+  if (!soundOn) return;
+  const ac = audioCtx(); if (!ac) return;
+  if (kind === 'done') { tone(ac, 784, 784, 0, 0.09, 0.07, 'triangle'); tone(ac, 1047, 1047, 0.07, 0.15, 0.07, 'triangle'); }
+  else if (kind === 'save') { tone(ac, 587, 587, 0, 0.1, 0.05, 'sine'); }
+  else if (kind === 'sync') { tone(ac, 523, 523, 0, 0.09, 0.04, 'sine'); tone(ac, 784, 784, 0.08, 0.14, 0.04, 'sine'); }
+  else if (kind === 'trash') { tone(ac, 330, 185, 0, 0.17, 0.055, 'triangle'); }
+}
+function toggleSound() {
+  soundOn = !soundOn;
+  try { localStorage.setItem('diaryStandalone.sound.v1', soundOn ? '1' : '0'); } catch (e) {}
+  renderSettingsMain();
+  if (soundOn) playSound('save');
+}
+
 function saveEdit(){
   const e=entryById(currentEntryId); if(!e || !editing) { editing=false; return; }
   const nt=$('editarea').value;
@@ -1352,7 +1388,7 @@ function saveEdit(){
   const ntm=$('edittime').value || null;
   if(nt!==e.text || nd!==e.date || ntm!==e.time){
     e.text=nt; e.date=nd; e.time=ntm; e.updatedAt=Date.now();
-    saveDB(); scheduleSync();
+    saveDB(); scheduleSync(); playSound('save');
   }
   editing=false;
 }
@@ -1375,7 +1411,7 @@ function openEntryMenu(){
     const ok=await sheetConfirm('削除', 'この日記を削除しますか？', '削除する', true);
     if(ok){
       if(editing){ editing=false; }
-      e.deleted=true; e.updatedAt=Date.now(); saveDB(); scheduleSync();
+      e.deleted=true; e.updatedAt=Date.now(); saveDB(); scheduleSync(); playSound('trash');
       currentEntryId=null; showView(prevView==='entry'?'list':prevView);
     }
   };
@@ -1483,6 +1519,7 @@ function applyAppearance(){
 const SICON = {
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
   palette: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5a8.5 8.5 0 100 17c1.4 0 2-.9 2-1.9 0-.8-.5-1.3-.5-2.1 0-.9.7-1.5 1.7-1.5H17a4.5 4.5 0 004.5-4.5C21.5 6.6 17.2 3.5 12 3.5z"/><circle cx="7.6" cy="10.4" r="1.15" fill="currentColor" stroke="none"/><circle cx="11" cy="7.2" r="1.15" fill="currentColor" stroke="none"/><circle cx="15.2" cy="8.2" r="1.15" fill="currentColor" stroke="none"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.6V5.4L7.5 9.5H4z"/><path d="M15.3 9.7a3.6 3.6 0 010 4.6"/><path d="M18 7.2a7.2 7.2 0 010 9.6"/></svg>',
   db: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.8" rx="7.5" ry="2.9"/><path d="M4.5 5.8v12.4c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9V5.8"/><path d="M4.5 12c0 1.6 3.4 2.9 7.5 2.9s7.5-1.3 7.5-2.9"/></svg>',
   info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.9" r="1.2" fill="currentColor" stroke="none"/></svg>',
   aaBig: '<span style="font-weight:600; line-height:1"><span style="font-size:14px">A</span><span style="font-size:21px">A</span></span>',
@@ -1512,6 +1549,9 @@ function renderSettingsMain(){
       srow(SICON.aaBig, '文字設定', sizeName(), "openSettingsPanel('text')")+
       srow(SICON.aa, 'フォントスタイル', famName(), "openSettingsPanel('font')")+
       srow(SICON.leading, '行間', lhName(), "openSettingsPanel('leading')")+
+    '</div>'+
+    '<div class="groupcard">'+
+      srow(SICON.sound, 'サウンド', soundOn ? 'オン' : 'オフ', "toggleSound()")+
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
@@ -1956,6 +1996,7 @@ async function createDiary(data){
 }
 
 async function syncNow(reason){
+  if(reason==='manual') audioCtx();
   if(syncRunning) return;
   if(!relayReady()){ setSyncStatus('disconnected', ''); return; }
   syncRunning=true; setSyncStatus('syncing');
@@ -1978,7 +2019,7 @@ async function syncNow(reason){
     await syncTodo();
     await syncMemo();
     lastSyncAt=Date.now(); try{ localStorage.setItem('diaryStandalone.lastSyncAt', String(lastSyncAt)); }catch(e){}
-    setSyncStatus('synced');
+    setSyncStatus('synced'); if(reason==='manual') playSound('sync');
     if(currentView==='list') renderList();
     if(currentView==='calendar') renderCalendar();
     if(currentView==='entry') renderEntry();
@@ -2306,7 +2347,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.29';
+const APP_VERSION='2.30';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2824,7 +2865,7 @@ function flipTodoRow(id, apply) {
     if (head && !hadHead) head.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, easing: 'ease-out' });
   }
 }
-function toggleTodo(id) { const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return; const prev = t.done; if (!todoSpecial) tdUndo = { id: id, prev: prev }; flipTodoRow(id, function () { t.done = !prev; }); }
+function toggleTodo(id) { const t = TodoDB.todos.find(function (x) { return x.id === id; }); if (!t) return; const prev = t.done; if (!todoSpecial) tdUndo = { id: id, prev: prev }; if (!prev) playSound('done'); flipTodoRow(id, function () { t.done = !prev; }); }
 function undoToggle() { if (!tdUndo) return; const u = tdUndo; tdUndo = null; const t = TodoDB.todos.find(function (x) { return x.id === u.id; }); if (!t) { renderTodo(); return; } flipTodoRow(u.id, function () { t.done = u.prev; }); }
 function enterEdit() { todoEdit = true; todoSel.clear(); renderTodo(); }
 function exitEdit() { todoEdit = false; todoSel.clear(); renderTodo(); }
@@ -3437,6 +3478,7 @@ function gotoTodo(id) {
 }
 /* ---- trash ---- */
 function moveToTrash(items) {
+  if (items && items.length) playSound('trash');
   const now = Date.now();
   items.forEach(function (t, i) { const c = Object.assign({}, t); c.deletedAt = now + i; TodoDB.trash.push(c); });
 }
