@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.31">
+<meta name="app-version" content="2.32">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1347,6 +1347,7 @@ function toggleEdit(force){
 }
 /* ---------- sound (Web Audio synthesized feedback; small, short, quiet) ---------- */
 let soundOn = true; try { soundOn = localStorage.getItem('diaryStandalone.sound.v1') !== '0'; } catch (e) {}
+let soundVol = 1; try { const sv = parseFloat(localStorage.getItem('diaryStandalone.soundVol.v1')); if (isFinite(sv) && sv >= 0 && sv <= 1) soundVol = sv; } catch (e) {}
 let AC = null;
 function audioCtx() {
   if (!soundOn) return null;
@@ -1364,7 +1365,7 @@ function tone(ac, f0, f1, delay, dur, peak, type) {
   o.frequency.setValueAtTime(f0, t);
   if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(Math.max(peak * soundVol, 0.0001), t + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g); g.connect(ac.destination);
   o.start(t); o.stop(t + dur + 0.05);
@@ -1382,11 +1383,17 @@ document.addEventListener('pointerdown', function () {
   AC._warmed = true;
   tone(ac, 440, 440, 0, 0.02, 0.0001, 'sine');
 }, true);
-function toggleSound() {
-  soundOn = !soundOn;
+function setSoundOn(onOff) {
+  soundOn = !!onOff;
   try { localStorage.setItem('diaryStandalone.sound.v1', soundOn ? '1' : '0'); } catch (e) {}
-  renderSettingsMain();
+  renderSettingsPanel();
   if (soundOn) playSound('save');
+}
+function setSoundVol(v, preview) {
+  soundVol = Math.min(100, Math.max(0, +v || 0)) / 100;
+  try { localStorage.setItem('diaryStandalone.soundVol.v1', String(soundVol)); } catch (e) {}
+  const el = document.getElementById('sndvolval'); if (el) el.textContent = Math.round(soundVol * 100) + '%';
+  if (preview) playSound('done');
 }
 
 function saveEdit(){
@@ -1559,7 +1566,7 @@ function renderSettingsMain(){
       srow(SICON.leading, '行間', lhName(), "openSettingsPanel('leading')")+
     '</div>'+
     '<div class="groupcard">'+
-      srow(SICON.sound, 'サウンド', soundOn ? 'オン' : 'オフ', "toggleSound()")+
+      srow(SICON.sound, 'サウンド', soundOn ? ('オン ' + Math.round(soundVol * 100) + '%') : 'オフ', "openSettingsPanel('sound')")+
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
@@ -1596,6 +1603,16 @@ function renderSettingsPanel(){
   else if(settingsPanel==='leading'){
     p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div><div class="note">日記の本文と入力欄に適用されます。</div></div>');
     $('lhseg').innerHTML = LINEHEIGHTS.map(l=>'<button class="seg'+(DB.settings.lineHeight===l.id?' on':'')+'" onclick="setLineHeight(\''+l.id+'\')">'+l.name+'</button>').join('');
+  }
+  else if(settingsPanel==='sound'){
+    const pct = Math.round(soundVol * 100);
+    p.innerHTML = panelShell('サウンド',
+      '<div class="setbox"><div class="setlabel">サウンド</div><div class="segrow">' +
+      '<button class="seg' + (soundOn ? ' on' : '') + '" onclick="setSoundOn(true)">オン</button>' +
+      '<button class="seg' + (!soundOn ? ' on' : '') + '" onclick="setSoundOn(false)">オフ</button></div>' +
+      '<div class="setlabel" style="margin-top:18px">音量 <span id="sndvolval">' + pct + '%</span></div>' +
+      '<input type="range" min="0" max="100" step="5" value="' + pct + '" oninput="setSoundVol(this.value, false)" onchange="setSoundVol(this.value, true)" style="width:100%; accent-color:var(--accent)"' + (soundOn ? '' : ' disabled') + '>' +
+      '<div class="note">アプリ内の音だけの音量です（端末の音量とは別）。スライダーを離すと、完了音でその音量を試聴できます。</div></div>');
   }
   else if(settingsPanel==='drive'){
     p.innerHTML = panelShell('同期と写真',
@@ -2355,7 +2372,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.31';
+const APP_VERSION='2.32';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
