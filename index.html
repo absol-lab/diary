@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.30">
+<meta name="app-version" content="2.31">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1350,12 +1350,15 @@ let soundOn = true; try { soundOn = localStorage.getItem('diaryStandalone.sound.
 let AC = null;
 function audioCtx() {
   if (!soundOn) return null;
-  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
-  if (AC.state === 'suspended') { AC.resume(); }
+  if (!AC) {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+  }
+  if (AC.state !== 'running') { AC.resume(); }
   return AC;
 }
 function tone(ac, f0, f1, delay, dur, peak, type) {
-  const t = ac.currentTime + delay;
+  const t = ac.currentTime + 0.03 + delay;
   const o = ac.createOscillator(), g = ac.createGain();
   o.type = type || 'sine';
   o.frequency.setValueAtTime(f0, t);
@@ -1369,11 +1372,16 @@ function tone(ac, f0, f1, delay, dur, peak, type) {
 function playSound(kind) {
   if (!soundOn) return;
   const ac = audioCtx(); if (!ac) return;
-  if (kind === 'done') { tone(ac, 784, 784, 0, 0.09, 0.07, 'triangle'); tone(ac, 1047, 1047, 0.07, 0.15, 0.07, 'triangle'); }
-  else if (kind === 'save') { tone(ac, 587, 587, 0, 0.1, 0.05, 'sine'); }
-  else if (kind === 'sync') { tone(ac, 523, 523, 0, 0.09, 0.04, 'sine'); tone(ac, 784, 784, 0.08, 0.14, 0.04, 'sine'); }
-  else if (kind === 'trash') { tone(ac, 330, 185, 0, 0.17, 0.055, 'triangle'); }
+  if (kind === 'done') { tone(ac, 784, 784, 0, 0.09, 0.12, 'triangle'); tone(ac, 1047, 1047, 0.07, 0.15, 0.12, 'triangle'); }
+  else if (kind === 'save') { tone(ac, 587, 587, 0, 0.1, 0.09, 'sine'); }
+  else if (kind === 'sync') { tone(ac, 523, 523, 0, 0.09, 0.065, 'sine'); tone(ac, 784, 784, 0.08, 0.14, 0.065, 'sine'); }
+  else if (kind === 'trash') { tone(ac, 330, 185, 0, 0.17, 0.09, 'triangle'); }
 }
+document.addEventListener('pointerdown', function () {
+  const ac = audioCtx(); if (!ac || AC._warmed) return;
+  AC._warmed = true;
+  tone(ac, 440, 440, 0, 0.02, 0.0001, 'sine');
+}, true);
 function toggleSound() {
   soundOn = !soundOn;
   try { localStorage.setItem('diaryStandalone.sound.v1', soundOn ? '1' : '0'); } catch (e) {}
@@ -2347,7 +2355,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.30';
+const APP_VERSION='2.31';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
