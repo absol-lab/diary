@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.34">
+<meta name="app-version" content="2.35">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -881,6 +881,7 @@ function normalizeEntry(e){
     text: typeof e.text==='string' ? e.text : '',
     photoNames: Array.isArray(e.photoNames) ? e.photoNames.filter(x=>typeof x==='string') : [],
     photoFileIds: Array.isArray(e.photoFileIds) ? e.photoFileIds.filter(x=>typeof x==='string') : [],
+    photosInline: Array.isArray(e.photosInline) ? e.photosInline.filter(x=>typeof x==='string' && x.indexOf('data:image/')===0) : [],
     createdAt: typeof e.createdAt==='number' ? e.createdAt : Date.now(),
     updatedAt: typeof e.updatedAt==='number' ? e.updatedAt : Date.now(),
     deleted: e.deleted===true
@@ -904,7 +905,7 @@ function loadDB(){
   return normalizeData(null);
 }
 let DB = loadDB();
-let LocalPhotos = {};   // entryId -> [dataUrl,...]（端末内のみ・同期JSONには含めない）
+let LocalPhotos = {};   // entryId -> [dataUrl,...]（端末内の原寸コピー。v2.35〜縮小コピーが photosInline として同期JSONにも入る）
 try{ const raw=storeGet(LS_PHOTOS); if(raw) LocalPhotos=JSON.parse(raw)||{}; }catch(e){ LocalPhotos={}; }
 
 let saveWarned=false;
@@ -941,6 +942,7 @@ function mergeData(local, remote){
     winner = Object.assign({}, winner);
     winner.photoNames = Array.from(new Set([].concat(winner.photoNames||[], loser.photoNames||[])));
     winner.photoFileIds = Array.from(new Set([].concat(winner.photoFileIds||[], loser.photoFileIds||[])));
+    winner.photosInline = Array.from(new Set([].concat(winner.photosInline||[], loser.photosInline||[])));
     map.set(e.id, winner);
   };
   (local.entries||[]).forEach(put);
@@ -1049,7 +1051,7 @@ function entryCardHTML(e){
   const dowCls = d ? (d.getDay()===6?'sat':(d.getDay()===0?'sun':'')) : '';
   const title=firstLine(e.text)||'（タイトルなし）';
   const prev=restPreview(e.text);
-  const nPhotos=(e.photoFileIds||[]).length + (LocalPhotos[e.id]?LocalPhotos[e.id].length:0) + (e.photoNames||[]).length;
+  const nPhotos=(e.photoFileIds||[]).length + Math.max(LocalPhotos[e.id]?LocalPhotos[e.id].length:0, (e.photosInline||[]).length) + (e.photoNames||[]).length;
   const tags=entryTags(e);
   return '<div class="cardwrap" data-eid="'+escA(e.id)+'">'+
     '<button class="carddel" onclick="swipeDeleteEntry(\''+escA(e.id)+'\')" aria-label="この日記を削除">削除</button>'+
@@ -1455,16 +1457,19 @@ function renderEntryPhotos(){
   const e=entryById(currentEntryId); if(!e){ $('entryphotos').innerHTML=''; return; }
   const local=LocalPhotos[e.id]||[];
   const driveIds=e.photoFileIds||[];
+  const inline=(e.photosInline||[]);
+  const showInline=!local.length && inline.length>0;
   let html='';
-  if(local.length || driveIds.length){
+  if(local.length || driveIds.length || showInline){
     html+='<div class="photogrid">';
     local.forEach((url,i)=>{ html+='<div class="phototile"><img src="'+url+'" alt="写真">'+(editing?'<button class="del" onclick="removeLocalPhoto('+i+')">×</button>':'')+'</div>'; });
+    if(showInline){ inline.forEach((url,i)=>{ html+='<div class="phototile"><img src="'+url+'" alt="写真">'+(editing?'<button class="del" onclick="removeInlinePhoto('+i+')">×</button>':'')+'</div>'; }); }
     driveIds.forEach((fid)=>{ html+='<div class="phototile" id="ph-'+escA(fid)+'"><div class="loading">読み込み中…</div>'+(editing?'<button class="del" onclick="removeDrivePhoto(\''+escA(fid)+'\')">×</button>':'')+'</div>'; });
     html+='</div>';
   }
   html+='<button class="addphoto" onclick="document.getElementById(\'photofile\').click()">＋ 写真を追加</button>';
   if(!isDriveConnected()){
-    html+='<div class="note">写真はこの端末内に保存されます（容量に注意）。設定の「写真用の Google 接続」をすると、写真は Drive に保存されます。</div>';
+    html+='<div class="note">写真は日記データに埋め込まれて、いつもの同期で Drive に保存されます。設定の「写真用の Google 接続」をすると、写真ファイルとしても Drive に保存されます。</div>';
   }
   $('entryphotos').innerHTML=html;
   driveIds.forEach((fid)=>{ loadDrivePhoto(fid); });
@@ -1487,21 +1492,67 @@ async function loadDrivePhoto(fid){
 }
 function removeLocalPhoto(i){
   const e=entryById(currentEntryId); if(!e) return;
-  const arr=LocalPhotos[e.id]||[]; arr.splice(i,1);
+  const arr=LocalPhotos[e.id]||[];
+  const hadInline=(e.photosInline||[]).length===arr.length;
+  arr.splice(i,1);
+  if(hadInline) e.photosInline.splice(i,1);
   if(arr.length) LocalPhotos[e.id]=arr; else delete LocalPhotos[e.id];
   saveLocalPhotos(); e.updatedAt=Date.now(); saveDB(); renderEntryPhotos(); scheduleSync();
+}
+function removeInlinePhoto(i){
+  const e=entryById(currentEntryId); if(!e) return;
+  (e.photosInline||[]).splice(i,1);
+  e.updatedAt=Date.now(); saveDB(); renderEntryPhotos(); scheduleSync();
 }
 function removeDrivePhoto(fid){
   const e=entryById(currentEntryId); if(!e) return;
   e.photoFileIds=(e.photoFileIds||[]).filter(x=>x!==fid);
   e.updatedAt=Date.now(); saveDB(); renderEntryPhotos(); scheduleSync();
 }
+/* v2.35: 写真は端末内コピーに加えて、縮小コピーを diary.json の photosInline に
+   埋め込んでいつもの中継同期で Drive に届ける（写真用トークンが無くても届く）。 */
+function downscaleDataUrl(dataUrl, maxDim, quality){
+  return new Promise((resolve)=>{
+    const img=new Image();
+    img.onload=()=>{ try{
+      let w=img.naturalWidth, h=img.naturalHeight;
+      const scale=Math.min(1, maxDim/Math.max(w,h));
+      if(scale>=1){ resolve(dataUrl); return; }
+      w=Math.max(1,Math.round(w*scale)); h=Math.max(1,Math.round(h*scale));
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(cv.toDataURL('image/jpeg', quality));
+    }catch(err){ resolve(dataUrl); } };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+async function makeInlineCopy(dataUrl){
+  let out=await downscaleDataUrl(dataUrl, 1280, 0.78);
+  if(out.length>900000) out=await downscaleDataUrl(dataUrl, 1000, 0.68);
+  return out;
+}
+async function ensureInlinePhotos(e){
+  if(!e) return false;
+  const local=LocalPhotos[e.id]||[];
+  if(!Array.isArray(e.photosInline)) e.photosInline=[];
+  if(e.photosInline.length>=local.length) return false;
+  for(let i=e.photosInline.length;i<local.length;i++){
+    e.photosInline.push(await makeInlineCopy(local[i]));
+  }
+  e.updatedAt=Date.now(); saveDB();
+  return true;
+}
+async function migrateInlinePhotos(){
+  for(const e of DB.entries){ if(!e.deleted && (LocalPhotos[e.id]||[]).length) await ensureInlinePhotos(e); }
+}
 function onPhotoFile(input){
   const file=input.files && input.files[0]; input.value='';
   const e=entryById(currentEntryId); if(!file || !e) return;
-  processPhotoFile(file).then((dataUrl)=>{
+  processPhotoFile(file).then(async (dataUrl)=>{
     if(!LocalPhotos[e.id]) LocalPhotos[e.id]=[];
     LocalPhotos[e.id].push(dataUrl); saveLocalPhotos();
+    await ensureInlinePhotos(e);
     e.updatedAt=Date.now(); saveDB(); renderEntryPhotos(); scheduleSync();
   }).catch(()=>{ sheetInfo('写真', '写真を読み込めませんでした。'); });
 }
@@ -1981,6 +2032,7 @@ async function uploadPendingPhotos(){
     const e=entryById(entryId); if(!e) continue;
     const arr=LocalPhotos[entryId]||[];
     const remaining=[];
+    const successIdx=[];
     for(let i=0;i<arr.length;i++){
       try{
         const name='photo_'+entryId+'_'+((e.photoFileIds||[]).length+ (arr.length-remaining.length)) +'.jpg';
@@ -1991,10 +2043,11 @@ async function uploadPendingPhotos(){
         const res=await fetch(UPLOAD_API+'/files?uploadType=multipart&fields=id', { method:'POST', headers:{ Authorization:'Bearer '+tok }, body: form });
         if(!res.ok) throw new Error('photo upload HTTP '+res.status);
         const j=await res.json();
-        if(j && j.id){ e.photoFileIds=(e.photoFileIds||[]).concat([j.id]); e.updatedAt=Date.now(); }
+        if(j && j.id){ e.photoFileIds=(e.photoFileIds||[]).concat([j.id]); e.updatedAt=Date.now(); successIdx.push(i); }
         else remaining.push(arr[i]);
       }catch(err){ remaining.push(arr[i]); }
     }
+    if(successIdx.length && (e.photosInline||[]).length===arr.length){ e.photosInline=e.photosInline.filter((_,idx)=>successIdx.indexOf(idx)<0); }
     if(remaining.length) LocalPhotos[entryId]=remaining; else delete LocalPhotos[entryId];
   }
   saveLocalPhotos(); saveDB();
@@ -2036,6 +2089,7 @@ async function syncNow(reason){
   if(!relayReady()){ setSyncStatus('disconnected', ''); return; }
   syncRunning=true; setSyncStatus('syncing');
   try{
+    await migrateInlinePhotos();
     await uploadPendingPhotos();
     let file=await findDiaryFile();
     if(!file){
@@ -2382,7 +2436,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.34';
+const APP_VERSION='2.35';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
