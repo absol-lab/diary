@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.38">
+<meta name="app-version" content="2.39">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -59,6 +59,37 @@
     --text:#211d14; --muted:#7a7261; --accent:#57503e; --line:#ddd2b8;
     --danger:#c23b2e; --sat:#2f6fb2; --sun:#c23b2e; --nav:rgba(250,246,234,.95);
     --sheet:rgba(60,52,32,.35); --fab:#57503e; --fabink:#f1ebda; --tag:#1f5fc4;
+  }
+  /* v2.39: 図鑑アプリのテーマカラー5種を移植（色のみ。木目の写真テクスチャは入れない） */
+  body[data-theme="wood-wenge"] {
+    --bg:#100d0a; --bg2:#1b1611; --card:#211b15; --card2:#2f261e;
+    --text:#f3eee7; --muted:#c2ab8e; --accent:#ddb55f; --line:#3d3227;
+    --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(27,22,17,.94);
+    --sheet:rgba(0,0,0,.55); --fab:#ddb55f; --fabink:#100d0a; --tag:#6ea8e0;
+  }
+  body[data-theme="wood-teak"] {
+    --bg:#150f0a; --bg2:#211810; --card:#281d13; --card2:#38281a;
+    --text:#f3ede7; --muted:#c2a88e; --accent:#e2b75a; --line:#473422;
+    --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(33,24,16,.94);
+    --sheet:rgba(0,0,0,.55); --fab:#e2b75a; --fabink:#150f0a; --tag:#6ea8e0;
+  }
+  body[data-theme="wood-walnut-smoke"] {
+    --bg:#110d09; --bg2:#1d160f; --card:#241b13; --card2:#33261b;
+    --text:#f3ede7; --muted:#c2a68e; --accent:#e0b65c; --line:#423223;
+    --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(29,22,15,.94);
+    --sheet:rgba(0,0,0,.55); --fab:#e0b65c; --fabink:#110d09; --tag:#6ea8e0;
+  }
+  body[data-theme="wood-sugi"] {
+    --bg:#160f07; --bg2:#24180b; --card:#2c1e0e; --card2:#3d2a14;
+    --text:#f3eee7; --muted:#c2aa8e; --accent:#e4b358; --line:#4f3619;
+    --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(36,24,11,.94);
+    --sheet:rgba(0,0,0,.55); --fab:#e4b358; --fabink:#160f07; --tag:#6ea8e0;
+  }
+  body[data-theme="wood-hinoki"] {
+    --bg:#140f0b; --bg2:#201811; --card:#261e15; --card2:#352a1d;
+    --text:#f3ede7; --muted:#c2a98e; --accent:#e0b65c; --line:#443525;
+    --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(32,24,17,.94);
+    --sheet:rgba(0,0,0,.55); --fab:#e0b65c; --fabink:#140f0b; --tag:#6ea8e0;
   }
 
   button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
@@ -900,7 +931,7 @@ function normalizeData(d){
   if(d && typeof d==='object'){
     if(Array.isArray(d.entries)){ for(const e of d.entries){ const n=normalizeEntry(e); if(n) out.entries.push(n); } }
     if(d.settings && typeof d.settings==='object'){
-      if(['sumi','ocher','spandrel','kinari'].includes(d.settings.theme)) out.settings.theme=d.settings.theme;
+      if(['sumi','ocher','spandrel','kinari','wood-wenge','wood-teak','wood-walnut-smoke','wood-sugi','wood-hinoki'].includes(d.settings.theme)) out.settings.theme=d.settings.theme;
       if(['small','standard','large','xlarge'].includes(d.settings.fontSize)) out.settings.fontSize=d.settings.fontSize;
       if(FONTFAMS.some(f=>f.id===d.settings.fontFamily)) out.settings.fontFamily=d.settings.fontFamily;
       if(LINEHEIGHTS.some(l=>l.id===d.settings.lineHeight)) out.settings.lineHeight=d.settings.lineHeight;
@@ -1588,7 +1619,12 @@ const THEMES=[
   { id:'sumi', name:'墨', chip:'linear-gradient(135deg,#000,#26262b)' },
   { id:'ocher', name:'オーカー', chip:'linear-gradient(135deg,#16110b,#d9a441)' },
   { id:'spandrel', name:'スパンドレル', chip:'linear-gradient(135deg,#0e100e,#c9cfae)' },
-  { id:'kinari', name:'生成り', chip:'linear-gradient(135deg,#f1ebda,#faf6ea)' }
+  { id:'kinari', name:'生成り', chip:'linear-gradient(135deg,#f1ebda,#faf6ea)' },
+  { id:'wood-wenge', name:'ウェンジ', chip:'linear-gradient(135deg,#100d0a,#ddb55f)' },
+  { id:'wood-teak', name:'チーク', chip:'linear-gradient(135deg,#150f0a,#e2b75a)' },
+  { id:'wood-walnut-smoke', name:'スモークウォールナット', chip:'linear-gradient(135deg,#110d09,#e0b65c)' },
+  { id:'wood-sugi', name:'杉', chip:'linear-gradient(135deg,#160f07,#e4b358)' },
+  { id:'wood-hinoki', name:'檜', chip:'linear-gradient(135deg,#140f0b,#e0b65c)' }
 ];
 function applyAppearance(){
   document.body.dataset.theme=DB.settings.theme;
@@ -1598,7 +1634,7 @@ function applyAppearance(){
   ensureFontLoaded(fontFamById(DB.settings.fontFamily));
   document.body.style.setProperty('--lh', lineHeightById(DB.settings.lineHeight).val);
   const tc=document.querySelector('meta[name="theme-color"]');
-  if(tc) tc.setAttribute('content', DB.settings.theme==='kinari' ? '#f1ebda' : '#000000');
+  if(tc) tc.setAttribute('content', ({'kinari':'#f1ebda','wood-wenge':'#100d0a','wood-teak':'#150f0a','wood-walnut-smoke':'#110d09','wood-sugi':'#160f07','wood-hinoki':'#140f0b'})[DB.settings.theme] || '#000000');
 }
 const SICON = {
   cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.8 18.5a4.3 4.3 0 01-.4-8.57 6.2 6.2 0 0111.94 1.6A3.9 3.9 0 0117.6 18.5H6.8z"/></svg>',
@@ -2444,7 +2480,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.38';
+const APP_VERSION='2.39';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
