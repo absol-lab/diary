@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.35">
+<meta name="app-version" content="2.36">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -247,10 +247,17 @@
   .tdlistrow .nm { flex: 1; }
   .tdlistrow .tdcnt { color: var(--muted); font-size: 15px; margin-right: 10px; }
   .tdlistrow .chev { color: var(--muted); font-size: 18px; }
-  .tdrow { display: flex; align-items: flex-start; gap: 12px; padding: 8px 4px; background: var(--bg); border-bottom: 1px solid var(--line); }
-  .tdimgbtn { flex: 0 0 auto; width: 38px; height: 38px; margin-top: 1px; padding: 0; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+  .tdrow { display: flex; align-items: center; gap: 12px; padding: 8px 4px; background: var(--bg); position: relative; }
+  /* v2.36: 罫線はタイトルの左端から引く（丸チェックの下には引かない・参考アプリ式） */
+  .tdrow::after { content: ''; position: absolute; left: 41px; right: 0; bottom: 0; height: 1px; background: var(--line); }
+  .tdrow.hasprice::after { left: 153px; }
+  .tdrow.sel::after { left: 55px; }
+  .tdrow.sel.hasprice::after { left: 167px; }
+  .tdrow.linefull::after { left: 4px; }
+  .tdrow.dragging::after { display: none; }
+  .tdimgbtn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
   .tdimgbtn img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .tdimgph { flex: 0 0 38px; width: 38px; }
+  .tdimgph { flex: 0 0 34px; width: 34px; }
   #tdimgview { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center; }
   #tdimgview.show { display: flex; }
   #tdimgview .ivscrim { position: absolute; inset: 0; background: rgba(0,0,0,.88); opacity: 0; transition: opacity .18s ease; }
@@ -265,7 +272,7 @@
   #tdimgview .ivclose { flex: 1; background: var(--card2); color: var(--text); font-size: 14px; font-weight: 600; padding: 11px 8px; border-radius: 10px; border: 1px solid var(--line); }
   .tdcheck { flex: 0 0 auto; width: 25px; height: 25px; border-radius: 50%; border: 2px solid var(--muted); color: var(--bg); font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; }
   .tdcheck.done { background: var(--text); border-color: var(--text); }
-  .tdprice { flex: 0 0 100px; width: 100px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 5px; white-space: nowrap; }
+  .tdprice { flex: 0 0 100px; width: 100px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 0; white-space: nowrap; }
   .tdsortcur { color: var(--text); font-weight: 600; }
   [data-dragkind] .tdcheck.done { background: #5eb1ef; border-color: #5eb1ef; color: #fff; }
   .tdrow.sel { background: var(--card2); margin-left: -14px; margin-right: -14px; padding-left: 18px; padding-right: 18px; }
@@ -274,7 +281,7 @@
   .tdtitle.done { color: var(--muted); text-decoration: line-through; }
   .tddue { display: inline-block; margin-top: 2px; font-size: 11.5px; color: var(--muted); font-family: var(--uifont); }
   .tddue.over { color: #e5484d; }
-  .tdhandle { flex: 0 0 auto; color: var(--muted); font-size: 23px; line-height: 1; padding: 10px 12px; cursor: grab; touch-action: none; }
+  .tdhandle { flex: 0 0 auto; color: var(--muted); font-size: 23px; line-height: 1; padding: 4px 12px; cursor: grab; touch-action: none; }
   .tdrow.dragging { position: relative; z-index: 5; background: var(--card2); border-radius: 10px; }
   .tmrow.dragging { position: relative; z-index: 5; background: var(--card2); border-radius: 10px; }
   [data-dragkind].tddraglive [data-dragid] { transition: transform .2s cubic-bezier(.32,.72,.28,1); }
@@ -356,7 +363,7 @@
   .tdlistrow { font-size: 17px; padding: 14px 4px; }
   .tdlistrow .tdcnt { font-size: 16px; }
   .tdtitle { font-size: 16.5px; }
-  .tdrow { padding-top: 9px; padding-bottom: 9px; }
+  .tdrow { padding-top: 6px; padding-bottom: 6px; min-height: 48px; }
   
   .tdsub button { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
   .tdsub button svg { width: 19px; height: 19px; flex: 0 0 auto; }
@@ -2436,7 +2443,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.35';
+const APP_VERSION='2.36';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -2677,8 +2684,9 @@ function openTodoImg(id) {
 function tdImgClose() { const v = $('tdimgview'); if (v) v.classList.remove('show'); }
 function todoRowHTML(t) {
   const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
-  return '<div class="tdrow" data-tid="' + t.id + '"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
-    + priceHTML(t)
+  const ph = priceHTML(t);
+  return '<div class="tdrow' + (ph ? ' hasprice' : '') + '" data-tid="' + t.id + '"><button class="tdcheck' + (t.done ? ' done' : '') + '"' + st + ' onclick="toggleTodo(' + t.id + ')">' + (t.done ? '✓' : '') + '</button>'
+    + ph
     + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div>' + imgBtnHTML(t) + '</div>';
 }
 function todoRowsHTML(items) {
@@ -2691,8 +2699,9 @@ function todoRowsHTML(items) {
 function todoEditRowHTML(t) {
   const on = todoSel.has(t.id);
   const st = (t.color && !on) ? ' style="border-color:' + t.color + '"' : '';
-  return '<div class="tdrow' + (on ? ' sel' : '') + '" data-dragid="' + t.id + '"><button class="tdcheck' + (on ? ' done' : '') + '"' + st + ' onclick="toggleSel(' + t.id + ')">' + (on ? '✓' : '') + '</button>'
-    + priceHTML(t)
+  const ph = priceHTML(t);
+  return '<div class="tdrow' + (on ? ' sel' : '') + (ph ? ' hasprice' : '') + '" data-dragid="' + t.id + '"><button class="tdcheck' + (on ? ' done' : '') + '"' + st + ' onclick="toggleSel(' + t.id + ')">' + (on ? '✓' : '') + '</button>'
+    + ph
     + '<div class="tdmain"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div><span class="tdhandle">☰</span></div>';
 }
 let todoSpecial = null;
@@ -3644,7 +3653,7 @@ function trashHTML() {
   h += '<div class="tdsub"><span></span><span class="tdsubR"><button onclick="purgeAllTrash()">すべて完全に削除</button></span></div>';
   h += items.map(function (t) {
     const where = t.listId ? (listById(t.listId) ? listById(t.listId).name : '削除済みのリスト') : (folderById(t.folderId) ? folderById(t.folderId).name : '');
-    return '<div class="tdrow"><div class="tdmain"><div class="tdtitle">' + esc(t.title) + '</div><div class="tdwhere">' + esc(where) + '</div></div>'
+    return '<div class="tdrow linefull"><div class="tdmain"><div class="tdtitle">' + esc(t.title) + '</div><div class="tdwhere">' + esc(where) + '</div></div>'
       + '<button style="color:var(--muted);font-size:13px;padding:6px 8px;font-family:var(--uifont)" onclick="restoreTodo(' + t.id + ')">復元</button>'
       + '<button style="color:#e5484d;font-size:13px;padding:6px 8px;font-family:var(--uifont)" onclick="purgeTodo(' + t.id + ')">削除</button></div>';
   }).join('');
