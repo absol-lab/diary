@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.36">
+<meta name="app-version" content="2.37">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -255,6 +255,8 @@
   .tdrow.sel.hasprice::after { left: 167px; }
   .tdrow.linefull::after { left: 4px; }
   .tdrow.dragging::after { display: none; }
+  /* v2.37: 行を交互にごく薄く色分けして読み分ける（テーマの文字色を3%だけ混ぜる） */
+  .tdrow:nth-child(even) { background: color-mix(in srgb, var(--text) 3%, var(--bg)); }
   .tdimgbtn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
   .tdimgbtn img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .tdimgph { flex: 0 0 34px; width: 34px; }
@@ -2443,7 +2445,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.36';
+const APP_VERSION='2.37';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
