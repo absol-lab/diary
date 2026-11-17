@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.41">
+<meta name="app-version" content="2.42">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -375,6 +375,27 @@
   .tdfinput::placeholder { color: var(--muted); }
   textarea.tdfinput { min-height: 180px; resize: vertical; line-height: 1.7; border-radius: 18px; }
   .tdfinput:focus { outline: none; }
+  /* ---- quick add popup (v2.42): 下から出るカード＋連続入力（参考アプリ式） ---- */
+  #tdquick { position: fixed; inset: 0; z-index: 97; visibility: hidden; transition: visibility 0s linear .38s; }
+  #tdquick.open { visibility: visible; transition: none; }
+  #tdquick .qascrim { position: absolute; inset: 0; }
+  .qacard { position: absolute; left: 10px; right: 10px; bottom: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 14px 14px 12px; box-shadow: 0 18px 50px rgba(0,0,0,.5); transform: translateY(115%); transition: transform .34s cubic-bezier(.32,.72,.28,1); font-family: var(--uifont); }
+  #tdquick.open .qacard { transform: none; }
+  .qainput { width: 100%; box-sizing: border-box; background: var(--bg2); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; font-size: 16px; color: var(--text); font-family: var(--uifont); outline: none; }
+  .qacolors { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .qacolor { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; border: 2px solid transparent; }
+  .qacolor.none { background: #fff; color: #161616; border-color: rgba(128,128,128,.45); }
+  .qacolor.on { border-color: var(--text); }
+  .qachips { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+  .qachip { padding: 8px 14px; border-radius: 999px; background: var(--card2); color: var(--text); font-size: 13.5px; font-family: var(--uifont); }
+  .qachip.on { background: var(--text); color: var(--bg); }
+  .qadue { background: var(--card2); border: none; border-radius: 10px; padding: 8px 10px; color: var(--text); font-size: 14px; font-family: var(--uifont); color-scheme: dark; }
+  body[data-theme="kinari"] .qadue { color-scheme: light; }
+  .qarow { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+  .qahint { flex: 1; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qabtns { display: flex; gap: 8px; }
+  .qaclose { padding: 10px 16px; border-radius: 999px; background: var(--card2); color: var(--text); font-size: 14px; font-family: var(--uifont); }
+  .qaadd { padding: 10px 20px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 14px; font-weight: 600; font-family: var(--uifont); }
   .tdfcard { background: var(--card); border-radius: 16px; margin-top: 16px; overflow: hidden; }
   .tdfopt { display: flex; align-items: center; width: 100%; padding: 15px 16px; font-size: 15px; color: var(--text); text-align: left; border-bottom: 1px solid var(--line); font-family: var(--uifont); }
   .tdfopt:last-child { border-bottom: none; }
@@ -810,6 +831,23 @@
   <div id="tdpop"><div class="popscrim" onclick="tdPopClose()"></div><div class="popcard" id="tdpopcard"></div></div>
 
   <div id="tdmodal"><div class="mscrim" onclick="tdModalClose()"></div><div class="mcard" id="tdmcard"></div></div>
+
+  <div id="tdquick"><div class="qascrim" onclick="qaClose()"></div><div class="qacard" id="qacard">
+    <form onsubmit="return qaSubmit(event)">
+      <input id="qatitle" class="qainput" placeholder="ToDoを入力" autocomplete="off" enterkeyhint="done">
+      <div class="qacolors" id="qacolors"></div>
+      <div class="qachips">
+        <button type="button" class="qachip" id="qachip-date" onclick="qaToggleDate()">期限</button>
+        <button type="button" class="qachip" id="qachip-today" onclick="qaDuePreset(0)">今日</button>
+        <button type="button" class="qachip" id="qachip-tmr" onclick="qaDuePreset(1)">明日</button>
+        <input type="date" id="qadue" class="qadue" style="display:none" onchange="qaDateChanged()">
+      </div>
+      <div class="qarow"><span class="qahint" id="qahint"></span><span class="qabtns">
+        <button type="button" class="qaclose" onclick="qaClose()">閉じる</button>
+        <button type="submit" class="qaadd">追加</button>
+      </span></div>
+    </form>
+  </div></div>
   <div id="tdimgview"><div class="ivscrim" onclick="tdImgClose()"></div><div class="ivcard" id="tdimgcard"></div></div>
 
   <input type="file" id="importfile" accept=".json,application/json" style="display:none" onchange="onImportFile(this)">
@@ -2493,7 +2531,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.41';
+const APP_VERSION='2.42';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3285,6 +3323,7 @@ function saveFolderForm() {
 let tf = null;
 function openTodoAddForm() {
   const c = curContainer(); if (!c) return;
+  if (c.kind === 'list') { openQuickAdd(c); return; }
   tf = { todoId: null, listId: c.kind === 'list' ? c.obj.id : null, folderId: c.kind === 'folder' ? c.obj.id : null, title: '', due: '', color: null, pickList: c.kind === 'folder' };
   if (tf.pickList) { const ls = listsInFolder(tf.folderId); if (ls.length) tf.listId = ls[0].id; }
   renderTodoForm();
@@ -3358,6 +3397,65 @@ function saveBulkRegister() {
   });
   touchTodo(); tdClose(); renderTodo();
 }
+/* ---- quick add (v2.42): bottom popup for rapid consecutive entry, modelled on the reference app ---- */
+let qa = null, qaLastId = 0;
+function openQuickAdd(c) {
+  qa = { listId: c.obj.id, folderId: null, color: null, due: '', preset: -1 };
+  $('qacolors').innerHTML = qaColorsHTML();
+  $('qatitle').value = '';
+  const di = $('qadue'); di.value = ''; di.style.display = 'none';
+  $('qahint').textContent = '';
+  qaChipsRender();
+  $('tdquick').classList.add('open');
+  qaFit();
+  setTimeout(function () { const i = $('qatitle'); if (i) i.focus(); }, 300);
+}
+function qaColorsHTML() {
+  return '<button type="button" class="qacolor none' + (!qa.color ? ' on' : '') + '" onclick="qaPickColor(null)" aria-label="色なし">' + (!qa.color ? '✓' : '') + '</button>'
+    + TODO_COLORS.map(function (col) { return '<button type="button" class="qacolor' + (qa.color === col ? ' on' : '') + '" style="background:' + col + '" onclick="qaPickColor(\'' + col + '\')" aria-label="色">' + (qa.color === col ? '✓' : '') + '</button>'; }).join('');
+}
+function qaPickColor(col) { qa.color = col; $('qacolors').innerHTML = qaColorsHTML(); const i = $('qatitle'); if (i) i.focus(); }
+function qaChipsRender() {
+  $('qachip-today').classList.toggle('on', qa.preset === 0);
+  $('qachip-tmr').classList.toggle('on', qa.preset === 1);
+  $('qachip-date').classList.toggle('on', !!qa.due && qa.preset === -1);
+}
+function qaDuePreset(days) {
+  if (qa.preset === days) { qa.preset = -1; qa.due = ''; }
+  else { qa.preset = days; const d = new Date(); d.setDate(d.getDate() + days); qa.due = tdYmd(d); }
+  const di = $('qadue'); if (di) { di.value = qa.due; di.style.display = 'none'; }
+  qaChipsRender();
+}
+function qaToggleDate() {
+  const di = $('qadue'); if (!di) return;
+  const show = di.style.display === 'none';
+  di.style.display = show ? '' : 'none';
+  if (show) di.focus();
+}
+function qaDateChanged() { const di = $('qadue'); qa.due = di.value || ''; qa.preset = -1; qaChipsRender(); }
+function qaSubmit(ev) {
+  if (ev) ev.preventDefault();
+  if (!qa) return false;
+  const inp = $('qatitle'); const nm = (inp.value || '').trim();
+  if (!nm) return false;
+  const id = Math.max(Date.now(), qaLastId + 1); qaLastId = id;
+  TodoDB.todos.push({ id: id, listId: qa.listId, folderId: qa.folderId, title: nm, done: false, due: qa.due || null, color: qa.color || null, price: null });
+  touchTodo(); renderTodo();
+  inp.value = '';
+  $('qahint').textContent = '「' + nm + '」を追加';
+  inp.focus();
+  return false;
+}
+function qaClose() { const w = $('tdquick'); if (w) w.classList.remove('open'); const i = $('qatitle'); if (i) i.blur(); }
+function qaFit() {
+  if (!qa) return;
+  const card = $('qacard'); if (!card) return;
+  const vv = window.visualViewport;
+  let kb = 0;
+  if (vv) kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  card.style.bottom = (kb + 10) + 'px';
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', qaFit); visualViewport.addEventListener('scroll', qaFit); }
 /* ---- popover menus ---- */
 let TDACTS = [], tdPopAnchor = null;
 function tdPopOpen(html) {
