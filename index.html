@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.40">
+<meta name="app-version" content="2.41">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -63,31 +63,31 @@
   /* v2.39: 図鑑アプリのテーマカラー5種を移植（色のみ。木目の写真テクスチャは入れない） */
   body[data-theme="wood-wenge"] {
     --bg:#100d0a; --bg2:#1b1611; --card:#211b15; --card2:#2f261e;
-    --text:#f3eee7; --muted:#c2ab8e; --accent:#ddb55f; --line:#3d3227;
+    --text:#f3eee7; --muted:#c2ab8e; --accent:#ddb55f; --line:#3d3227; --lineStrong:#ad8d66;
     --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(27,22,17,.94);
     --sheet:rgba(0,0,0,.55); --fab:#ddb55f; --fabink:#100d0a; --tag:#6ea8e0; --desktex:var(--tex-wood-wenge);
   }
   body[data-theme="wood-teak"] {
     --bg:#150f0a; --bg2:#211810; --card:#281d13; --card2:#38281a;
-    --text:#f3ede7; --muted:#c2a88e; --accent:#e2b75a; --line:#473422;
+    --text:#f3ede7; --muted:#c2a88e; --accent:#e2b75a; --line:#473422; --lineStrong:#ad8966;
     --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(33,24,16,.94);
     --sheet:rgba(0,0,0,.55); --fab:#e2b75a; --fabink:#150f0a; --tag:#6ea8e0; --desktex:var(--tex-wood-teak);
   }
   body[data-theme="wood-walnut-smoke"] {
     --bg:#110d09; --bg2:#1d160f; --card:#241b13; --card2:#33261b;
-    --text:#f3ede7; --muted:#c2a68e; --accent:#e0b65c; --line:#423223;
+    --text:#f3ede7; --muted:#c2a68e; --accent:#e0b65c; --line:#423223; --lineStrong:#ad8766;
     --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(29,22,15,.94);
     --sheet:rgba(0,0,0,.55); --fab:#e0b65c; --fabink:#110d09; --tag:#6ea8e0; --desktex:var(--tex-wood-walnut-smoke);
   }
   body[data-theme="wood-sugi"] {
     --bg:#160f07; --bg2:#24180b; --card:#2c1e0e; --card2:#3d2a14;
-    --text:#f3eee7; --muted:#c2aa8e; --accent:#e4b358; --line:#4f3619;
+    --text:#f3eee7; --muted:#c2aa8e; --accent:#e4b358; --line:#4f3619; --lineStrong:#ad8c66;
     --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(36,24,11,.94);
     --sheet:rgba(0,0,0,.55); --fab:#e4b358; --fabink:#160f07; --tag:#6ea8e0; --desktex:var(--tex-wood-sugi);
   }
   body[data-theme="wood-hinoki"] {
     --bg:#140f0b; --bg2:#201811; --card:#261e15; --card2:#352a1d;
-    --text:#f3ede7; --muted:#c2a98e; --accent:#e0b65c; --line:#443525;
+    --text:#f3ede7; --muted:#c2a98e; --accent:#e0b65c; --line:#443525; --lineStrong:#ad8b66;
     --danger:#ff6a55; --sat:#7fa3c8; --sun:#e08a68; --nav:rgba(32,24,17,.94);
     --sheet:rgba(0,0,0,.55); --fab:#e0b65c; --fabink:#140f0b; --tag:#6ea8e0; --desktex:var(--tex-wood-hinoki);
   }
@@ -102,6 +102,8 @@
   /* v2.40: wood themes — the grain is a fixed layer under the content, tiled at 560px (same treatment as the zukan app) */
   body[data-theme^="wood-"]::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none; background-image:var(--desktex); background-size:560px 560px; background-repeat:repeat; }
   body[data-theme^="wood-"] .tdrow { background: transparent; }
+  /* v2.41: 木目の上では通常の線色が埋もれるので、仕切りだけ図鑑の強い線色を半分の濃さで使う */
+  body[data-theme^="wood-"] .tdrow::after { background: var(--lineStrong); opacity: .5; }
 
   button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
   /* UIの文字は常にゴシック体（本文とカードのタイトル／プレビューだけ選択フォント） */
@@ -2491,7 +2493,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.40';
+const APP_VERSION='2.41';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
