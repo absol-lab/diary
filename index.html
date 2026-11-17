@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.43">
+<meta name="app-version" content="2.44">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -397,6 +397,11 @@
   .qabtns { display: flex; gap: 8px; }
   .qaclose { padding: 10px 16px; border-radius: 999px; background: var(--card2); color: var(--text); font-size: 14px; font-family: var(--uifont); }
   .qaadd { padding: 10px 20px; border-radius: 999px; background: var(--text); color: var(--bg); font-size: 14px; font-weight: 600; font-family: var(--uifont); }
+  .qarow2 { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .qalab { font-size: 13px; color: var(--muted); flex: 0 0 auto; }
+  .qalistchips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .qalistchip { padding: 7px 12px; border-radius: 999px; background: var(--card2); color: var(--text); font-size: 13.5px; font-family: var(--uifont); }
+  .qalistchip.on { background: var(--text); color: var(--bg); }
   .tdfcard { background: var(--card); border-radius: 16px; margin-top: 16px; overflow: hidden; }
   .tdfopt { display: flex; align-items: center; width: 100%; padding: 15px 16px; font-size: 15px; color: var(--text); text-align: left; border-bottom: 1px solid var(--line); font-family: var(--uifont); }
   .tdfopt:last-child { border-bottom: none; }
@@ -835,6 +840,7 @@
 
   <div id="tdquick"><div class="qascrim" onclick="qaClose()"></div><div class="qacard" id="qacard">
     <form onsubmit="return qaSubmit(event)">
+      <div class="qarow2" id="qalistrow" style="display:none"><span class="qalab">入れるリスト</span><span class="qalistchips" id="qalistchips"></span></div>
       <input id="qatitle" class="qainput" placeholder="ToDoを入力" autocomplete="off" enterkeyhint="done">
       <div class="qacolors" id="qacolors"></div>
       <div class="qachips">
@@ -2532,7 +2538,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.43';
+const APP_VERSION='2.44';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3325,6 +3331,7 @@ let tf = null;
 function openTodoAddForm() {
   const c = curContainer(); if (!c) return;
   if (c.kind === 'list') { openQuickAdd(c); return; }
+  if (c.kind === 'folder' && listsInFolder(c.obj.id).length) { openQuickAdd(c); return; }
   tf = { todoId: null, listId: c.kind === 'list' ? c.obj.id : null, folderId: c.kind === 'folder' ? c.obj.id : null, title: '', due: '', color: null, pickList: c.kind === 'folder' };
   if (tf.pickList) { const ls = listsInFolder(tf.folderId); if (ls.length) tf.listId = ls[0].id; }
   renderTodoForm();
@@ -3401,7 +3408,9 @@ function saveBulkRegister() {
 /* ---- quick add (v2.42): bottom popup for rapid consecutive entry, modelled on the reference app ---- */
 let qa = null, qaLastId = 0;
 function openQuickAdd(c) {
-  qa = { listId: c.obj.id, folderId: null, color: null, due: '', preset: -1 };
+  qa = { listId: c.kind === 'list' ? c.obj.id : listsInFolder(c.obj.id)[0].id, folderId: null, color: null, due: '', preset: -1 };
+  const lr = $('qalistrow');
+  if (c.kind === 'folder') { lr.style.display = ''; qaListRender(c.obj.id); } else { lr.style.display = 'none'; }
   $('qacolors').innerHTML = qaColorsHTML();
   $('qatitle').value = '';
   const di = $('qadue'); di.value = ''; di.style.display = 'none';
@@ -3411,6 +3420,10 @@ function openQuickAdd(c) {
   qaFit();
   setTimeout(function () { const i = $('qatitle'); if (i) i.focus(); }, 300);
 }
+function qaListRender(folderId) {
+  $('qalistchips').innerHTML = listsInFolder(folderId).map(function (l) { return '<button type="button" class="qalistchip' + (qa.listId === l.id ? ' on' : '') + '" onclick="qaPickList(' + folderId + ',' + l.id + ')">' + esc(l.name) + '</button>'; }).join('');
+}
+function qaPickList(folderId, id) { qa.listId = id; qaListRender(folderId); const i = $('qatitle'); if (i) i.focus(); }
 function qaColorsHTML() {
   return '<button type="button" class="qacolor none' + (!qa.color ? ' on' : '') + '" onclick="qaPickColor(null)" aria-label="色なし">' + (!qa.color ? '✓' : '') + '</button>'
     + TODO_COLORS.map(function (col) { return '<button type="button" class="qacolor' + (qa.color === col ? ' on' : '') + '" style="background:' + col + '" onclick="qaPickColor(\'' + col + '\')" aria-label="色">' + (qa.color === col ? '✓' : '') + '</button>'; }).join('');
