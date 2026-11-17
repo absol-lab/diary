@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.42">
+<meta name="app-version" content="2.43">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -102,8 +102,9 @@
   /* v2.40: wood themes — the grain is a fixed layer under the content, tiled at 560px (same treatment as the zukan app) */
   body[data-theme^="wood-"]::before { content:''; position:fixed; inset:0; z-index:-1; pointer-events:none; background-image:var(--desktex); background-size:560px 560px; background-repeat:repeat; }
   body[data-theme^="wood-"] .tdrow { background: transparent; }
-  /* v2.41: 木目の上では通常の線色が埋もれるので、仕切りだけ図鑑の強い線色を半分の濃さで使う */
-  body[data-theme^="wood-"] .tdrow::after { background: var(--lineStrong); opacity: .5; }
+  /* v2.43: 木目の上では線色と地の明度差が無く仕切りが見えない（本人の指摘）。仕切りは「＋リスト」と同じ muted 色にする */
+  body[data-theme^="wood-"] .tdrow::after { background: var(--muted); }
+  body[data-theme^="wood-"] .tdlistrow { border-bottom-color: var(--muted); }
 
   button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
   /* UIの文字は常にゴシック体（本文とカードのタイトル／プレビューだけ選択フォント） */
@@ -2531,7 +2532,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.42';
+const APP_VERSION='2.43';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
