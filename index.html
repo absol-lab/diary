@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.45">
+<meta name="app-version" content="2.46">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1567,7 +1567,7 @@ function renderEntryPhotos(){
   }
   html+='<button class="addphoto" onclick="document.getElementById(\'photofile\').click()">＋ 写真を追加</button>';
   if(!isDriveConnected()){
-    html+='<div class="note">写真は日記データに埋め込まれて、いつもの同期で Drive に保存されます。設定の「写真用の Google 接続」をすると、写真ファイルとしても Drive に保存されます。</div>';
+    html+='<div class="note">写真は通常の同期で Drive に保存されます（写真用の接続は不要です）。</div>';
   }
   $('entryphotos').innerHTML=html;
   driveIds.forEach((fid)=>{ loadDrivePhoto(fid); });
@@ -1734,7 +1734,6 @@ function renderSettingsMain(){
     '</div>'+
     '<div class="groupcard">'+
       srow(SICON.db, 'データ', '', "openSettingsPanel('data')")+
-      srow(SICON.info, 'このアプリについて', 'v'+APP_VERSION, "openSettingsPanel('about')")+
     '</div>';
 }
 function openSettingsPanel(name){ settingsPanel=name; renderSettingsPanel(); window.scrollTo(0,0); }
@@ -1761,11 +1760,11 @@ function renderSettingsPanel(){
       fhtml+='<div class="taglabel" style="margin:16px 4px 8px">'+esc(c)+'</div><div class="groupcard" style="margin-bottom:6px">'+
         FONTFAMS.filter(f=>f.cat===c).map(f=>'<button class="srow" onclick="setFontFamily(\''+f.id+'\')"><span class="lb" style="font-family:'+f.stack.replace(/"/g,'&quot;')+'">'+esc(f.name)+'</span>'+(DB.settings.fontFamily===f.id?'<span style="color:var(--accent); font-size:19px">✓</span>':'')+'</button>').join('')+'</div>';
     });
-    p.innerHTML = panelShell('フォントスタイル', fhtml+'<div class="note">Webフォントはネット接続時に読み込まれます。一覧を開くとプレビューが順に読み込まれます。オフラインでは端末の明朝／ゴシックで表示されます（壊れはしません）。</div>');
+    p.innerHTML = panelShell('フォントスタイル', fhtml+'<div class="note">オフラインでは端末の明朝／ゴシックで表示されます。</div>');
     ensureAllFontsLoaded();
   }
   else if(settingsPanel==='leading'){
-    p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div><div class="note">日記の本文と入力欄に適用されます。</div></div>');
+    p.innerHTML = panelShell('行間', '<div class="setbox"><div class="setlabel">本文の行間</div><div class="segrow" id="lhseg"></div></div>');
     $('lhseg').innerHTML = LINEHEIGHTS.map(l=>'<button class="seg'+(DB.settings.lineHeight===l.id?' on':'')+'" onclick="setLineHeight(\''+l.id+'\')">'+l.name+'</button>').join('');
   }
   else if(settingsPanel==='sound'){
@@ -1783,7 +1782,7 @@ function renderSettingsPanel(){
       '<div class="setbox">'+
       '<div class="setrow"><button class="btn primary" onclick="syncNow(\'manual\')">今すぐ同期</button></div>'+
       '<div class="syncstat" id="syncstat"></div>'+
-      '<div class="note">同期はすべて下の中継（Apps Script）経由で、Drive 上の diary.json / todo.json / memo.json を読み書きします。Google ログインは同期には使いません。未設定でも端末内で全機能が使えます。</div>'+
+      '<div class="note">中継が未設定でも、端末内では全機能が使えます。</div>'+
       '</div>'+
       '<div class="setbox" style="margin-top:12px">'+
       '<div class="setlabel">中継（Apps Script）</div>'+
@@ -1791,12 +1790,12 @@ function renderSettingsPanel(){
       '<input class="textin" id="relaysecret" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="シークレット" value="'+(relayCfg() ? escA(relayCfg().secret) : '')+'" style="margin-top:8px">'+
       '<div class="setrow"><button class="btn primary" onclick="relaySaveAndTest()">保存して接続テスト</button>'+(relayCfg() ? '<button class="btn" onclick="relayClear()">中継を解除</button>' : '')+'</div>'+
       '<div class="syncstat" id="relaystat">'+(relayCfg() ? '設定済みです。接続テストで中継の応答を確認できます。' : '未設定です。')+'</div>'+
-      '<div class="note">あなたの Google アカウントの中で動く中継経由で同期します。設定すると Google ログインが不要になり、アプリを落としても接続が切れません。URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末内にだけ保存されます。</div>'+
+      '<div class="note">URL は最初から入っているので、貼るのはシークレットだけでOKです。シークレットはこの端末内にだけ保存されます。</div>'+
       '</div>'+
       '<div class="setbox" style="margin-top:12px">'+
       '<div class="setlabel">写真用の Google 接続</div>'+
       '<div class="setrow"><button class="btn" onclick="connectDrive()">写真用に接続</button><button class="btn" onclick="disconnectDrive()">写真用を切断</button></div>'+
-      '<div class="note">写真の表示とアップロードだけは、中継が写真に未対応のため、いまのところ Google ログインを使います（同期には一切使いません）。写真を使わない場合は接続不要です。</div>'+
+      '<div class="note">写真の表示とアップロードに使います。写真を使わない場合は接続不要です。</div>'+
       '</div>');
     renderSyncStatus();
   }
@@ -1811,9 +1810,6 @@ function renderSettingsPanel(){
     const cy=new Date().getFullYear(); if(!years.includes(cy)) years.unshift(cy);
     $('delyear').innerHTML = years.map(y=>'<option value="'+y+'">'+y+'年</option>').join('');
     $('delmonth').innerHTML = Array.from({length:12},(_,i)=>'<option value="'+pad2(i+1)+'">'+(i+1)+'月</option>').join('');
-  }
-  else if(settingsPanel==='about'){
-    p.innerHTML = panelShell('このアプリについて', '<div class="setbox"><div class="note" style="margin-top:0">独立版 日記 v'+APP_VERSION+' ／ データは端末内と、接続時はあなたの Google Drive に保存されます。</div></div>');
   }
 }
 function setTheme(id){ DB.settings.theme=id; saveDB(); applyAppearance(); renderSettings(); scheduleSync(); }
@@ -1962,7 +1958,7 @@ function connectDrive(){
           storeDel(LS_PENDING);
           uploadPendingPhotos();
           if(currentEntryId) renderEntryPhotos();
-          sheetInfo('写真用 Google 接続', '写真の表示・アップロードができるようになりました。（同期は中継が担当します）');
+          sheetInfo('写真用 Google 接続', '写真の表示・アップロードができるようになりました。');
         } else {
           setSyncStatus('error', 'トークンを取得できませんでした');
         }
@@ -2539,7 +2535,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.45';
+const APP_VERSION='2.46';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3828,8 +3824,6 @@ const SVG_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const SVG_TODAY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><circle cx="12" cy="15.2" r="1.6" fill="currentColor" stroke="none"/></svg>';
 const SVG_FOLDER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7.5A1.8 1.8 0 0 1 4.8 5.7h4.4l2 2.3h7A1.8 1.8 0 0 1 20 9.8v7.4a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 17.2z"/></svg>';
 const SVG_FOLDERADD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A1.8 1.8 0 0 1 4.8 5.7h4.4l2 2.3h7A1.8 1.8 0 0 1 20 9.8v7.4a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 17.2z"/><path d="M11.5 11v5M9 13.5h5"/></svg>';
-const SVG_TABSET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><line x1="3.5" y1="15" x2="20.5" y2="15"/></svg>';
-let drawerInfoHidden = false;
 function openDrawer() {
   if (!TodoDB) { try { loadTodo(); } catch (e) {} }
   renderDrawer();
@@ -3842,12 +3836,9 @@ function drawerGoFolder(id) { closeDrawer(); setTimeout(function () { pickTodoFo
 function drawerGoList(id) { closeDrawer(); setTimeout(function () { pickTodoTab('list', id); }, 80); }
 function drawerAddList() { closeDrawer(); setTimeout(openListForm, 80); }
 function drawerAddFolder() { closeDrawer(); setTimeout(openFolderForm, 80); }
-function drawerTabSetting() { openSheet('<h3>タブ表示・起動画面設定</h3><p class="msg">このアプリではタブ（リスト／カレンダー／Todo／設定）は固定です。</p><button class="sheetbtn primary" onclick="closeSheet()">閉じる</button>'); }
 function renderDrawer() {
   const row = function (icon, label, fn, cnt) { return '<button class="tddr-row" onclick="' + fn + '">' + icon + '<span class="nm">' + label + '</span>' + (cnt != null ? '<span class="tdcnt">' + cnt + '</span>' : '') + '</button>'; };
   let h = '<div class="tddr-title">メニュー</div>';
-  h += row(SVG_TABSET, 'タブ表示・起動画面設定', 'drawerTabSetting()', null);
-  if (!drawerInfoHidden) h += '<div class="tddr-info">カレンダーなどをタブに追加したり、起動時の画面に設定できます<button class="x" onclick="drawerInfoHidden=true;renderDrawer()">✕</button></div>';
   h += row(SVG_DCAL, 'カレンダー', "drawerGo('cal')", null);
   h += row(SVG_CLOCK, '期限付き', "drawerGo('due')", null);
   h += row(SVG_TODAY, '今日', "drawerGo('today')", null);
