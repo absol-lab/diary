@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.47">
+<meta name="app-version" content="2.48">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -2933,7 +2933,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.47';
+const APP_VERSION='2.48';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -3141,10 +3141,11 @@ function leftFabsHTML() {
     + (tdUndo ? '<button class="pundo" onclick="undoToggle()" aria-label="元に戻す">' + SVG_UNDO + '</button>' : '')
     + '</div>';
 }
+let tdColPrice=false, tdColImg=false;
 function priceHTML(t) {
   if (!tdShowPrice) return '';
   if (!todoInPriceScope(t)) return '';
-  if (t.price == null) return '<span class="tdprice"></span>';
+  if (t.price == null) return tdColPrice ? '<span class="tdprice"></span>' : '';
   if (typeof t.price === 'string') {
     const m = t.price.match(/^(\d+)-(\d+)$/);
     if (!m) return '<span class="tdprice"></span>';
@@ -3154,7 +3155,7 @@ function priceHTML(t) {
 }
 function imgBtnHTML(t) {
   if (!todoInPriceScope(t)) return '';
-  if (!t.img) return '<span class="tdimgph"></span>';
+  if (!t.img) return tdColImg ? '<span class="tdimgph"></span>' : '';
   return '<button class="tdimgbtn" aria-label="写真を見る" onclick="event.stopPropagation();openTodoImg(' + t.id + ')"><img src="' + esc(t.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="tdImgErr(this)"></button>';
 }
 function tdImgErr(img) { const b = img.parentNode; img.remove(); if (b) { b.textContent = '\u{1F5BC}'; b.style.fontSize = '16px'; } }
@@ -3179,7 +3180,12 @@ function todoRowHTML(t) {
     + ph
     + '<div class="tdmain" onclick="openTodoEditForm(' + t.id + ')"><div class="tdtitle' + (t.done ? ' done' : '') + '">' + esc(t.title) + '</div>' + dueLabel(t.due) + '</div>' + imgBtnHTML(t) + '</div>';
 }
+function todoSetCols(items) {
+  tdColPrice = tdShowPrice && items.some(function (t) { return t.price != null && todoInPriceScope(t); });
+  tdColImg = items.some(function (t) { return !!t.img && todoInPriceScope(t); });
+}
 function todoRowsHTML(items) {
+  todoSetCols(items);
   const act = items.filter(function (t) { return !t.done; });
   const done = items.filter(function (t) { return t.done; });
   let h = act.map(todoRowHTML).join('');
@@ -3398,6 +3404,7 @@ function editHTML(c) {
   const items = sortTodos(c.items, c.obj.sort);
   let h = '<div class="tdedithead"><button class="x" onclick="exitEdit()">✕</button><span class="t">編集</span></div>';
   h += '<div class="tdsub"><button onclick="toggleSelectAll()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5.5"/></svg>全て選択</button><button onclick="openSortPop(this)">↑↓ 並び替え</button></div>';
+  todoSetCols(items);
   h += '<div data-dragkind="todos">' + (items.length ? items.map(todoEditRowHTML).join('') : '<div class="tdnone">ToDoはありません</div>') + '</div>';
   const off = todoSel.size ? '' : ' off';
   h += '<div class="tdeditbar">'
