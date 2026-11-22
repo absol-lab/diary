@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.46">
+<meta name="app-version" content="2.47">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -164,7 +164,19 @@
   .mrow .mmeta { font-family: var(--uifont); font-size: 11px; color: var(--muted); margin-top: 4px; }
   .memoempty { text-align: center; color: var(--muted); padding: 52px 20px; line-height: 1.9; }
   .memoeditmeta { font-family: var(--uifont); font-size: 12px; color: var(--muted); padding: 2px 2px 8px; }
-  #memoeditor { width: 100%; box-sizing: border-box; min-height: 52vh; background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 14px; padding: 14px; font-size: calc(var(--fs) * 1.0); line-height: var(--lh, 1.7); resize: vertical; outline: none; }
+  #memoeditor { width: 100%; box-sizing: border-box; min-height: 52vh; background: transparent; color: var(--text); border: none; padding: 6px 2px 30px; font-size: calc(var(--fs) * 1.0); line-height: var(--lh, 1.7); outline: none; caret-color: var(--fab); -webkit-user-select: text; user-select: text; }
+  #memoeditor.isEmpty::before { content: attr(data-ph); color: var(--muted); pointer-events: none; }
+  #memoeditor h1 { font-size: calc(var(--fs) * 1.55); font-weight: 800; line-height: 1.35; margin: .3em 0; }
+  #memoeditor h2 { font-size: calc(var(--fs) * 1.28); font-weight: 700; line-height: 1.4; margin: .3em 0; }
+  #memoeditor h3 { font-size: calc(var(--fs) * 1.1); font-weight: 700; line-height: 1.45; margin: .3em 0; }
+  #memoeditor pre { font-family: ui-monospace, Menlo, monospace; font-size: calc(var(--fs) * .9); white-space: pre-wrap; margin: .3em 0; }
+  #memoeditor ul, #memoeditor ol { padding-left: 1.5em; margin: .2em 0; }
+  #memoeditor img { max-width: 100%; border-radius: 10px; }
+  #memoeditor .mchk { position: relative; padding-left: 34px; }
+  #memoeditor .mchk::before { content: ''; position: absolute; left: 2px; top: .3em; width: 21px; height: 21px; border-radius: 50%; border: 1.8px solid var(--muted); box-sizing: border-box; }
+  #memoeditor .mchk[data-done="1"] { color: var(--muted); }
+  #memoeditor .mchk[data-done="1"]::before { background: var(--fab); border-color: var(--fab); }
+  #memoeditor .mchk[data-done="1"]::after { content: ''; position: absolute; left: 9px; top: calc(.3em + 3px); width: 6px; height: 10px; border-right: 2.4px solid #1a1408; border-bottom: 2.4px solid #1a1408; transform: rotate(42deg); }
   #memodel svg { width: 20px; height: 20px; }
   .mfbar, .mtbar { display: flex; gap: 6px; overflow-x: auto; padding: 4px 14px 2px; scrollbar-width: none; }
   .mfbar::-webkit-scrollbar, .mtbar::-webkit-scrollbar { display: none; }
@@ -194,6 +206,60 @@
   #memotoast { position: fixed; left: 0; right: 0; margin-left: auto; margin-right: auto; width: fit-content; max-width: calc(100vw - 40px); bottom: 86px; z-index: 65; display: none; align-items: center; gap: 14px; background: var(--card2); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; font-family: var(--uifont); font-size: 13.5px; box-shadow: 0 10px 28px rgba(0,0,0,.4); }
   #memotoast.on { display: flex; }
   #memotoast button { color: var(--accent, #d9a13b); font-weight: 700; font-family: var(--uifont); font-size: 13.5px; }
+  /* ===== memo v2.47: Apple Notes style ===== */
+  .mtopbar { display: flex; align-items: flex-end; justify-content: space-between; padding: calc(env(safe-area-inset-top, 0px) + 16px) 16px 4px; }
+  .mbigtitle { font-family: var(--uifont); font-size: 30px; font-weight: 800; letter-spacing: .01em; }
+  .mtopbtns { display: flex; gap: 8px; align-items: center; }
+  .mroundbtn { width: 42px; height: 42px; border-radius: 50%; background: var(--card); border: 1px solid var(--line); color: var(--text); display: flex; align-items: center; justify-content: center; }
+  .mroundbtn svg { width: 21px; height: 21px; }
+  .mpillbtn { height: 42px; padding: 0 16px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--text); font-family: var(--uifont); font-size: 14.5px; }
+  .mcard { background: var(--card); border: 1px solid var(--line); border-radius: 18px; margin: 10px 14px 0; overflow: hidden; }
+  .mfrow2 { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 14px; color: var(--text); text-align: left; background: transparent; position: relative; }
+  .mfrow2 + .mfrow2::before { content: ''; position: absolute; top: 0; left: 48px; right: 0; height: 1px; background: var(--line); }
+  .mfrow2 .mficon { flex: 0 0 auto; display: flex; }
+  .mfrow2 .mficon svg { width: 23px; height: 23px; }
+  .mfrow2 .mflabel { flex: 1; font-size: calc(var(--fs) * .98); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mfrow2 .mfcount { font-family: var(--uifont); font-size: 14px; color: var(--muted); }
+  .mfrow2 .mfchev { color: var(--muted); font-size: 18px; font-family: var(--uifont); }
+  .msechead { font-family: var(--uifont); font-size: 19px; font-weight: 700; margin: 22px 16px 2px; }
+  .mtagchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px 0; }
+  #view-memo main { padding-bottom: 190px; }
+  #view-memolist main { padding-bottom: 120px; }
+  #view-memoedit main { padding-bottom: 110px; }
+  .mbottombar { position: fixed; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 31; display: flex; gap: 10px; padding: 0 14px; max-width: 748px; margin: 0 auto; box-sizing: border-box; }
+  #view-memo .mbottombar { bottom: calc(82px + env(safe-area-inset-bottom, 0px)); }
+  .msearchpill { flex: 1; display: flex; align-items: center; gap: 8px; background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 12px 16px; color: var(--muted); font-family: var(--uifont); font-size: 15px; box-shadow: 0 10px 26px rgba(0,0,0,.35); min-height: 48px; }
+  .msearchpill svg { width: 18px; height: 18px; flex: 0 0 auto; }
+  .mcomposebtn { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 50%; background: var(--card2); border: 1px solid var(--line); color: var(--text); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 26px rgba(0,0,0,.35); }
+  .mcomposebtn svg { width: 22px; height: 22px; }
+  .mlistsub { font-family: var(--uifont); font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+  .mgrouphead { font-family: var(--uifont); font-size: 19px; font-weight: 700; margin: 20px 16px 8px; display: flex; align-items: center; justify-content: space-between; }
+  .mnotecard { background: var(--card); border: 1px solid var(--line); border-radius: 18px; margin: 0 14px; overflow: hidden; }
+  .mnote { display: block; width: 100%; text-align: left; padding: 12px 16px; color: var(--text); background: transparent; position: relative; }
+  .mnote + .mnote::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; height: 1px; background: var(--line); }
+  .mnote .mtitle { font-size: calc(var(--fs) * 1.02); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mnote .mline2 { font-size: calc(var(--fs) * .85); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .mnote .mline3 { font-family: var(--uifont); font-size: 12px; color: var(--muted); margin-top: 3px; display: flex; align-items: center; gap: 4px; }
+  .mnote .mline3 svg { width: 13px; height: 13px; flex: 0 0 auto; }
+  .memoedsel.slim, .memoedtags.slim { min-height: 38px; padding: 7px 10px; font-size: 13.5px; border-radius: 999px; }
+  .memoedrow { gap: 8px; margin-bottom: 4px; }
+  #memopin.on { color: var(--fab); }
+  #memopin.on svg { fill: currentColor; }
+  #memopin svg { width: 20px; height: 20px; }
+  #memoebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; display: flex; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); pointer-events: none; }
+  .mebarpill { pointer-events: auto; display: flex; gap: 2px; background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 4px; box-shadow: 0 10px 26px rgba(0,0,0,.4); }
+  .mebtn { width: 46px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--text); border-radius: 999px; font-family: var(--uifont); font-size: 15.5px; }
+  .mebtn:active { background: var(--card); }
+  .mebtn svg { width: 21px; height: 21px; }
+  .fmtstyles { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 4px; scrollbar-width: none; }
+  .fmtstyles::-webkit-scrollbar { display: none; }
+  .fmtchip { flex: 0 0 auto; padding: 9px 16px; border-radius: 999px; background: var(--card2); color: var(--text); font-family: var(--uifont); font-size: 15px; }
+  .fmtchip.on { background: #f0b429; color: #171106; font-weight: 700; }
+  .fmtrow { display: flex; gap: 6px; margin-top: 8px; }
+  .fmtbtn { flex: 1; min-height: 44px; border-radius: 10px; background: var(--card2); color: var(--text); font-family: var(--uifont); font-size: 15.5px; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+  .fmtbtn.on { background: #f0b429; color: #171106; font-weight: 700; }
+  .fmtcolors { display: flex; gap: 12px; margin-top: 14px; padding: 0 2px; }
+  .fmtcolor { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); flex: 0 0 auto; }
   #syncbar .err { color: var(--danger); }
 
   main { max-width: 720px; margin: 0 auto; padding: 0 14px; }
@@ -757,17 +823,37 @@
 
   <!-- ======= MEMO ======= -->
   <section id="view-memo" class="view">
-    <div class="topbar">
-      <div class="spacer44"></div>
-      <div class="ttl">メモ</div>
-      <div class="memocountwrap"><span id="memocount"></span></div>
+    <div class="mtopbar">
+      <div class="mbigtitle">フォルダ</div>
+      <div class="mtopbtns">
+        <button class="mroundbtn" onclick="memoNewFolderPrompt()" aria-label="新規フォルダ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A2.5 2.5 0 015.5 5h3L10 7h8.5A2.5 2.5 0 0121 9.5v8A2.5 2.5 0 0118.5 20h-13A2.5 2.5 0 013 17.5v-10z"/><path d="M12 10.5v6M9 13.5h6"/></svg></button>
+        <button class="mpillbtn" onclick="openMemoFolders()">編集</button>
+      </div>
     </div>
     <div id="memosyncbar" onclick="memoSyncBarTap()"></div>
-    <div class="memosearchrow"><input id="memosearch" type="text" placeholder="メモを検索" autocomplete="off"></div>
-    <div id="memofolderbar" class="mfbar"></div>
-    <div id="memotagbar" class="mtbar"></div>
+    <main>
+      <div id="memofolderlist2"></div>
+      <div id="memotagsec"></div>
+    </main>
+    <div class="mbottombar">
+      <button class="msearchpill" onclick="openMemoSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg><span>検索</span></button>
+      <button class="mcomposebtn" onclick="newMemo()" aria-label="新規メモ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4.2 1.2L5 15L16.5 3.5z"/></svg></button>
+    </div>
+  </section>
+
+  <!-- ======= MEMO LIST ======= -->
+  <section id="view-memolist" class="view">
+    <div class="topbar entrybar">
+      <button class="iconbtn" onclick="closeMemoList()" aria-label="戻る">‹</button>
+      <div class="ttl" style="text-align:center"><span id="memolisttitle">メモ</span><div class="mlistsub" id="memolistsub"></div></div>
+      <div class="spacer44"></div>
+    </div>
+    <div class="memosearchrow" id="memolistsearchrow" style="display:none"><input id="memolistsearch" type="text" placeholder="メモを検索" autocomplete="off"></div>
     <main><div id="memolist"></div></main>
-    <button class="tdfab plus" onclick="newMemo()" aria-label="新しいメモ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <div class="mbottombar" id="memolistbar">
+      <button class="msearchpill" onclick="openMemoSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg><span>検索</span></button>
+      <button class="mcomposebtn" onclick="newMemo()" aria-label="新規メモ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L8 18l-4.2 1.2L5 15L16.5 3.5z"/></svg></button>
+    </div>
   </section>
 
   <!-- ======= MEMO EDIT ======= -->
@@ -775,15 +861,23 @@
     <div class="topbar entrybar">
       <button class="iconbtn" onclick="closeMemoEditor()" aria-label="戻る">‹</button>
       <div class="ttl">メモ</div>
+      <button class="iconbtn" id="memopin" onclick="toggleMemoPinCurrent()" aria-label="ピン留め"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6.5 3 3.5v2H7v-2l3-3.5L9 4z"/><path d="M12 16v5"/></svg></button>
       <button class="iconbtn" id="memodel" onclick="deleteMemoCurrent()" aria-label="削除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V5.2A1.2 1.2 0 0110.7 4h2.6a1.2 1.2 0 011.2 1.2V7M6.5 7l.9 12.2A1.5 1.5 0 008.9 20.5h6.2a1.5 1.5 0 001.5-1.3L17.5 7"/></svg></button>
     </div>
     <main>
       <div class="memoeditmeta" id="memometa"></div>
-      <div class="memoedctrls"><label class="memoedlab" for="memofoldersel">フォルダ</label><select id="memofoldersel" class="memoedsel"></select></div>
-      <div class="memoedctrls"><label class="memoedlab" for="memotags">タグ</label><input id="memotags" class="memoedtags" type="text" placeholder="タグをカンマ区切りで（例：買い物, 画材）" autocomplete="off"></div>
-      <div class="memotagsug" id="memotagsug"></div>
-      <textarea id="memoeditor" placeholder="ここに書く"></textarea>
+      <div class="memoedctrls memoedrow"><select id="memofoldersel" class="memoedsel slim" aria-label="フォルダ"></select><input id="memotags" class="memoedtags slim" type="text" placeholder="タグ（カンマ区切り）" autocomplete="off"></div>
+      <div id="memoeditor" contenteditable="true" data-ph="ここに書く"></div>
     </main>
+    <div id="memoebar">
+      <div class="mebarpill">
+        <button class="mebtn" onclick="openMemoFmt()" aria-label="書式">ああ</button>
+        <button class="mebtn" onclick="memoFmtChecklistBtn()" aria-label="チェックリスト"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="4.5" cy="6" r="2.2"/><circle cx="4.5" cy="12" r="2.2"/><circle cx="4.5" cy="18" r="2.2"/><path d="M10 6h10M10 12h10M10 18h10"/></svg></button>
+        <button class="mebtn" onclick="memoPhotoPick()" aria-label="写真"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5.5-5 3.5 3.5L17 12l3 3.5"/></svg></button>
+        <button class="mebtn" onclick="memoFmtCmd('undo')" aria-label="元に戻す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 5.5L4 10l4.5 4.5"/><path d="M4 10h10a6 6 0 016 6v1"/></svg></button>
+      </div>
+    </div>
+    <input type="file" id="memofile" accept="image/*" style="display:none">
   </section>
 
   <!-- ======= MEMO FOLDERS ======= -->
@@ -1116,18 +1210,19 @@ document.addEventListener('touchstart', function(){}, { passive:true }); /* enab
 function showView(v){
   if(currentView==='entry' && v!=='entry' && editing){ saveEdit(); }
   if(v!=='settings' && typeof settingsPanel!=='undefined') settingsPanel=null;
-  if(v!=='entry' && v!=='memoedit' && v!=='memofolders') prevView = (v==='search') ? prevView : v;
+  if(v!=='entry' && v!=='memoedit' && v!=='memofolders' && v!=='memolist') prevView = (v==='search') ? prevView : v;
   currentView=v;
-  ['list','calendar','todo','memo','search','entry','memoedit','memofolders','settings'].forEach(x=>{ $('view-'+x).classList.toggle('active', x===v); });
-  ['list','calendar','todo','memo','settings'].forEach(x=>{ const b=$('nav-'+x); if(b) b.classList.toggle('on', x===v || ((v==='memoedit' || v==='memofolders') && x==='memo')); });
-  $('pillnav').style.display = (v==='entry' || v==='memoedit' || v==='memofolders') ? 'none' : 'flex';
-  if(v!=='entry' && v!=='memoedit' && v!=='memofolders') moveNavInd(true);
+  ['list','calendar','todo','memo','search','entry','memoedit','memofolders','memolist','settings'].forEach(x=>{ $('view-'+x).classList.toggle('active', x===v); });
+  ['list','calendar','todo','memo','settings'].forEach(x=>{ const b=$('nav-'+x); if(b) b.classList.toggle('on', x===v || ((v==='memoedit' || v==='memofolders' || v==='memolist') && x==='memo')); });
+  $('pillnav').style.display = (v==='entry' || v==='memoedit' || v==='memofolders' || v==='memolist') ? 'none' : 'flex';
+  if(v!=='entry' && v!=='memoedit' && v!=='memofolders' && v!=='memolist') moveNavInd(true);
   $('fab').style.display = (v==='list'||v==='calendar') ? 'flex' : 'none';
   if(v==='list') renderList();
   if(v==='calendar') renderCalendar();
   if(v==='settings') renderSettings();
   if(v==='todo') renderTodo();
-  if(v==='memo') renderMemoList();
+  if(v==='memo') renderMemoRoot();
+  if(v==='memolist') renderMemoList();
   if(v==='search'){ renderSearch(); setTimeout(()=>{ try{$('searchinput').focus();}catch(e){} }, 60); }
   window.scrollTo(0,0);
   pinNav(); setTimeout(pinNav, 350); requestAnimationFrame(healNav); setTimeout(healNav, 380);
@@ -2221,8 +2316,8 @@ async function syncNow(reason){
 
 /* ================= memo (integrated 2026-11-12; same memo.json + per-memo merge as the standalone memo app) ================= */
 const MEMO_LS='diaryStandalone.memo.v1';
-let MemoDB={ memos:[], deleted:{}, folders:[] };
-try{ const d=JSON.parse(localStorage.getItem(MEMO_LS)||'null'); if(d && Array.isArray(d.memos)) MemoDB={ memos:d.memos, deleted:d.deleted||{}, folders:Array.isArray(d.folders)?d.folders:[] }; }catch(e){}
+let MemoDB={ memos:[], deleted:{}, folders:[], trash:[] };
+try{ const d=JSON.parse(localStorage.getItem(MEMO_LS)||'null'); if(d && Array.isArray(d.memos)) MemoDB={ memos:d.memos, deleted:d.deleted||{}, folders:Array.isArray(d.folders)?d.folders:[], trash:Array.isArray(d.trash)?d.trash:[] }; }catch(e){}
 let memoDirty=false, memoEditSeq=0, memoSyncTimer=null;
 let memoEditId=null, memoEditIsNew=false, memoLastDeleted=null, memoToastTimer=null, memoSearchQ='';
 function saveMemoLocal(){ try{ localStorage.setItem(MEMO_LS, JSON.stringify(MemoDB)); }catch(e){} }
@@ -2249,11 +2344,21 @@ function mergeMemoData(local, remote){
   [local.deleted||{}, remote.deleted||{}].forEach(src=>{ Object.keys(src).forEach(id=>{ if(!deleted[id] || src[id]>deleted[id]) deleted[id]=src[id]; }); });
   const byId={};
   [local.memos||[], remote.memos||[]].forEach(list=>{ list.forEach(m=>{ const ex=byId[m.id]; if(!ex || (m.updatedAt||'')>(ex.updatedAt||'')) byId[m.id]=m; }); });
+  const tById={};
+  [local.trash||[], remote.trash||[]].forEach(list=>{ list.forEach(t=>{ const ex=tById[t.id]; if(!ex || (t.deletedAt||'')>(ex.deletedAt||'')) tById[t.id]=t; }); });
+  Object.keys(tById).forEach(id=>{
+    const t=tById[id];
+    if(deleted[id] && deleted[id]>=(t.deletedAt||'')){ delete tById[id]; return; }
+    const m=byId[id];
+    if(m && (m.updatedAt||'')>(t.deletedAt||'')){ delete tById[id]; }
+    else if(m){ delete byId[id]; }
+  });
   const memos=Object.values(byId).filter(m=> !(deleted[m.id] && deleted[m.id]>=(m.updatedAt||'')));
+  const trash=Object.values(tById).filter(t=> !(deleted[t.id] && deleted[t.id]>=(t.deletedAt||'')));
   const fById={};
   [local.folders||[], remote.folders||[]].forEach(list=>{ list.forEach(f=>{ const ex=fById[f.id]; if(!ex || (f.updatedAt||'')>(ex.updatedAt||'')) fById[f.id]=f; }); });
   const folders=Object.values(fById).filter(f=> !(deleted[f.id] && deleted[f.id]>=(f.updatedAt||'')));
-  return { memos, deleted, folders };
+  return { memos, deleted, folders, trash };
 }
 function touchMemo(){
   memoDirty=true; memoEditSeq++; saveMemoLocal(); renderMemoSyncNote();
@@ -2276,47 +2381,167 @@ function memoAllTags(){
 }
 function memoSetFolderFilter(f){ memoFolderFilter=f; renderMemoList(); }
 function memoSetTagFilter(t){ memoTagFilter=(memoTagFilter===t)?'':t; renderMemoList(); }
-function renderMemoFolderBar(){
-  const bar=$('memofolderbar'); if(!bar) return;
-  if(memoFolderFilter!=='all' && memoFolderFilter!=='none' && !memoFolderById(memoFolderFilter)) memoFolderFilter='all';
+/* ===== memo v2.47: folders root + scoped list (Apple Notes style) ===== */
+let memoScope={ kind:'all' }, memoReturnTo='memo', memoLpStamp=0, memoPinOpen=true;
+const MEMO_FOLDER_SVG='<svg viewBox="0 0 24 24" fill="#e8b93c" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 015.5 5h3L10 7h8.5A2.5 2.5 0 0121 9.5v8A2.5 2.5 0 0118.5 20h-13A2.5 2.5 0 013 17.5v-10z"/></svg>';
+const MEMO_TRASH_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="#e8b93c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V5.2A1.2 1.2 0 0110.7 4h2.6a1.2 1.2 0 011.2 1.2V7M6.5 7l.9 12.2A1.5 1.5 0 008.9 20.5h6.2a1.5 1.5 0 001.5-1.3L17.5 7"/></svg>';
+const MEMO_FOLDER_SM='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 015.5 5h3L10 7h8.5A2.5 2.5 0 0121 9.5v8A2.5 2.5 0 0118.5 20h-13A2.5 2.5 0 013 17.5v-10z"/></svg>';
+function memoRowDate(iso){ if(!iso) return ''; const d=new Date(iso); return d.getFullYear()+'/'+pad2(d.getMonth()+1)+'/'+pad2(d.getDate()); }
+function memoMonthKey(iso){ const d=new Date(iso||0); return d.getFullYear()+'-'+pad2(d.getMonth()+1); }
+function memoMonthLabel(key){ const p=key.split('-'); return (+p[0]===new Date().getFullYear()) ? (+p[1])+'月' : p[0]+'年'+(+p[1])+'月'; }
+function openMemoList(kind, id){ memoScope={ kind:kind, id:id||null }; showView('memolist'); }
+function closeMemoList(){ showView('memo'); }
+function openMemoSearch(){ memoScope={ kind:'search' }; memoSearchQ=''; const inp=$('memolistsearch'); if(inp) inp.value=''; showView('memolist'); setTimeout(()=>{ try{ $('memolistsearch').focus({ preventScroll:true }); }catch(e){} }, 380); }
+function memoNewFolderPrompt(){
+  openSheet('<h3>新規フォルダ</h3><div class="memosearchrow" style="padding:4px 0 10px"><input id="memofoldername" type="text" placeholder="フォルダ名" autocomplete="off"></div><button class="sheetbtn primary" onclick="memoCreateFolderFromSheet()">作成</button><button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+  setTimeout(()=>{ try{ $('memofoldername').focus(); }catch(e){} }, 120);
+}
+function memoCreateFolderFromSheet(){
+  const inp=$('memofoldername'); const name=inp ? inp.value.trim() : ''; if(!name){ closeSheet(); return; }
+  const ts=memoNowISO();
+  if(!Array.isArray(MemoDB.folders)) MemoDB.folders=[];
+  MemoDB.folders.push({ id: memoNewId(), name, createdAt: ts, updatedAt: ts });
+  closeSheet(); touchMemo(); renderMemoRoot();
+}
+function renderMemoRoot(){
+  if(!Array.isArray(MemoDB.trash)) MemoDB.trash=[];
+  const cutoff=Date.now()-30*864e5; let purged=false;
+  MemoDB.trash.slice().forEach(t=>{ if(new Date(t.deletedAt||0).getTime()<cutoff){ MemoDB.trash=MemoDB.trash.filter(x=>x.id!==t.id); MemoDB.deleted[t.id]=memoNowISO(); purged=true; } });
+  if(purged) touchMemo();
+  const box=$('memofolderlist2'); if(!box) return;
   const counts={ none:0 };
   MemoDB.memos.forEach(m=>{ const f=memoEffFolderId(m); if(f) counts[f]=(counts[f]||0)+1; else counts.none++; });
-  const chip=(key,label,n)=>'<button class="mfchip'+(memoFolderFilter===key?' on':'')+'" onclick="memoSetFolderFilter(\''+key+'\')">'+esc(label)+' <span class="n">'+n+'</span></button>';
-  let html=chip('all','すべて',MemoDB.memos.length);
-  (MemoDB.folders||[]).slice().sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).forEach(f=>{ html+=chip(f.id, f.name, counts[f.id]||0); });
-  html+=chip('none','未分類',counts.none);
-  html+='<button class="mfchip" onclick="openMemoFolders()">フォルダ管理</button>';
-  bar.innerHTML=html;
+  const row=(icon,label,n,onclick)=>'<button class="mfrow2" onclick="'+onclick+'"><span class="mficon">'+icon+'</span><span class="mflabel">'+esc(label)+'</span><span class="mfcount">'+n+'</span><span class="mfchev">›</span></button>';
+  let html='<div class="mcard">';
+  html+=row(MEMO_FOLDER_SVG,'すべてのメモ',MemoDB.memos.length,"openMemoList('all')");
+  (MemoDB.folders||[]).slice().sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).forEach(f=>{ html+=row(MEMO_FOLDER_SVG, f.name, counts[f.id]||0, "openMemoList('folder','"+f.id+"')"); });
+  html+=row(MEMO_FOLDER_SVG,'未分類',counts.none,"openMemoList('none')");
+  html+=row(MEMO_TRASH_SVG,'最近削除した項目',MemoDB.trash.length,"openMemoList('trash')");
+  html+='</div>';
+  box.innerHTML=html;
+  const tsec=$('memotagsec');
+  if(tsec){
+    const tags=memoAllTags();
+    tsec.innerHTML = tags.length ? '<div class="msechead">タグ</div><div class="mtagchips">'+tags.map(x=>'<button class="mtchip" data-tag="'+esc(x.tag)+'">#'+esc(x.tag)+' <span class="n">'+x.n+'</span></button>').join('')+'</div>' : '';
+    tsec.querySelectorAll('.mtchip').forEach(b=>{ b.addEventListener('click', ()=> openMemoList('tag', b.dataset.tag)); });
+  }
+  renderMemoSyncNote();
 }
-function renderMemoTagBar(){
-  const bar=$('memotagbar'); if(!bar) return;
-  const tags=memoAllTags();
-  if(memoTagFilter && !tags.some(x=>x.tag===memoTagFilter)) memoTagFilter='';
-  bar.innerHTML=tags.map(x=>'<button class="mtchip'+(memoTagFilter===x.tag?' on':'')+'" onclick="memoSetTagFilter(\''+esc(x.tag)+'\')">#'+esc(x.tag)+' <span class="n">'+x.n+'</span></button>').join('');
+function memoScopeItems(){
+  const k=memoScope.kind;
+  if(k==='trash') return (MemoDB.trash||[]).slice().sort((a,b)=> (b.deletedAt||'').localeCompare(a.deletedAt||''));
+  let items=memoSorted();
+  if(k==='folder') items=items.filter(m=> memoEffFolderId(m)===memoScope.id);
+  else if(k==='none') items=items.filter(m=> !memoEffFolderId(m));
+  else if(k==='tag') items=items.filter(m=> memoTagsOf(m).includes(memoScope.id));
+  else if(k==='search'){
+    const q=memoSearchQ.trim().toLowerCase();
+    if(q) items=items.filter(m=> (m.body||'').toLowerCase().includes(q) || memoTagsOf(m).some(t=> t.toLowerCase().includes(q)));
+    else items=[];
+  }
+  return items;
+}
+function memoScopeTitle(){
+  const k=memoScope.kind;
+  if(k==='all') return 'すべてのメモ';
+  if(k==='folder'){ const f=memoFolderById(memoScope.id); return f ? f.name : 'すべてのメモ'; }
+  if(k==='none') return '未分類';
+  if(k==='tag') return '#'+memoScope.id;
+  if(k==='trash') return '最近削除した項目';
+  if(k==='search') return '検索';
+  return 'メモ';
+}
+function memoNoteRow(m, showFolder, isTrash){
+  const t=memoTitleOf(m.body), s=memoSnippetOf(m.body);
+  const date=memoRowDate(isTrash ? m.deletedAt : m.updatedAt);
+  const ef=memoEffFolderId(m), f=ef ? memoFolderById(ef) : null;
+  return '<button class="mnote" data-id="'+m.id+'" onclick="memoNoteTap(\''+m.id+'\')"><div class="mtitle">'+esc(t)+'</div><div class="mline2">'+date+(s ? '　'+esc(s) : '　追加テキストなし')+'</div>'+(showFolder ? '<div class="mline3">'+MEMO_FOLDER_SM+'<span>'+esc(f ? f.name : '未分類')+'</span></div>' : '')+'</button>';
+}
+function memoNoteTap(id){
+  if(Date.now()-memoLpStamp<600) return;
+  if(memoScope.kind==='trash') openTrashNoteMenu(id);
+  else openMemo(id);
 }
 function renderMemoList(){
-  renderMemoFolderBar(); renderMemoTagBar();
-  const q=memoSearchQ.trim().toLowerCase();
-  const items=memoSorted().filter(m=>{
-    const ef=memoEffFolderId(m);
-    if(memoFolderFilter==='none' && ef) return false;
-    if(memoFolderFilter!=='all' && memoFolderFilter!=='none' && ef!==memoFolderFilter) return false;
-    if(memoTagFilter && !memoTagsOf(m).includes(memoTagFilter)) return false;
-    if(q && !((m.body||'').toLowerCase().includes(q) || memoTagsOf(m).some(t=>t.toLowerCase().includes(q)))) return false;
-    return true;
-  });
-  const cnt=$('memocount'); if(cnt) cnt.textContent=MemoDB.memos.length ? '全'+MemoDB.memos.length+'件' : '';
+  if(memoScope.kind==='folder' && !memoFolderById(memoScope.id)) memoScope={ kind:'all' };
   const el=$('memolist'); if(!el) return;
+  const title=$('memolisttitle'); if(title) title.textContent=memoScopeTitle();
+  const items=memoScopeItems();
+  const sub=$('memolistsub'); if(sub) sub.textContent=items.length ? items.length+'件のメモ' : '';
+  const srow=$('memolistsearchrow'); if(srow) srow.style.display = memoScope.kind==='search' ? '' : 'none';
+  const sbar=$('memolistbar'); if(sbar) sbar.style.display = memoScope.kind==='search' ? 'none' : '';
   if(!items.length){
-    const filtering = q || memoTagFilter || memoFolderFilter!=='all';
-    el.innerHTML='<div class="memoempty">'+(filtering ? '条件に合うメモがありません' : 'まだメモがありません。<br>右下の ＋ から書けます。')+'</div>';
+    el.innerHTML='<div class="memoempty">'+(memoScope.kind==='search' ? (memoSearchQ.trim() ? '見つかりませんでした' : '上の欄に入力すると、すべてのメモから探します') : memoScope.kind==='trash' ? '削除したメモはありません' : 'このフォルダにはメモがありません')+'</div>';
     return;
   }
-  el.innerHTML=items.map(m=>{
-    const t=memoTitleOf(m.body), s=memoSnippetOf(m.body);
-    const ef=memoEffFolderId(m), f=ef ? memoFolderById(ef) : null, tags=memoTagsOf(m);
-    return '<button class="mrow" onclick="openMemo(\''+m.id+'\')"><div class="mtitle">'+esc(t)+'</div>'+(s ? '<div class="msnip">'+esc(s)+'</div>' : '')+'<div class="mmeta">'+esc(memoFmtDate(m.updatedAt))+(f ? ' ・ <span class="mfolder">'+esc(f.name)+'</span>' : '')+'</div>'+(tags.length ? '<div class="mtags">'+tags.map(tg=>'<span class="mtag">#'+esc(tg)+'</span>').join('')+'</div>' : '')+'</button>';
-  }).join('');
+  const isTrash=memoScope.kind==='trash';
+  const showFolder=(memoScope.kind==='all' || memoScope.kind==='search' || memoScope.kind==='tag');
+  let html='';
+  let rest=items;
+  if(!isTrash && memoScope.kind!=='search'){
+    const pinned=items.filter(m=> m.pinned);
+    rest=items.filter(m=> !m.pinned);
+    if(pinned.length){
+      html+='<div class="mgrouphead"><span>ピン留め</span><button class="mpillbtn" style="height:30px;padding:0 10px;font-size:12.5px" onclick="memoPinOpen=!memoPinOpen;renderMemoList()">'+(memoPinOpen?'閉じる':'開く')+'</button></div>';
+      if(memoPinOpen) html+='<div class="mnotecard">'+pinned.map(m=> memoNoteRow(m, showFolder, false)).join('')+'</div>';
+    }
+  }
+  const groups={};
+  rest.forEach(m=>{ const key=memoMonthKey(isTrash ? m.deletedAt : m.updatedAt); (groups[key]=groups[key]||[]).push(m); });
+  Object.keys(groups).sort().reverse().forEach(key=>{
+    html+='<div class="mgrouphead"><span>'+memoMonthLabel(key)+'</span></div><div class="mnotecard">'+groups[key].map(m=> memoNoteRow(m, showFolder, isTrash)).join('')+'</div>';
+  });
+  el.innerHTML=html;
+  el.querySelectorAll('.mnote').forEach(b=>{
+    let t=null;
+    b.addEventListener('touchstart', ()=>{ t=setTimeout(()=>{ memoLpStamp=Date.now(); if(memoScope.kind==='trash') openTrashNoteMenu(b.dataset.id); else openMemoNoteMenu(b.dataset.id); }, 480); }, { passive:true });
+    ['touchend','touchmove','touchcancel'].forEach(ev=> b.addEventListener(ev, ()=>{ if(t) clearTimeout(t); }, { passive:true }));
+  });
+}
+function openMemoNoteMenu(id){
+  const m=memoById(id); if(!m) return;
+  openSheet('<h3>'+esc(memoTitleOf(m.body))+'</h3>'+
+    '<button class="sheetbtn" onclick="memoTogglePin(\''+id+'\');closeSheet();renderMemoList()">'+(m.pinned ? 'ピン留めを外す' : 'ピン留めする')+'</button>'+
+    '<button class="sheetbtn" onclick="openMemoMoveMenu(\''+id+'\')">フォルダへ移動</button>'+
+    '<button class="sheetbtn danger" onclick="closeSheet();deleteMemoById(\''+id+'\',true);renderMemoList()">削除する</button>'+
+    '<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+}
+function openMemoMoveMenu(id){
+  let html='<h3>移動先のフォルダ</h3><button class="sheetbtn" onclick="memoMoveMemo(\''+id+'\',null)">未分類</button>';
+  (MemoDB.folders||[]).slice().sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).forEach(f=>{ html+='<button class="sheetbtn" onclick="memoMoveMemo(\''+id+'\',\''+f.id+'\')">'+esc(f.name)+'</button>'; });
+  html+='<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>';
+  openSheet(html);
+}
+function memoTogglePin(id){ const m=memoById(id); if(!m) return; m.pinned=!m.pinned; touchMemo(); }
+function memoMoveMemo(id, fid){
+  const m=memoById(id); closeSheet(); if(!m) return;
+  m.folderId=fid; touchMemo(); renderMemoList();
+}
+function openTrashNoteMenu(id){
+  const t=(MemoDB.trash||[]).find(x=> x.id===id); if(!t) return;
+  openSheet('<h3>'+esc(memoTitleOf(t.body))+'</h3>'+
+    '<button class="sheetbtn" onclick="memoRestoreFromTrash(\''+id+'\');closeSheet();renderMemoList()">復元する</button>'+
+    '<button class="sheetbtn danger" onclick="memoPurgeAsk(\''+id+'\')">完全に削除する</button>'+
+    '<button class="sheetbtn" onclick="closeSheet()">キャンセル</button>');
+}
+async function memoPurgeAsk(id){
+  const ok=await sheetConfirm('完全に削除', '元に戻せません。本当に削除しますか？', '削除する', true);
+  if(!ok) return;
+  memoPurgeFromTrash(id); renderMemoList();
+}
+function memoRestoreFromTrash(id){
+  if(!Array.isArray(MemoDB.trash)) return;
+  const t=MemoDB.trash.find(x=> x.id===id); if(!t) return;
+  MemoDB.trash=MemoDB.trash.filter(x=> x.id!==id);
+  const m=Object.assign({}, t); delete m.deletedAt;
+  if(!memoById(id)) MemoDB.memos.push(m);
+  touchMemo();
+}
+function memoPurgeFromTrash(id){
+  if(!Array.isArray(MemoDB.trash)) return;
+  MemoDB.trash=MemoDB.trash.filter(x=> x.id!==id);
+  MemoDB.deleted[id]=memoNowISO();
+  touchMemo();
 }
 function renderMemoSyncNote(){
   const el=$('memosyncbar'); if(!el) return;
@@ -2334,13 +2559,14 @@ function memoSyncBarTap(){
   if(!relayReady()){ sheetInfo('中継未設定', '設定タブの「同期と写真」で、中継のシークレットを貼ってください。'); return; }
   syncNow('manual');
 }
+function memoUpdatePinBtn(m){ const b=$('memopin'); if(b) b.classList.toggle('on', !!(m && m.pinned)); }
 function fillMemoEditorControls(m){
   const sel=$('memofoldersel'); if(!sel) return;
-  const cur = m ? memoEffFolderId(m) : (memoFolderFilter!=='all' && memoFolderFilter!=='none' ? memoFolderFilter : null);
+  const cur = m ? memoEffFolderId(m) : (memoScope.kind==='folder' ? memoScope.id : null);
   sel.innerHTML='<option value="">未分類</option>'+(MemoDB.folders||[]).slice().sort((a,b)=> (a.createdAt||'').localeCompare(b.createdAt||'')).map(f=>'<option value="'+esc(f.id)+'">'+esc(f.name)+'</option>').join('');
   sel.value=cur||'';
   $('memotags').value = m ? memoTagsOf(m).join(', ') : '';
-  renderMemoTagSug(m);
+  memoUpdatePinBtn(m);
 }
 function renderMemoTagSug(m){
   const el=$('memotagsug'); if(!el) return;
@@ -2369,42 +2595,205 @@ function applyMemoTags(){
   if(JSON.stringify(memoTagsOf(m))===JSON.stringify(tags)) return;
   m.tags=tags; m.updatedAt=memoNowISO(); touchMemo();
 }
+/* ===== memo editor: rich text (v2.47) ===== */
+let memoSavedRange=null;
+function memoSanitizeHtml(html){
+  const box=document.createElement('div'); box.innerHTML=String(html||'');
+  const okTags={ DIV:1, P:1, BR:1, SPAN:1, B:1, STRONG:1, I:1, EM:1, U:1, S:1, STRIKE:1, UL:1, OL:1, LI:1, H1:1, H2:1, H3:1, PRE:1, IMG:1, FONT:1, BLOCKQUOTE:1 };
+  const walk=(node)=>{
+    Array.prototype.slice.call(node.childNodes).forEach(ch=>{
+      if(ch.nodeType===3) return;
+      if(ch.nodeType!==1){ ch.remove(); return; }
+      if(!okTags[ch.tagName]){ const t=document.createTextNode(ch.textContent||''); ch.replaceWith(t); return; }
+      walk(ch);
+      Array.prototype.slice.call(ch.attributes||[]).forEach(a=>{
+        const n=a.name.toLowerCase();
+        if(ch.tagName==='IMG' && n==='src' && /^data:image\//.test(a.value)) return;
+        if(ch.tagName==='FONT' && n==='color') return;
+        if(ch.tagName==='SPAN' && n==='style'){ const m=/color\s*:\s*([^;]+)/i.exec(a.value||''); if(m){ ch.setAttribute('style','color:'+m[1].trim()); return; } }
+        if(n==='class' && (ch.getAttribute('class')||'').split(/\s+/).indexOf('mchk')>=0){ ch.setAttribute('class','mchk'); return; }
+        if(n==='data-done' && (a.value==='0' || a.value==='1')) return;
+        ch.removeAttribute(a.name);
+      });
+      if(ch.tagName==='IMG' && !/^data:image\//.test(ch.getAttribute('src')||'')) ch.remove();
+    });
+  };
+  walk(box);
+  return box.innerHTML;
+}
+function memoTextToHtml(text){
+  const lines=String(text||'').split('\n');
+  if(!lines.some(l=> l.trim())) return '';
+  return lines.map(l=> '<div>'+(l.trim() ? esc(l) : '<br>')+'</div>').join('');
+}
+function memoEditorText(){ const ed=$('memoeditor'); return ed ? (ed.innerText||'').replace(/ /g,' ') : ''; }
+function memoEditorChanged(){
+  const ed=$('memoeditor'); if(!ed) return;
+  const text=memoEditorText();
+  ed.classList.toggle('isEmpty', !text.trim() && !ed.querySelector('img'));
+  const ts=memoNowISO();
+  if(memoEditIsNew && memoEditId===null){
+    if(!text.trim() && !ed.querySelector('img')) return;
+    memoEditId=memoNewId();
+    MemoDB.memos.push({ id:memoEditId, body:text, html:memoSanitizeHtml(ed.innerHTML), createdAt:ts, updatedAt:ts, folderId: $('memofoldersel').value||null, tags: memoParseTags($('memotags').value), pinned:false });
+    $('memodel').style.display='';
+  } else if(memoEditId){
+    const m=memoById(memoEditId);
+    if(m){ m.body=text; m.html=memoSanitizeHtml(ed.innerHTML); m.updatedAt=ts; }
+  }
+  $('memometa').textContent=memoFmtDate(ts)+' ・ '+text.length+'文字';
+  touchMemo();
+}
+function memoSaveSel(){ try{ const s=window.getSelection(); if(s && s.rangeCount && $('memoeditor').contains(s.anchorNode)) memoSavedRange=s.getRangeAt(0).cloneRange(); }catch(e){} }
+function memoRestoreSel(){
+  const ed=$('memoeditor'); if(!ed) return;
+  try{ ed.focus({ preventScroll:true }); }catch(e){ try{ ed.focus(); }catch(e2){} }
+  if(memoSavedRange){ try{ const s=window.getSelection(); s.removeAllRanges(); s.addRange(memoSavedRange); }catch(e){} }
+}
+function memoCurBlock(){
+  const ed=$('memoeditor'); if(!ed) return null;
+  let n=null; try{ const s=window.getSelection(); n=s && s.rangeCount ? s.anchorNode : null; }catch(e){}
+  if(!n || !ed.contains(n)) return ed.lastElementChild;
+  while(n && n.parentNode!==ed) n=n.parentNode;
+  return n && n.nodeType===1 ? n : null;
+}
+function memoFmtAfter(){ memoSaveSel(); memoEditorChanged(); memoFmtRefresh(); }
+function memoFmtCmd(cmd){ memoRestoreSel(); try{ document.execCommand(cmd, false, null); }catch(e){} memoFmtAfter(); }
+function memoFmtBlock(tag){
+  memoRestoreSel();
+  try{ document.execCommand('formatBlock', false, tag); }catch(e){}
+  memoFmtAfter();
+}
+function memoFmtColor(c){
+  memoRestoreSel();
+  let col=c;
+  if(!col){ try{ col=getComputedStyle($('memoeditor')).color; }catch(e){ col='#ffffff'; } }
+  try{ document.execCommand('foreColor', false, col); }catch(e){}
+  memoFmtAfter();
+}
+function memoFmtList(kind){ memoRestoreSel(); try{ document.execCommand(kind==='ol' ? 'insertOrderedList' : 'insertUnorderedList', false, null); }catch(e){} memoFmtAfter(); }
+function memoToggleChecklistBlock(){
+  const blk=memoCurBlock(); if(!blk) return;
+  blk.classList.toggle('mchk');
+  if(blk.classList.contains('mchk')){ if(!blk.dataset.done) blk.dataset.done='0'; }
+  else blk.removeAttribute('data-done');
+}
+function memoFmtChecklistBtn(){ memoRestoreSel(); memoToggleChecklistBlock(); memoFmtAfter(); }
+function memoFmtRefresh(){
+  const bar=$('memofmtbar'); if(!bar) return;
+  ['bold','italic','underline','strikeThrough'].forEach(cmd=>{
+    const b=bar.querySelector('[data-cmd="'+cmd+'"]'); if(!b) return;
+    let on=false; try{ on=document.queryCommandState(cmd); }catch(e){}
+    b.classList.toggle('on', !!on);
+  });
+  const blk=memoCurBlock();
+  const tag=blk ? blk.tagName : '';
+  const map={ H1:'title', H2:'h', H3:'h3', PRE:'mono', P:'body', DIV:'body' };
+  bar.querySelectorAll('[data-style]').forEach(b=> b.classList.toggle('on', map[tag]===b.dataset.style));
+  const cl=bar.querySelector('[data-chk]'); if(cl) cl.classList.toggle('on', !!(blk && blk.classList.contains('mchk')));
+}
+function openMemoFmt(){
+  memoSaveSel();
+  const colors=['#f0564a','#f08c2e','#e8b93c','#4caf7d','#3e9bff','#b07fe8'];
+  openSheet('<div id="memofmtbar"><h3>フォーマット</h3>'+
+    '<div class="fmtstyles">'+
+    '<button class="fmtchip" data-style="title" onpointerdown="event.preventDefault()" onclick="memoFmtBlock(\'H1\')">タイトル</button>'+
+    '<button class="fmtchip" data-style="h" onpointerdown="event.preventDefault()" onclick="memoFmtBlock(\'H2\')">見出し</button>'+
+    '<button class="fmtchip" data-style="h3" onpointerdown="event.preventDefault()" onclick="memoFmtBlock(\'H3\')">小見出し</button>'+
+    '<button class="fmtchip" data-style="body" onpointerdown="event.preventDefault()" onclick="memoFmtBlock(\'P\')">本文</button>'+
+    '<button class="fmtchip" data-style="mono" onpointerdown="event.preventDefault()" onclick="memoFmtBlock(\'PRE\')">等幅</button></div>'+
+    '<div class="fmtrow">'+
+    '<button class="fmtbtn" data-cmd="bold" onpointerdown="event.preventDefault()" onclick="memoFmtCmd(\'bold\')"><b>B</b></button>'+
+    '<button class="fmtbtn" data-cmd="italic" onpointerdown="event.preventDefault()" onclick="memoFmtCmd(\'italic\')"><i>I</i></button>'+
+    '<button class="fmtbtn" data-cmd="underline" onpointerdown="event.preventDefault()" onclick="memoFmtCmd(\'underline\')"><u>U</u></button>'+
+    '<button class="fmtbtn" data-cmd="strikeThrough" onpointerdown="event.preventDefault()" onclick="memoFmtCmd(\'strikeThrough\')"><s>S</s></button></div>'+
+    '<div class="fmtcolors"><button class="fmtcolor" style="background:var(--text)" onpointerdown="event.preventDefault()" onclick="memoFmtColor(null)" aria-label="標準の色"></button>'+
+    colors.map(c=> '<button class="fmtcolor" style="background:'+c+'" onpointerdown="event.preventDefault()" onclick="memoFmtColor(\''+c+'\')" aria-label="文字色"></button>').join('')+'</div>'+
+    '<div class="fmtrow">'+
+    '<button class="fmtbtn" onpointerdown="event.preventDefault()" onclick="memoFmtList(\'ul\')">・リスト</button>'+
+    '<button class="fmtbtn" onpointerdown="event.preventDefault()" onclick="memoFmtList(\'ol\')">1.リスト</button>'+
+    '<button class="fmtbtn" data-chk="1" onpointerdown="event.preventDefault()" onclick="memoFmtChecklistBtn()">✓ チェック</button></div>'+
+    '<div class="fmtrow">'+
+    '<button class="fmtbtn" onpointerdown="event.preventDefault()" onclick="memoFmtCmd(\'outdent\')">インデント減</button>'+
+    '<button class="fmtbtn" onpointerdown="event.preventDefault()" onclick="memoFmtCmd(\'indent\')">インデント増</button></div>'+
+    '<button class="sheetbtn" onclick="closeSheet()">閉じる</button></div>');
+  memoFmtRefresh();
+}
+function memoPhotoPick(){ memoSaveSel(); const f=$('memofile'); if(f){ f.value=''; f.click(); } }
+async function memoPhotoChosen(){
+  const f=$('memofile'); const file=f && f.files && f.files[0]; if(!file) return;
+  const dataUrl=await new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>res(null); r.readAsDataURL(file); });
+  if(!dataUrl) return;
+  const small=await makeInlineCopy(dataUrl);
+  memoRestoreSel();
+  try{ document.execCommand('insertImage', false, small); }catch(e){}
+  memoFmtAfter();
+}
+function memoBarFit(){
+  if(currentView!=='memoedit') return;
+  const bar=$('memoebar'); if(!bar) return;
+  const vv=window.visualViewport;
+  let kb=0;
+  if(vv) kb=Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  bar.style.bottom=kb+'px';
+  bar.style.paddingBottom = kb>0 ? '8px' : 'calc(8px + env(safe-area-inset-bottom, 0px))';
+}
+function toggleMemoPinCurrent(){
+  if(!memoEditId) return;
+  const m=memoById(memoEditId); if(!m) return;
+  m.pinned=!m.pinned; touchMemo(); memoUpdatePinBtn(m);
+}
 function openMemo(id){
   const m=memoById(id); if(!m) return;
   memoEditId=id; memoEditIsNew=false;
+  memoReturnTo = currentView==='memolist' ? 'memolist' : 'memo';
   fillMemoEditorControls(m);
-  $('memoeditor').value=m.body||'';
+  const ed=$('memoeditor');
+  ed.innerHTML = m.html ? memoSanitizeHtml(m.html) : memoTextToHtml(m.body);
+  ed.classList.toggle('isEmpty', !(m.body||'').trim() && !ed.querySelector('img'));
   $('memometa').textContent=memoFmtDate(m.updatedAt)+' ・ '+(m.body||'').length+'文字';
   $('memodel').style.display='';
   showView('memoedit');
+  setTimeout(memoBarFit, 60);
 }
 function newMemo(){
   memoEditId=null; memoEditIsNew=true;
+  memoReturnTo = currentView==='memolist' ? 'memolist' : 'memo';
   fillMemoEditorControls(null);
-  $('memoeditor').value='';
+  const ed=$('memoeditor');
+  ed.innerHTML=''; ed.classList.add('isEmpty');
   $('memometa').textContent='新しいメモ';
   $('memodel').style.display='none';
   showView('memoedit');
-  setTimeout(()=>{ try{ $('memoeditor').focus({ preventScroll:true }); }catch(e){} }, 380);
+  setTimeout(()=>{ try{ $('memoeditor').focus({ preventScroll:true }); }catch(e){} memoBarFit(); }, 380);
+}
+function memoBackFromEditor(){
+  if(memoReturnTo==='memolist') showView('memolist');
+  else showView('memo');
 }
 function closeMemoEditor(){
-  const body=$('memoeditor').value;
-  if(memoEditId && !body.trim()){ deleteMemoById(memoEditId, !memoEditIsNew); }
+  memoEditorChanged();
+  if(memoEditId){
+    const m=memoById(memoEditId);
+    const ed=$('memoeditor');
+    const hasImg=!!(ed && ed.querySelector('img'));
+    if(m && !(m.body||'').trim() && !hasImg) deleteMemoById(memoEditId, !memoEditIsNew);
+  }
   memoEditId=null; memoEditIsNew=false;
-  renderMemoList();
-  showView('memo');
+  memoBackFromEditor();
 }
 function deleteMemoCurrent(){
   if(memoEditId){ deleteMemoById(memoEditId, true); }
   memoEditId=null; memoEditIsNew=false;
-  renderMemoList();
-  showView('memo');
+  memoBackFromEditor();
 }
 function deleteMemoById(id, notify){
   const m=memoById(id); if(!m) return;
   const ts=memoNowISO();
   MemoDB.memos=MemoDB.memos.filter(x=>x.id!==id);
-  MemoDB.deleted[id]=ts;
+  if(!Array.isArray(MemoDB.trash)) MemoDB.trash=[];
+  MemoDB.trash=MemoDB.trash.filter(x=>x.id!==id);
+  MemoDB.trash.push(Object.assign({}, m, { deletedAt: ts }));
   memoLastDeleted={ memo:m, ts };
   memoLastDeletedFolder=null;
   touchMemo();
@@ -2413,11 +2802,16 @@ function deleteMemoById(id, notify){
 function undoMemoDelete(){
   if(!memoLastDeleted) return;
   const memo=memoLastDeleted.memo, ts=memoLastDeleted.ts;
+  if(Array.isArray(MemoDB.trash)){
+    const t=MemoDB.trash.find(x=> x.id===memo.id);
+    if(t && t.deletedAt===ts) MemoDB.trash=MemoDB.trash.filter(x=> x.id!==memo.id);
+  }
   if(MemoDB.deleted[memo.id]===ts) delete MemoDB.deleted[memo.id];
   if(!memoById(memo.id)) MemoDB.memos.push(memo);
   memoLastDeleted=null;
   touchMemo();
-  renderMemoList();
+  if(currentView==='memolist') renderMemoList();
+  if(currentView==='memo') renderMemoRoot();
   hideMemoToast();
 }
 function showMemoToast(msg){
@@ -2468,6 +2862,7 @@ function memoDeleteFolder(id){
   memoLastDeletedFolder={ folder:f, ts, memoIds: affected.map(m=>m.id) };
   memoLastDeleted=null;
   if(memoFolderFilter===id) memoFolderFilter='all';
+  if(memoScope.kind==='folder' && memoScope.id===id) memoScope={ kind:'all' };
   touchMemo(); renderMemoFolderList(); renderMemoList();
   showMemoToast('フォルダを削除しました');
 }
@@ -2500,13 +2895,14 @@ async function syncMemo(){
     const dl=await driveFetch('/files/'+encodeURIComponent(file.id)+'?alt=media');
     if(!dl.ok) return false;
     const text=await dl.text();
-    let remote={ memos:[], deleted:{}, folders:[] };
-    if(text && text.trim()){ const p=JSON.parse(text); remote={ memos:Array.isArray(p.memos)?p.memos:[], deleted:p.deleted||{}, folders:Array.isArray(p.folders)?p.folders:[] }; }
-    const snap=(d)=>JSON.stringify({ m:d.memos, d:d.deleted, f:d.folders||[] });
+    let remote={ memos:[], deleted:{}, folders:[], trash:[] };
+    if(text && text.trim()){ const p=JSON.parse(text); remote={ memos:Array.isArray(p.memos)?p.memos:[], deleted:p.deleted||{}, folders:Array.isArray(p.folders)?p.folders:[], trash:Array.isArray(p.trash)?p.trash:[] }; }
+    const snap=(d)=>JSON.stringify({ m:d.memos, d:d.deleted, f:d.folders||[], t:d.trash||[] });
     const remoteSnap=snap(remote);
     MemoDB=mergeMemoData(MemoDB, remote);
     saveMemoLocal();
-    if(currentView==='memo') renderMemoList();
+    if(currentView==='memo') renderMemoRoot();
+    if(currentView==='memolist') renderMemoList();
     if(currentView==='memoedit' && memoEditId){ const m=memoById(memoEditId); if(!m){ memoEditId=null; } }
     if(snap(MemoDB)!==remoteSnap){
       const up=await driveUploadPatch(file.id, JSON.stringify(memoFilePayload()), tok);
@@ -2516,26 +2912,28 @@ async function syncMemo(){
     return true;
   }catch(e){ return false; }
 }
-$('memosearch').addEventListener('input', (e)=>{ memoSearchQ=e.target.value; renderMemoList(); });
-$('memoeditor').addEventListener('input', ()=>{
-  const body=$('memoeditor').value;
-  const ts=memoNowISO();
-  if(memoEditIsNew && memoEditId===null){
-    memoEditId=memoNewId();
-    MemoDB.memos.push({ id:memoEditId, body, createdAt:ts, updatedAt:ts, folderId: $('memofoldersel').value||null, tags: memoParseTags($('memotags').value) });
-    $('memodel').style.display='none';
-  } else if(memoEditId){
-    const m=memoById(memoEditId);
-    if(m){ m.body=body; m.updatedAt=ts; }
+$('memolistsearch').addEventListener('input', (e)=>{ memoSearchQ=e.target.value; if(memoScope.kind==='search') renderMemoList(); });
+$('memoeditor').addEventListener('input', memoEditorChanged);
+$('memoeditor').addEventListener('keyup', memoSaveSel);
+$('memoeditor').addEventListener('mouseup', memoSaveSel);
+$('memoeditor').addEventListener('touchend', memoSaveSel, { passive:true });
+$('memoeditor').addEventListener('click', (e)=>{
+  const ed=$('memoeditor');
+  let n=e.target;
+  while(n && n.parentNode!==ed) n=n.parentNode;
+  if(n && n.nodeType===1 && n.classList && n.classList.contains('mchk')){
+    const r=n.getBoundingClientRect();
+    if(e.clientX - r.left < 38){ n.dataset.done = n.dataset.done==='1' ? '0' : '1'; memoEditorChanged(); }
   }
-  $('memometa').textContent=memoFmtDate(ts)+' ・ '+body.length+'文字';
-  touchMemo();
 });
+$('memofile').addEventListener('change', memoPhotoChosen);
+document.querySelectorAll('#memoebar .mebtn').forEach(b=> b.addEventListener('pointerdown', (e)=>{ e.preventDefault(); }));
+if(window.visualViewport){ visualViewport.addEventListener('resize', memoBarFit); visualViewport.addEventListener('scroll', memoBarFit); }
 $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.46';
+const APP_VERSION='2.47';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
