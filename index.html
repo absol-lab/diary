@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.48">
+<meta name="app-version" content="2.49">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -131,6 +131,9 @@
   }
   .topbar .ttl { flex: 1; text-align: center; font-size: calc(var(--fs) * 1.12); letter-spacing: .08em; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", sans-serif; }
   .iconbtn { min-width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: calc(var(--fs) * 1.05); color: var(--text); border-radius: 12px; }
+  .backbtn { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; background: var(--card2); border: 1px solid var(--line); color: var(--text); display: inline-flex; align-items: center; justify-content: center; }
+  .backbtn svg { width: 20px; height: 20px; }
+  .backbtn:active { background: var(--card); }
   .iconbtn:active { background: var(--card); }
   .roundbtn {
     width: 46px; height: 46px; flex: none; border-radius: 50%;
@@ -401,7 +404,7 @@
   [data-dragkind].tddraglive [data-dragid].dragging { transition: none; opacity: .55; }
   .tdnone { color: var(--muted); text-align: center; padding: 52px 0; font-size: 14px; }
   .tdbackbar { display: flex; align-items: center; gap: 6px; padding: 2px 0 6px; }
-  .tdback { font-size: 24px; color: var(--text); padding: 2px 10px 2px 2px; line-height: 1; }
+  .tdback { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; background: var(--card2); border: 1px solid var(--line); color: var(--text); display: inline-flex; align-items: center; justify-content: center; font-size: 24px; line-height: 1; padding: 0; }
   .tdltitle { flex: 1; font-size: 16px; font-weight: 700; font-family: var(--uifont); text-align: center; }
   .tdiconbtn { color: var(--text); padding: 6px; display: flex; }
   .tdiconbtn svg { width: 21px; height: 21px; }
@@ -776,7 +779,7 @@
   <!-- ======= SEARCH ======= -->
   <section id="view-search" class="view">
     <div class="topbar">
-      <button class="iconbtn" onclick="showView('list')" aria-label="戻る">‹</button>
+      <button class="backbtn" onclick="showView('list')" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
       <div class="ttl">検索</div>
       <div class="spacer44"></div>
     </div>
@@ -792,7 +795,7 @@
   <!-- ======= ENTRY ======= -->
   <section id="view-entry" class="view">
     <div class="topbar entrybar">
-      <button class="iconbtn" onclick="backFromEntry()" aria-label="戻る">‹</button>
+      <button class="backbtn" onclick="backFromEntry()" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
       <div class="datepill" id="entrypill"></div>
       <button class="iconbtn" id="entryeditbtn" onclick="toggleEdit()" aria-label="編集">✎</button>
       <button class="iconbtn" onclick="openEntryMenu()" aria-label="メニュー">…</button>
@@ -844,7 +847,7 @@
   <!-- ======= MEMO LIST ======= -->
   <section id="view-memolist" class="view">
     <div class="topbar entrybar">
-      <button class="iconbtn" onclick="closeMemoList()" aria-label="戻る">‹</button>
+      <button class="backbtn" onclick="closeMemoList()" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
       <div class="ttl" style="text-align:center"><span id="memolisttitle">メモ</span><div class="mlistsub" id="memolistsub"></div></div>
       <div class="spacer44"></div>
     </div>
@@ -859,7 +862,7 @@
   <!-- ======= MEMO EDIT ======= -->
   <section id="view-memoedit" class="view">
     <div class="topbar entrybar">
-      <button class="iconbtn" onclick="closeMemoEditor()" aria-label="戻る">‹</button>
+      <button class="backbtn" onclick="closeMemoEditor()" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
       <div class="ttl">メモ</div>
       <button class="iconbtn" id="memopin" onclick="toggleMemoPinCurrent()" aria-label="ピン留め"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6.5 3 3.5v2H7v-2l3-3.5L9 4z"/><path d="M12 16v5"/></svg></button>
       <button class="iconbtn" id="memodel" onclick="deleteMemoCurrent()" aria-label="削除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V5.2A1.2 1.2 0 0110.7 4h2.6a1.2 1.2 0 011.2 1.2V7M6.5 7l.9 12.2A1.5 1.5 0 008.9 20.5h6.2a1.5 1.5 0 001.5-1.3L17.5 7"/></svg></button>
@@ -883,7 +886,7 @@
   <!-- ======= MEMO FOLDERS ======= -->
   <section id="view-memofolders" class="view">
     <div class="topbar entrybar">
-      <button class="iconbtn" onclick="closeMemoFolders()" aria-label="戻る">‹</button>
+      <button class="backbtn" onclick="closeMemoFolders()" aria-label="戻る"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg></button>
       <div class="ttl">フォルダ管理</div>
       <div class="spacer44"></div>
     </div>
@@ -2933,7 +2936,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.48';
+const APP_VERSION='2.49';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -4174,7 +4177,7 @@ function purgeAllTrash() {
 }
 function doPurgeAllTrash() { TodoDB.trash = []; touchTodo(); closeSheet(); renderTodo(); }
 /* ---- special views （期限付き/今日/カレンダー/ゴミ箱） ---- */
-function tdBackbar(title) { return '<div class="tdbackbar"><button class="tdback" onclick="closeSpecial()">‹</button><div class="tdltitle">' + esc(title) + '</div><span style="width:34px"></span></div>'; }
+function tdBackbar(title) { return '<div class="tdbackbar"><button class="tdback" onclick="closeSpecial()">‹</button><div class="tdltitle">' + esc(title) + '</div><span style="width:42px"></span></div>'; }
 function specialRowHTML(t) {
   const where = t.listId ? (listById(t.listId) ? listById(t.listId).name : '') : (folderById(t.folderId) ? folderById(t.folderId).name : '');
   const st = t.color ? ' style="border-color:' + t.color + (t.done ? ';background:' + t.color : '') + '"' : '';
