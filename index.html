@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.49">
+<meta name="app-version" content="2.50">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -1210,7 +1210,9 @@ let navHealTimer=null;
 window.addEventListener('scroll', ()=>{ if(navHealTimer) clearTimeout(navHealTimer); navHealTimer=setTimeout(healNav, 160); }, { passive:true });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(healNav, 60); });
 document.addEventListener('touchstart', function(){}, { passive:true }); /* enables :active on iOS */
+const scrollSave={}, scrollWanted={};
 function showView(v){
+  if((currentView==='list' || currentView==='memolist') && v!==currentView){ scrollSave[currentView] = window.scrollY || 0; scrollWanted[currentView] = true; }
   if(currentView==='entry' && v!=='entry' && editing){ saveEdit(); }
   if(v!=='settings' && typeof settingsPanel!=='undefined') settingsPanel=null;
   if(v!=='entry' && v!=='memoedit' && v!=='memofolders' && v!=='memolist') prevView = (v==='search') ? prevView : v;
@@ -1227,7 +1229,8 @@ function showView(v){
   if(v==='memo') renderMemoRoot();
   if(v==='memolist') renderMemoList();
   if(v==='search'){ renderSearch(); setTimeout(()=>{ try{$('searchinput').focus();}catch(e){} }, 60); }
-  window.scrollTo(0,0);
+  if(scrollWanted[v]){ scrollWanted[v]=false; const y=scrollSave[v]||0; window.scrollTo(0,y); requestAnimationFrame(()=>window.scrollTo(0,y)); setTimeout(()=>window.scrollTo(0,y), 80); }
+  else window.scrollTo(0,0);
   pinNav(); setTimeout(pinNav, 350); requestAnimationFrame(healNav); setTimeout(healNav, 380);
 }
 
@@ -1504,7 +1507,9 @@ function backFromEntry(){
   if(editing){ saveEdit(); }
   const e=entryById(currentEntryId);
   if(e && currentIsNew && !e.text.trim()){ e.deleted=true; e.updatedAt=Date.now(); saveDB(); scheduleSync(); }
+  const wasNew = currentIsNew;
   currentIsNew=false; currentEntryId=null;
+  if(wasNew) scrollWanted.list=false;
   showView(prevView==='entry' ? 'list' : prevView);
 }
 function renderEntry(){
@@ -2775,6 +2780,7 @@ function memoBackFromEditor(){
   else showView('memo');
 }
 function closeMemoEditor(){
+  const mWasNew = memoEditIsNew;
   memoEditorChanged();
   if(memoEditId){
     const m=memoById(memoEditId);
@@ -2783,6 +2789,7 @@ function closeMemoEditor(){
     if(m && !(m.body||'').trim() && !hasImg) deleteMemoById(memoEditId, !memoEditIsNew);
   }
   memoEditId=null; memoEditIsNew=false;
+  if(mWasNew) scrollWanted.memolist=false;
   memoBackFromEditor();
 }
 function deleteMemoCurrent(){
@@ -2936,7 +2943,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.49';
+const APP_VERSION='2.50';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
