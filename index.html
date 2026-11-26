@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="app-version" content="2.50">
+<meta name="app-version" content="2.50.1">
 <title>日記</title>
 <meta name="application-name" content="日記">
 <meta name="apple-mobile-web-app-title" content="日記">
@@ -752,7 +752,7 @@
   <div id="splash" class="wait"></div>
 
   <!-- ======= LIST ======= -->
-  <section id="view-list" class="view active">
+  <section id="view-list" class="view">
     <div class="topbar">
       <button class="roundbtn" onclick="openYearSheet()" aria-label="年を選ぶ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/><circle cx="8" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="8" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.15" fill="currentColor" stroke="none"/></svg></button>
       <div class="ttl">日記</div>
@@ -814,7 +814,7 @@
   </section>
 
   <!-- ======= TODO ======= -->
-  <section id="view-todo" class="view">
+  <section id="view-todo" class="view active">
     <div class="topbar">
       <button class="tdiconbtn" onclick="openDrawer()" aria-label="メニュー"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       <div class="ttl">Todo<span id="tdsyncdot"></span><button id="tdsyncbtn" class="btn" onclick="todoSyncBtnTap()">Driveに保存</button><span id="tdsynctime"></span></div>
@@ -913,9 +913,9 @@
 
   <nav id="pillnav">
     <span id="navind"></span>
-    <button id="nav-list" class="on" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15.5" x2="12.5" y2="15.5"/></svg><span>日記</span></button>
+    <button id="nav-list" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8.5" x2="15" y2="8.5"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15.5" x2="12.5" y2="15.5"/></svg><span>日記</span></button>
     <button id="nav-calendar" onclick="showView('calendar')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><line x1="3.5" y1="10" x2="20.5" y2="10"/><line x1="8" y1="3" x2="8" y2="6.5"/><line x1="16" y1="3" x2="16" y2="6.5"/><circle cx="8" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="16" cy="14" r="1.15" fill="currentColor" stroke="none"/><circle cx="8" cy="17.5" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="17.5" r="1.15" fill="currentColor" stroke="none"/></svg><span>カレンダー</span></button>
-    <button id="nav-todo" onclick="showView('todo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 12.3l2.3 2.3 4.5-5"/></svg><span>Todo</span></button>
+    <button id="nav-todo" class="on" onclick="showView('todo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M8.6 12.3l2.3 2.3 4.5-5"/></svg><span>Todo</span></button>
     <button id="nav-memo" onclick="showView('memo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="4.5" width="15" height="15" rx="3"/><path d="M8.6 15.4l.9-2.7 5.3-5.3a1.55 1.55 0 012.2 0l.5.5a1.55 1.55 0 010 2.2l-5.3 5.3-2.7.9z"/></svg><span>メモ</span></button>
     <button id="nav-settings" onclick="showView('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>設定</span></button>
   </nav>
@@ -1176,7 +1176,7 @@ function sheetInfo(title, msg){
 }
 
 /* ================= view switching ================= */
-let currentView='list';
+let currentView='todo';
 let prevView='list';
 let lastNavX=null;
 function moveNavInd(animate){
@@ -2943,7 +2943,7 @@ $('memofoldersel').addEventListener('change', applyMemoFolder);
 $('memotags').addEventListener('input', ()=>{ applyMemoTags(); });
 
 /* ================= self update ================= */
-const APP_VERSION='2.50';
+const APP_VERSION='2.50.1';
 { const vb=$('verbadge'); if(vb) vb.textContent='v'+APP_VERSION; }
 function splashGo(){ const sp=$('splash'); if(!sp || sp.dataset.went) return; sp.dataset.went='1'; sp.classList.remove('wait'); sp.classList.add('hide');
   setTimeout(()=>{ try{ sp.remove(); }catch(e){} }, 520); }
@@ -4555,6 +4555,7 @@ document.addEventListener('pointerup', function () {
   loadTodo(); renderTodo();
   const authResult=checkAuthRedirect();
   renderList(); renderCalendar(); renderSyncStatus();
+  showView('todo'); /* 初手はTodoページ（翔万の指示 2026-11-26）：起動のたびにTodoから始める */
   if(relayReady()){
     /* v2.21: a configured relay needs no token — sync on open. */
     setTimeout(()=>syncNow('startup'), 300);
